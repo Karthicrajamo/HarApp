@@ -1,0 +1,1430 @@
+rr// Notice baordscreen backup - 11-09-2024  - props method
+
+import React, {useEffect, useState, useRef, useCallback} from 'react';
+import SockJS from 'sockjs-client';
+import {Stomp, Client} from '@stomp/stompjs';
+import {TextEncoder} from 'text-encoding';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Vibration,
+  BackHandler,
+  Linking,
+  Platform,
+  PermissionsAndroid,
+  PlatformConstants,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+// import {launchImageLibrary} from 'react-native-image-picker';
+import DocumentPicker from 'react-native-document-picker';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import {CustomThemeColors} from './CustomThemeColors';
+import UUID from 'react-native-uuid';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {compareAsc, format} from 'date-fns';
+import {utcToZonedTime, toZonedTime} from 'date-fns-tz';
+import API_URL from '../components/ApiUrl';
+import * as Keychain from 'react-native-keychain';
+import RNFS from 'react-native-fs';
+import Share from 'react-native-share';
+import {Image} from 'react-native-elements';
+import {useFocusEffect} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import Pdf from 'react-native-pdf';
+import {writeFile, DocumentDirectoryPath} from 'react-native-fs';
+import FileViewer from 'react-native-file-viewer';
+import mime from 'react-native-mime-types';
+
+global.TextEncoder = TextEncoder;
+
+const audioRecorderPlayer = new AudioRecorderPlayer();
+
+const NoticeBoardScreen = ({group, userId, prevMessageHistory, userName}) => {
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const backAction = () => {
+      // Reset the navigation stack and navigate to NoticeBoardMainScreen
+      navigation.reset({
+        index: 0, // Set the index to 0 to reset to the first screen
+        routes: [{name: 'NoticeBoardMainScreen'}],
+      });
+      return true; // Prevent default behavior (exit app)
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
+  // const navigation = useNavigation();
+  console.log(
+    'received props from NOtice board List: \n>>>>>group : ',
+    group,
+    '\n',
+    '>>>>> userId : ',
+    userId,
+    // '>>>>>> prevConversation in NoticeBoardScreen CHat screen : ',
+    // prevMessageHistory,
+  );
+
+  const [message, setMessage] = useState('Start messaging ...');
+  const [messageHistory, setMessageHistory] = useState(
+    prevMessageHistory || [],
+  );
+  const [typedMessage, setTypedMessage] = useState('');
+  const [stompClient, setStompClient] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [loading, setLoading] = useState(false);
+  // const [needRefresh, setNeedRefresh] = useState(false);
+  // useEffect(() => {}, [messageHistory]);
+  useEffect(() => {
+    setMessageHistory(prevMessageHistory);
+
+    setLoading(true);
+    const socketUrl = 'http://192.168.0.107:8084/websocket';
+    const socket = new SockJS(socketUrl);
+    const client = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      onConnect: frame => {
+        console.log('Connected: ' + frame);
+        setStompClient(client);
+        setConnectionStatus('Online');
+
+        client.subscribe(
+          `/topic/listen/group/${group.noticeBoardId}`,
+          response => {
+            const receivedData = JSON.parse(response.body);
+            const receivedMessage = receivedData.body;
+            console.log('Received message: hrt5jjg94', receivedMessage);
+            console.log(
+              'Received message: hrt56tg',
+              receivedMessage.sender,
+              receivedMessage.messageType,
+            );
+
+            // if (receivedMessage.messageType === 'DELETED_CHAT') {
+            //   setMessageHistory(prevMessages =>
+            //     prevMessages.map(msg =>
+            //       msg.messageId === receivedMessage.messageId
+            //         ? {...msg, message: 'DELETED MESSAGE !!!!'}
+            //         : msg,
+            //     ),
+            //   );
+            // }
+
+            // if (!receivedMessage.messageType === 'DELETED_CHAT') {
+            //   setMessage(receivedMessage.message);
+            // }
+            setMessage(receivedMessage.message);
+            console.log(
+              'listening use effect triggered !!! 999098766553gg3g76 :',
+            );
+            // Check if the message already exists in the history before adding
+            setMessageHistory(prevHistory => {
+              const alreadyExists = prevHistory.some(
+                msg => msg.referenceId === receivedMessage.referenceId,
+              );
+
+              if (!alreadyExists) {
+                return [
+                  ...prevHistory,
+                  {
+                    sender: receivedMessage.sender,
+                    userName: receivedMessage.userName,
+                    text: receivedMessage.message,
+                    timeStamp: receivedMessage.timeStamp,
+                    type: 'received',
+                    referenceId: receivedMessage.referenceId,
+                    messageType: receivedMessage.messageType,
+                    messageId: receivedMessage.messageId,
+                    metaData: receivedMessage.metaData,
+                  },
+                ];
+              }
+              return prevHistory;
+            });
+          },
+        );
+
+        setLoading(false);
+      },
+      onStompError: error => {
+        console.log('STOMP error:', error);
+        setConnectionStatus('Connection error');
+        setLoading(false);
+      },
+    });
+
+    client.activate();
+    return () => {
+      if (client.connected) {
+        client.deactivate();
+        console.log('Disconnected');
+        setConnectionStatus('Disconnected, Connecting Again...');
+      }
+    };
+  }, [prevMessageHistory.length > 0]);
+
+  const sendMessage = () => {
+    console.log('userId while messaging j5iji5lklkjij5i4i : ', userId);
+    const now = new Date();
+    const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+    if (stompClient && typedMessage.trim() !== '') {
+      const messageId = UUID.v4();
+      const newMessage = {
+        message: typedMessage,
+        referenceId: messageId,
+        messageType: 'CHAT',
+        sender: userId,
+        userName: userName ? userName : 'unknown',
+        timeStamp: formattedTimestamp,
+        groupId: group.noticeBoardId,
+        metaData: {
+          fileUrl: null,
+          fileName: null,
+          fileId: null,
+        },
+      };
+      // Optimistically add the message to the history to avoid waiting for the subscription
+      // setMessageHistory(prevHistory => {
+      //   const alreadyExists = prevHistory.some(
+      //     msg => msg.referenceId === typedMessage.referenceId,
+      //   );
+
+      //   if (!alreadyExists) {
+      //     return [
+      //       ...prevHistory,
+      //       {
+      //         sender: userId,
+      //         text: typedMessage,
+      //         timeStamp: formattedTimestamp,
+      //         type: 'sent',
+      //         referenceId: messageId,
+      //       },
+      //     ];
+      //   }
+      //   return prevHistory;
+      // });
+      const JsonNewMessageString = JSON.stringify(newMessage);
+      console.log('sent Messages mm98985n', JsonNewMessageString);
+      stompClient.publish({
+        destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+        body: JsonNewMessageString,
+      });
+    }
+    setTypedMessage('');
+  };
+
+  // const chooseFile = () => {
+  //   const options = {
+  //     mediaType: 'mixed',
+  //     includeBase64: false,
+  //   };
+
+  // const chooseFile = async () => {
+  //   const options = {
+  //     mediaType: 'mixed',
+  //     selectionLimit: 0, // 0 allows multiple selection
+  //   };
+
+  //   const response = await launchImageLibrary(options);
+
+  //   if (response.didCancel) {
+  //     console.log('User cancelled image picker');
+  //   } else if (response.errorCode) {
+  //     console.log('ImagePicker Error: ', response.errorMessage);
+  //   } else {
+  //     const files = response.assets;
+  //     const formData = new FormData();
+
+  //     files.forEach((file, index) => {
+  //       formData.append('file', {
+  //         uri: file.uri,
+  //         type: file.type,
+  //         name: file.fileName || `file_${index}`,
+  //       });
+  //     });
+
+  //     try {
+  //       const uploadResponse = await fetch('http://192.168.0.107:8084/upload', {
+  //         method: 'POST',
+  //         body: formData,
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       });
+
+  //       const data = await uploadResponse.json();
+  //       console.log('Uploaded file:', data);
+
+  //       // Send metadata to WebSocket
+  //       if (stompClient) {
+  //         const now = new Date();
+  //         const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+  //         const messageId = UUID.v4();
+
+  //         const fileMessage = {
+  //           message: `File uploaded: ${data.fileName}`,
+  //           referenceId: messageId,
+  //           messageType: 'FILE',
+  //           sender: userId,
+  //           timeStamp: formattedTimestamp,
+  //           groupId: group.noticeBoardId,
+  //           fileUrl: data.fileUrl,
+  //           fileName: data.fileName,
+  //         };
+
+  //         stompClient.publish({
+  //           destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+  //           body: JSON.stringify(fileMessage),
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error('File upload error:', error);
+  //     }
+  //   }
+  //   launchImageLibrary(options, response => {
+  //     // referenceId;
+  //     if (response.didCancel) {
+  //       console.log('User cancelled image picker');
+  //     } else if (response.errorCode) {
+  //       console.log('ImagePicker Error: ', response.errorMessage);
+  //     } else {
+  //       console.log('Selected file:', response.assets[0]);
+  //     }
+  //   });
+  // };
+
+  // };
+
+  // const chooseFile = async () => {
+  //   try {
+  //     const options = {
+  //       mediaType: 'mixed',
+  //       selectionLimit: 0, // Allows multiple selection
+  //     };
+
+  //     const response = await launchImageLibrary(options);
+
+  //     if (response.didCancel) {
+  //       console.log('User cancelled image picker');
+  //       return;
+  //     }
+
+  //     if (response.errorCode) {
+  //       console.error('ImagePicker Error: ', response.errorMessage);
+  //       return;
+  //     }
+
+  //     const files = response.assets;
+  //     if (!files || files.length === 0) {
+  //       console.log('No files selected');
+  //       return;
+  //     }
+
+  //     const formData = new FormData();
+  //     files.forEach((file, index) => {
+  //       formData.append('file', {
+  //         uri: file.uri,
+  //         type: file.type,
+  //         name: file.fileName || `file_${index}`,
+  //       });
+  //     });
+
+  //     const uploadResponse = await fetch(`${API_URL}/upload`, {
+  //       method: 'POST',
+  //       body: formData,
+  //       headers: {
+  //         'Content-Type': 'multipart/form-data',
+  //       },
+  //     });
+
+  //     if (!uploadResponse.ok) {
+  //       throw new Error('File upload failed');
+  //     }
+
+  //     const data = await uploadResponse.json();
+  //     console.log('Uploaded file:', data);
+
+  //     // Send metadata to WebSocket
+  //     if (stompClient) {
+  //       const now = new Date();
+  //       const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+  //       const messageId = UUID.v4();
+
+  //       const fileMessage = {
+  //         message: `File uploaded: ${data.fileName}`,
+  //         referenceId: messageId,
+  //         messageType: 'FILE',
+  //         sender: userId,
+  //         timeStamp: formattedTimestamp,
+  //         groupId: group.noticeBoardId,
+  //         fileUrl: data.fileUrl,
+  //         fileName: data.fileName,
+  //       };
+
+  //       stompClient.publish({
+  //         destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+  //         body: JSON.stringify(fileMessage),
+  //       });
+  //     }
+  //   } catch (error) {
+  //     console.error('File upload error:', error);
+  //   }
+  // };
+
+  //IMPORTNAT - Supports to send any type of file
+  // const chooseFile = async () => {
+  //   try {
+  //     const response = await DocumentPicker.pick({
+  //       type: [DocumentPicker.types.allFiles], // Allows all types of files
+  //       allowMultiSelection: true, // Allows multiple file selection
+  //     });
+
+  //     // Log the original URI of the selected files
+  //     const fileUris = response.map(file => file.uri);
+  //     console.log('Selected file URIs:', fileUris);
+
+  //     // Proceed if files are selected
+  //     if (!response || response.length === 0) {
+  //       console.log('No files selected');
+  //       return;
+  //     }
+
+  //     const formData = new FormData();
+  //     response.forEach((file, index) => {
+  //       formData.append('file', {
+  //         uri: file.uri,
+  //         type: file.type,
+  //         name: file.name || `file_${index}`,
+  //       });
+  //     });
+  //     const fileUuid = UUID.v4();
+  //     const uploadResponse = await fetch(
+  //       `http://192.168.0.107:8084/api/noticeBoard/upload?usrid=${userId}&nbid=${group.noticeBoardId}&uuid=${fileUuid}`,
+  //       {
+  //         method: 'POST',
+  //         body: formData,
+  //         headers: {
+  //           'Content-Type': 'multipart/form-data',
+  //         },
+  //       },
+  //     );
+
+  //     if (!uploadResponse.ok) {
+  //       throw new Error('File upload failed');
+  //     }
+
+  //     const data = await uploadResponse.json();
+  //     console.log('Uploaded file:', data);
+
+  //     // Send metadata to WebSocket
+  //     if (stompClient) {
+  //       const now = new Date();
+  //       const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+  //       const messageId = UUID.v4();
+
+  //       const fileMessage = {
+  //         message: `${data.metaData.fileName}`,
+  //         referenceId: messageId,
+  //         messageType: 'FILE',
+  //         sender: userId,
+  //         userName: userName,
+  //         timeStamp: formattedTimestamp,
+  //         groupId: group.noticeBoardId,
+  //         metaData: {
+  //           fileUrl: data.metaData.fileUrl,
+  //           fileName: data.metaData.fileName,
+  //           fileId: data.metaData.fileId,
+  //         },
+  //       };
+
+  //       stompClient.publish({
+  //         destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+  //         body: JSON.stringify(fileMessage),
+  //       });
+  //     }
+  //   } catch (error) {
+  //     if (DocumentPicker.isCancel(error)) {
+  //       console.log('User cancelled document picker');
+  //     } else {
+  //       console.error('File upload error:', error.message);
+  //     }
+  //   }
+  // };
+
+  //FOR sending only images and pdfs
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif', // Image MIME types
+    'application/pdf', // PDF MIME type
+  ];
+
+  const chooseFile = async () => {
+    try {
+      const response = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles], // Allows all types of files
+        allowMultiSelection: true, // Allows multiple file selection
+      });
+
+      // Filter out files that are not images or PDFs
+      const validFiles = response.filter(file =>
+        allowedMimeTypes.includes(file.type),
+      );
+      const invalidFiles = response.filter(
+        file => !allowedMimeTypes.includes(file.type),
+      );
+
+      if (invalidFiles.length > 0) {
+        Alert.alert(
+          'Invalid File Type',
+          'You can only select images and PDF documents to send.',
+          [{text: 'OK'}],
+        );
+      }
+
+      if (validFiles.length === 0) {
+        console.log('No valid files selected');
+        return;
+      }
+
+      // Log the original URI of the selected files
+      const fileUris = validFiles.map(file => file.uri);
+      console.log('Selected file URIs:', fileUris);
+
+      const formData = new FormData();
+      validFiles.forEach((file, index) => {
+        formData.append('file', {
+          uri: file.uri,
+          type: file.type,
+          name: file.name || `file_${index}`,
+        });
+      });
+
+      const fileUuid = UUID.v4();
+      const uploadResponse = await fetch(
+        `${API_URL}/api/noticeBoard/upload?usrid=${userId}&nbid=${group.noticeBoardId}&uuid=${fileUuid}`,
+        {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error('File upload failed');
+      }
+
+      const data = await uploadResponse.json();
+      console.log('Uploaded file:', data);
+
+      // Send metadata to WebSocket
+      if (stompClient) {
+        const now = new Date();
+        const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+        const messageId = UUID.v4();
+
+        const fileMessage = {
+          message: `${data.metaData.fileName}`,
+          referenceId: messageId,
+          messageType: 'FILE',
+          sender: userId,
+          userName: userName,
+          timeStamp: formattedTimestamp,
+          groupId: group.noticeBoardId,
+          metaData: {
+            fileUrl: data.metaData.fileUrl,
+            fileName: data.metaData.fileName,
+            fileId: data.metaData.fileId,
+          },
+        };
+
+        stompClient.publish({
+          destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+          body: JSON.stringify(fileMessage),
+        });
+      }
+    } catch (error) {
+      if (DocumentPicker.isCancel(error)) {
+        console.log('User cancelled document picker');
+      } else {
+        console.error('File upload error:', error.message);
+      }
+    }
+  };
+
+  //FOR FILE(IMAGE, PDF) OPEN
+  // Determine if the file is an image
+  // Determine if the file is an image
+  const isImage = fileUrl =>
+    (fileUrl && fileUrl.endsWith('.jpg')) ||
+    fileUrl.endsWith('.jpeg') ||
+    fileUrl.endsWith('.png') ||
+    fileUrl.endsWith('.gif');
+
+  // Determine if the file is a PDF
+  const isPDF = fileUrl => fileUrl && fileUrl.endsWith('.pdf');
+
+  // Call this function to check if 'document.pdf' exists
+  const getMimeTypeFromFile = fileName => {
+    const fileExtension = fileName.split('.').pop();
+    return mime.lookup(fileExtension) || 'application/octet-stream'; // Default MIME type
+  };
+
+  const downloadAndOpenPDF = async (base64Uri, fileName) => {
+    try {
+      const androidVersion = Platform.Version;
+      let filePath;
+
+      if (Platform.OS === 'android') {
+        if (androidVersion >= 29) {
+          filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+        } else {
+          filePath = `${RNFS.ExternalDirectoryPath}/${fileName}`;
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            {
+              title: 'Storage Permission',
+              message:
+                'App needs access to your file storage to save and open the PDF',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            },
+          );
+
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            Alert.alert(
+              'Permission Denied',
+              'Storage permission is required to save and open the file.',
+            );
+            return;
+          }
+        }
+      } else {
+        filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+      }
+
+      // Write the base64 content to a file
+      await RNFS.writeFile(filePath, base64Uri, 'base64');
+      console.log('File written successfully to:', filePath);
+
+      // Verify file exists and is not empty
+      const fileExists = await RNFS.exists(filePath);
+      if (!fileExists) {
+        Alert.alert('Error', 'File does not exist.');
+        return;
+      }
+
+      const fileStat = await RNFS.stat(filePath);
+      if (fileStat.size === 0) {
+        Alert.alert('Error', 'File is empty.');
+        return;
+      }
+
+      // Open the file using FileViewer
+      await FileViewer.open(filePath);
+    } catch (error) {
+      console.error('Error downloading or opening PDF:', error);
+      Alert.alert('Error', 'Failed to download or open the file.');
+    }
+  };
+  // Function to render file content (image or PDF)
+  const renderFileContent = msg => {
+    const fileRecord = downloadedFilesRecords.find(
+      record => record.messageId === msg.messageId,
+    );
+
+    if (fileRecord) {
+      const fileUri = fileRecord.base64Uri;
+      const fileType = fileRecord.contentType;
+
+      if (fileType.startsWith('image/')) {
+        // Display image
+        return (
+          <Image
+            source={{uri: `data:${fileType};base64,${fileUri}`}}
+            style={{width: 200, height: 200, borderRadius: 10}}
+          />
+        );
+      } else if (fileType === 'application/pdf') {
+        // Handle PDF opening
+        const fileName = 'document.pdf';
+        return (
+          <TouchableOpacity
+            onPress={() => downloadAndOpenPDF(fileUri, fileName)}>
+            <Text style={styles.downloadLink}>Open PDF</Text>
+          </TouchableOpacity>
+        );
+      } else {
+        // Fallback for unsupported file types
+        return (
+          <TouchableOpacity onPress={() => Linking.openURL(fileUri)}>
+            <Text style={styles.downloadLink}>Open/Download</Text>
+          </TouchableOpacity>
+        );
+      }
+    }
+
+    // Render download link if file is not found locally
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          if (msg.metaData?.fileUrl) {
+            downloadFileDirect(msg.metaData.fileUrl, msg.messageId);
+          } else {
+            downloadFileByMessageId(msg.messageId);
+          }
+        }}>
+        <Text style={styles.downloadLink}>Open/Download</Text>
+      </TouchableOpacity>
+    );
+  };
+  const startRecording = async () => {
+    const result = await audioRecorderPlayer.startRecorder();
+    console.log('Recording started:', result);
+  };
+
+  const stopRecording = async () => {
+    const result = await audioRecorderPlayer.stopRecorder();
+    console.log('Recording stopped:', result);
+  };
+
+  const toTitleCase = str => {
+    // console.log('Title CASING 00890890ij0988758:  ', str);
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const scrollViewRef = useRef();
+
+  // useEffect(() => {
+  //   if (scrollViewRef.current) {
+  //     scrollViewRef.current.scrollToEnd({animated: false});
+  //   }
+  // }, [messageHistory]);
+
+  // const formatTimestamp = utcTime => {
+  //   const date = new Date(utcTime);
+
+  //   const hours = date.getHours();
+  //   const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  //   const ampm = hours >= 12 ? 'PM' : 'AM';
+  //   const formattedHours = hours % 12 || 12; // Convert to 12-hour format
+
+  //   return `${formattedHours}:${minutes} ${ampm}`;
+  // };
+  const formatTimestamp = utcTime => {
+    // Parse the string to a Date object
+    const date = new Date(utcTime);
+
+    // console.log('date njjke890909090ne8 : ', date);
+    // console.log(
+    //   'Intl.DateTimeFormat().resolvedOptions().timeZone njjke890909090ne8 : ',
+    //   Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // );
+    // Convert UTC time to local time
+    const zonedTime = toZonedTime(
+      date,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+
+    // Format the time to "hh:mm a" (12-hour clock with AM/PM)
+    const formattedTime = format(zonedTime, 'MMM dd, yyyy hh:mm a');
+    // const formattedTime = format(zonedTime, 'hh:mm a');
+    return formattedTime;
+  };
+  const handleDeleteMessage = async messageIds => {
+    // Call the API to delete the message
+    console.log(
+      'Selected Message Ids for Slection in handle delete Message : 8788960873j90683',
+      messageIds,
+    );
+    console.log(
+      'DELETE MESSAGE API : llhmkkkoophh943n',
+      `${API_URL}/deleteMessage?nbid=${group.noticeBoardId}&usrid=${userId}`,
+    );
+
+    const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+    const token = credentials.password;
+    console.log(
+      'token with berarer : for deleting notice board messages',
+      `${token}`,
+    );
+
+    fetch(
+      `${API_URL}/api/noticeBoard/deleteMessage/${group.noticeBoardId}/${userId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify({messageIds: messageIds}),
+      },
+    )
+      .then(response => {
+        if (response.ok) {
+          console.log('Message deleted successfully');
+          // Update the UI after deletion
+          setMessageHistory(prevMessages =>
+            prevMessages.filter(msg => !messageIds.includes(msg.messageId)),
+          );
+          // Clear any long-pressed message state
+          setSelectedMessageIds([]);
+          //logic to be changed for informing other user that, about deleted messages, need EDIT MESSAGE  API or backend Edit Message Logic.
+          // if (stompClient) {
+          //   const now = new Date();
+          //   const formattedTimestamp = format(now, 'yyyy-MM-dd HH:mm:ss.SSS');
+          //   const referenceId = UUID.v4();
+
+          //   const fileMessage = {
+          //     message: `Message Deleted`,
+          //     referenceId: referenceId,
+          //     messageType: 'DELETED_CHAT',
+          //     sender: userId,
+          //     timeStamp: formattedTimestamp,
+          //     groupId: group.noticeBoardId,
+          //     // fileUrl: data.fileUrl,
+          //     // fileName: data.fileName,
+          //   };
+          //   console.log('gk-0re87d787d8jgidu');
+          //   stompClient.publish({
+          //     destination: `/app/group/${group.noticeBoardId}/sendMessage`,
+          //     body: JSON.stringify(fileMessage),
+          //   });
+          // }
+        } else {
+          console.error('Failed to delete the message');
+          return response.text().then(text => {
+            throw new Error(text || 'Failed to delete the message');
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting message:', error.message);
+        Alert.alert(
+          'Error',
+          'Failed to delete the message. Please try again later.',
+        );
+      });
+  };
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
+
+  const isSelected = messageId => {
+    return selectedMessageIds.includes(messageId);
+  };
+
+  const handleDeleteSelectedMessages = () => {
+    // selectedMessageIds.forEach(messageId => {
+    //   handleDeleteMessage(messageId);
+    // });
+    console.log(
+      'SELECTED MESSAGE ID FOR DELETION : MLKLKLKGS088978GSJ',
+      selectedMessageIds,
+    );
+    handleDeleteMessage(selectedMessageIds);
+    //API
+    setSelectedMessageIds([]); // Clear selection after deletion
+    setSelectionMode(false);
+  };
+
+  const handleLongPressMessage = (messageId, timeStamp) => {
+    const currentTime = new Date(); // Get the current time
+    const messageTime = new Date(timeStamp); // Convert the message timestamp to a Date object
+    console.log('Original timeStamp: R745', timeStamp);
+
+    // Calculate the difference in milliseconds and convert to minutes
+    const timeDifference = (currentTime - messageTime) / (1000 * 60);
+    console.log('timeDifferencce :3478472h4929756 : ', timeDifference);
+
+    // Check if the message is within 30 minutes of the current time
+    if (timeDifference > 30) {
+      Alert.alert(
+        'Please Note',
+        'You cannot perform an action on messages older than 30 minutes.',
+        [{text: 'OK', onPress: () => console.log('Alert closed')}],
+      );
+      return; // Prevent selection if it's beyond the time limit
+    }
+
+    Vibration.vibrate(100);
+    console.log('Long press detected, messageId: ', messageId);
+    console.log('Current selection mode: ', selectionMode);
+
+    if (!selectionMode) {
+      setSelectionMode(true);
+    }
+    toggleSelection(messageId);
+  };
+
+  const handlePressMessage = (messageId, timeStamp) => {
+    const currentTime = new Date(); // Get the current time
+    const messageTime = new Date(timeStamp); // Convert the message timestamp to a Date object
+    console.log('Original timeStamp: R745', timeStamp);
+
+    // Calculate the difference in milliseconds and convert to minutes
+    const timeDifference = (currentTime - messageTime) / (1000 * 60);
+    console.log('timeDifferencce :3478472h4929756 : ', timeDifference);
+
+    // Check if the message is within 30 minutes of the current time
+    if (timeDifference > 30) {
+      Alert.alert(
+        'Please Note',
+        'You cannot perform an action on messages older than 30 minutes.',
+        [{text: 'OK', onPress: () => console.log('Alert closed')}],
+      );
+      return; // Prevent selection if it's beyond the time limit
+    }
+
+    Vibration.vibrate(100);
+    // Vibration.vibrate(100);
+    console.log('Single press detected, messageId: 524asre2r2ad ', messageId);
+    console.log('Current selection mode: ii789684653242gd', selectionMode);
+
+    if (timeDifference < 30 && selectionMode) {
+      toggleSelection(messageId);
+    }
+  };
+
+  const toggleSelection = messageId => {
+    if (selectedMessageIds.includes(messageId)) {
+      setSelectedMessageIds(selectedMessageIds.filter(id => id !== messageId));
+    } else {
+      setSelectedMessageIds([...selectedMessageIds, messageId]);
+    }
+
+    // If no more messages are selected, exit selection mode
+    if (
+      selectedMessageIds.length === 1 &&
+      selectedMessageIds.includes(messageId)
+    ) {
+      setSelectionMode(false);
+    }
+  };
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete Messages',
+      'Are you sure you want to delete the selected messages permanently?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+          onPress: () => {
+            setSelectedMessageIds([]);
+            setSelectionMode(false);
+          },
+        },
+        {
+          text: 'Yes, Delete',
+          style: 'destructive',
+          onPress: () => handleDeleteSelectedMessages(),
+        },
+      ],
+      {cancelable: true},
+    );
+  };
+
+  // Function to open the file using its URI
+  const openFile = async fileName => {
+    console.log(
+      'fileName received for openfile  99509988989485j94594 :',
+      fileName,
+    );
+    try {
+      const fileUri = `file:///data/user/0/com.harnesserp/cache/${fileName}`;
+      // Check if the file still exists at the given URI
+      const fileExists = await RNFS.exists(fileUri);
+
+      if (fileExists) {
+        // If the file exists, open it using the system's default app
+        const options = {
+          // url: `file://${fileUri1}`,
+          url: `${fileUri}`,
+          type: '*/*', // This will allow the OS to select the best app to open the file
+        };
+        await Share.open(options);
+      } else {
+        console.log('File not found. It may have been deleted.');
+        Alert.alert('File not found', 'You may need to download it again.');
+      }
+    } catch (error) {
+      console.error('Failed to open file:', error);
+      Alert.alert('Error', 'Failed to open the file. Please try again.');
+    }
+  };
+
+  const [downloadedFilesRecords, setDownloadedFilesRecords] = useState([]);
+
+  useEffect(() => {}, [downloadedFilesRecords]);
+
+  const downloadFileDirect = async (fileUrl, messageId) => {
+    try {
+      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+      const token = credentials.password;
+      console.log('token with berarer : ', `${token}`);
+      // Replace with your API endpoint to fetch Filter
+
+      console.log(`${API_URL}${fileUrl}`);
+
+      //Example data : 08-Jan-20&toDate=09-Jan-24
+      const response = await fetch(`${API_URL}${fileUrl}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error while download direct image! Status: ${response.status}, for this url : ${fileUrl}`,
+        );
+      }
+
+      const data = await response.json();
+      console.log(
+        'DOWNLOAD FILE DIRECT LOG : ===============>>>>>>>>>> ',
+        data,
+      );
+      setDownloadedFilesRecords(prev => [
+        ...prev,
+        {
+          base64Uri: data.data,
+          contentType: data.fileType,
+          messageId: messageId,
+        },
+      ]);
+      console.log(
+        'File Download Complete !!   >>>>>>>>>> jikjiiij9098999d',
+        downloadedFilesRecords,
+      );
+    } catch (error) {
+      console.error('Error Downloading File', error);
+    } finally {
+      // Always hide loading indicator after login attempt (success or failure)
+    }
+  };
+
+  const downloadFileByMessageId = async messageId => {
+    try {
+      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+      const token = credentials.password;
+      console.log('token with berarer : ', `${token}`);
+      // Replace with your API endpoint to fetch Filter
+
+      console.log(
+        `${API_URL}/api/noticeBoard/getFileMetaData?nbid=${group.noticeBoardId}&msgid=${messageId}`,
+      );
+
+      //Example data : 08-Jan-20&toDate=09-Jan-24
+      const response = await fetch(
+        `${API_URL}/api/noticeBoard/getFileMetaData?nbid=${group.noticeBoardId}&msgid=${messageId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP error while fetching uploaded file metadata! Status: ${response.status}, for this messageId : ${messageId}`,
+        );
+      }
+
+      const data = await response.json();
+      console.log(
+        'FETCHED UPLOADED FILE METADATA : ===============>>>>>>>>>> ',
+        data,
+      );
+      console.log('Fetching uploaded file metedata Complete !!   >>>>>>>>>> ');
+      downloadFileDirect(data.fileUrl, messageId);
+    } catch (error) {
+      console.error('Error Fetching uploaded file metedata', error);
+    }
+  };
+  return (
+    <View style={styles.container}>
+      <View style={{flexDirection: 'row', width: '100%'}}>
+        {/* <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => {
+            navigation.reset({
+              index: 0, // Reset to the first screen
+              routes: [{name: 'NoticeBoardMainScreen'}], // The screen you want to navigate to
+            });
+          }}>
+          <Icon name="arrow-back" size={30} color="red" />
+        </TouchableOpacity> */}
+        <Text
+          style={{
+            width: '90%',
+            borderRadius: 10,
+            color: 'white',
+            fontWeight: '600',
+            marginBottom: 10,
+            padding: 10,
+            backgroundColor: CustomThemeColors.primary,
+            fontSize: 25,
+            alignItems: 'center',
+            textAlign: 'center',
+          }}>
+          {group.noticeBoardName}
+        </Text>
+        <View>
+          {selectedMessageIds.length > 0 && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={confirmDelete}>
+              <Icon name="delete" size={24} color="red" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      <Text style={[styles.status]}>{connectionStatus}</Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <>
+          <ScrollView
+            style={styles.scrollView}
+            ref={scrollViewRef}
+            onContentSizeChange={() =>
+              scrollViewRef.current.scrollToEnd({animated: false})
+            }>
+            {messageHistory.length > 0 ? (
+              messageHistory.map((msg, index) =>
+                msg.type === 'received' ? (
+                  //If received message type is FILE then treat it as a file and put it in a filemessage bubble
+                  msg.messageType === 'FILE' ? (
+                    // console.log(
+                    //   'FILE Message DEBUG 90859035873 :',
+                    //   'messsageId: ',
+                    //   msg.messageId,
+                    //   'message Type : ',
+                    //   msg.messageType,
+                    //   'message',
+                    //   msg.text,
+                    //   'file metaData',
+                    //   msg.metaData,
+                    // ),
+                    <View
+                      key={index}
+                      // onLongPress={() => setLongPressedMessageId(msg.messageId)}
+                      style={[
+                        styles.messageContainer,
+                        msg.sender === userId
+                          ? styles.sentMessageContainer
+                          : styles.receivedMessageContainer,
+                      ]}>
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          msg.sender === userId
+                            ? styles.sentMessageBubble
+                            : styles.receivedMessageBubble,
+                          isSelected(msg.messageId)
+                            ? {
+                                ...styles.selectedMessageBubble,
+                              }
+                            : null,
+                        ]}
+                        // disabled={() => msg.sender === userId}
+                        onLongPress={() => {
+                          if (msg.sender === userId) {
+                            handleLongPressMessage(
+                              msg.messageId,
+                              msg.timeStamp,
+                            );
+                          }
+                        }}
+                        onPress={() => {
+                          if (selectionMode) {
+                            if (msg.sender === userId) {
+                              handlePressMessage(msg.messageId, msg.timeStamp);
+                            }
+                          }
+                        }}>
+                        <View style={styles.fileMessageBubble}>
+                          <Text style={styles.userName}>
+                            {toTitleCase(msg.userName)}
+                          </Text>
+                          <Text style={styles.fileName}>{msg.text}</Text>
+                          {renderFileContent(msg)}
+                          <Text style={styles.timestamp}>
+                            {formatTimestamp(msg.timeStamp)}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                      {/* {selectedMessageIds.length > 0 && (
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={confirmDelete}>
+                          <Icon name="delete" size={24} color="white" />
+                        </TouchableOpacity>
+                      )} */}
+                    </View>
+                  ) : (
+                    msg.messageType === 'CHAT' && (
+                      // console.log(
+                      //   'CHAT Message DEBUG 90859035873 :',
+                      //   'messsageId: ',
+                      //   msg.messageId,
+                      //   'message Type : ',
+                      //   msg.messageType,
+                      //   'message',
+                      //   msg.text,
+                      // ),
+                      <View
+                        key={index}
+                        style={[
+                          styles.messageContainer,
+                          msg.sender === userId
+                            ? styles.sentMessageContainer
+                            : styles.receivedMessageContainer,
+                        ]}>
+                        <TouchableOpacity
+                          style={[
+                            msg.sender === userId
+                              ? styles.sentMessageBubble
+                              : styles.receivedMessageBubble,
+                            selectedMessageIds.includes(msg.messageId) &&
+                              styles.selectedMessageBubble,
+                            isSelected(msg.messageId)
+                              ? {
+                                  ...styles.selectedMessageBubble,
+                                }
+                              : null,
+                          ]}
+                          onLongPress={() => {
+                            if (msg.sender === userId) {
+                              handleLongPressMessage(
+                                msg.messageId,
+                                msg.timeStamp,
+                              );
+                            }
+                          }}
+                          onPress={() => {
+                            if (selectionMode) {
+                              if (msg.sender === userId) {
+                                handlePressMessage(
+                                  msg.messageId,
+                                  msg.timeStamp,
+                                );
+                              }
+                            }
+                          }}>
+                          <View style={{flexDirection: 'row'}}>
+                            <MaterialIcons
+                              name="account-circle"
+                              size={14}
+                              style={{
+                                color: CustomThemeColors.primary,
+                                marginRight: 5,
+                                marginBottom: 3,
+                              }}
+                            />
+                            <Text style={styles.userName}>
+                              {msg.sender !== null && msg.sender !== ''
+                                ? msg.sender === userId
+                                  ? `${toTitleCase(msg.userName)} (You)`
+                                  : toTitleCase(msg.userName)
+                                : 'Anonymous'}
+                            </Text>
+                          </View>
+
+                          <Text style={styles.messageText}>{msg.text}</Text>
+                          <Text style={styles.timestamp}>
+                            {formatTimestamp(msg.timeStamp)}
+                          </Text>
+                        </TouchableOpacity>
+                        {/* {selectedMessageIds.length > 0 && (
+                        <TouchableOpacity
+                          style={styles.deleteButton}
+                          onPress={confirmDelete}>
+                          <Icon name="delete" size={24} color="white" />
+                        </TouchableOpacity>
+                      )} */}
+                      </View>
+                    )
+                  )
+                ) : //If received message type is Not a FILE then treat it as a normal text message and put it in a messagebubble
+                null,
+              )
+            ) : (
+              //if messages history desnt exist then show typed message
+              <Text style={styles.messageText}>{message}</Text>
+            )}
+          </ScrollView>
+          <View style={styles.inputContainer}>
+            <TouchableOpacity style={styles.iconButton} onPress={chooseFile}>
+              <Icon name="attach-file" size={24} color="#000" />
+            </TouchableOpacity>
+            <TextInput
+              style={styles.input}
+              placeholder="Type your message"
+              value={typedMessage}
+              onChangeText={setTypedMessage}
+            />
+            {/* <TouchableOpacity style={styles.sendButton} onPress={sendMessage}> */}
+            <TouchableOpacity
+              style={{paddingHorizontal: 10}}
+              onPress={sendMessage}>
+              {/* <Text style={styles.sendButtonText}>Send</Text> */}
+              <Icon name="send" size={26} color="#125fee" />
+            </TouchableOpacity>
+            {/* <TouchableOpacity
+              style={styles.iconButton}
+              onPress={startRecording}>
+              <Icon name="mic" size={24} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconButton} onPress={stopRecording}>
+              <Icon name="stop" size={24} color="#000" />
+            </TouchableOpacity> */}
+          </View>
+        </>
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: CustomThemeColors.H,
+  },
+  status: {
+    width: '100%',
+    textAlign: 'center',
+    fontWeight: '500',
+    fontSize: 18,
+    marginBottom: 10,
+    color: '#40a717',
+  },
+  scrollView: {
+    flex: 1,
+    marginBottom: 10,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  sentMessageContainer: {
+    justifyContent: 'flex-end',
+  },
+  receivedMessageContainer: {
+    justifyContent: 'flex-start',
+  },
+  sentMessageBubble: {
+    backgroundColor: CustomThemeColors.fadedPrimary,
+    padding: 10,
+    maxWidth: '80%',
+    borderTopLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    borderBottomLeftRadius: 10,
+  },
+  receivedMessageBubble: {
+    backgroundColor: CustomThemeColors.fadedPrimary,
+    padding: 10,
+    maxWidth: '80%',
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 10,
+  },
+  fileMessageBubble: {
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: '#e0e0e0',
+    maxWidth: '100%',
+    alignSelf: 'flex-start',
+  },
+  fileName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  downloadLink: {
+    color: '#125fee',
+    textDecorationLine: 'underline',
+    marginTop: 5,
+    fontSize: 14,
+  },
+  messageText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#888',
+    alignSelf: 'flex-end',
+  },
+  userName: {
+    fontSize: 12,
+    color: '#888',
+    alignSelf: 'flex-start',
+  },
+  selectedMessageBubble: {
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // Light red shade
+  },
+  deleteButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    // position: 'absolute',
+    // right: 10,
+    top: 10,
+    marginLeft: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: CustomThemeColors.fadedPrimary,
+    borderRadius: 10,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 20,
+    flex: 1,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  sendButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  iconButton: {
+    marginHorizontal: 5,
+  },
+});
+
+export default NoticeBoardScreen;

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "669809894019",
+    "project_id": "harnesserp-messaging",
+    "storage_bucket": "harnesserp-messaging.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:669809894019:android:242d5dea9d38ef610fb1b6",
+        "android_client_info": {
+          "package_name": "com.harnesserp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdQJf0MTNTTCTSzfxDl0j1UwZ6cAh9rVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
