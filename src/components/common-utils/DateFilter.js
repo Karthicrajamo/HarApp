@@ -1,69 +1,104 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, Platform, Modal, Text} from 'react-native';
 import {Button} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {CustomThemeColors} from '../CustomThemeColors';
+
+// Helper function to parse a formatted date string into a Date object
+const parseDate = dateStr => {
+  const monthMap = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11,
+  };
+
+  let day, month, year;
+  console.log('dateStr::', dateStr);
+  if (dateStr.includes(' ')) {
+    // Format: 'dd MMM yy'
+    [day, month, year] = dateStr.split(' ');
+    month = monthMap[month]; // Map month abbreviation to month index
+  } else if (dateStr.includes('-')) {
+    // Format: 'dd-MM-yy'
+    [day, month, year] = dateStr.split('-');
+    month = monthMap[month];
+  }
+
+  // Create a valid Date string in the format 'YYYY-MM-DD'
+  const dateString = `20${year}-${month + 1}-${day}`;
+
+  // Create and return the Date object
+  const parsedDate = new Date(dateString);
+  console.log('parseDate:', parsedDate);
+  return parsedDate;
+};
+
+// Helper function to format a Date object into 'dd MMM yy' format
+const formatDate = date => {
+  const options = {day: '2-digit', month: 'short', year: '2-digit'};
+  return new Intl.DateTimeFormat('en-GB', options)
+    .format(date)
+    .replace(/ /g, '-');
+};
+
+// Convert formatted date to Date object for DateTimePicker
+const convertToDate = dateStr => (dateStr ? parseDate(dateStr) : new Date());
 
 const DateFilter = ({
   setFormattedStartDate,
   setFormattedEndDate,
   formattedStartDate,
   formattedEndDate,
-  flexDirection = 'row', // Default to row layout
-  showStartDate = true, // Control visibility of start date button
-  showEndDate = true, // Control visibility of end date button
+  flexDirection = 'row',
+  showStartDate = true,
+  showEndDate = true,
 }) => {
   const [startDateVisible, setStartDateVisible] = useState(false);
   const [endDateVisible, setEndDateVisible] = useState(false);
-  const [errorVisible, setErrorVisible] = useState(false); // New state for error popup
+  const [errorVisible, setErrorVisible] = useState(false);
 
-  const [selectedStartDate, setSelectedStartDate] = useState(new Date());
-  const [selectedEndDate, setSelectedEndDate] = useState(new Date());
-
-  const showStartDatePicker = () => setStartDateVisible(true);
-  const hideStartDatePicker = () => setStartDateVisible(false);
-  const showEndDatePicker = () => setEndDateVisible(true);
-  const hideEndDatePicker = () => setEndDateVisible(false);
-
-  const formatDate = date => {
-    const options = {day: '2-digit', month: 'short', year: '2-digit'};
-    return new Intl.DateTimeFormat('en-GB', options)
-      .format(new Date(date))
-      .replace(/ /g, '-') // Replace spaces with hyphens
-      .toString(); // Ensure it's a string
-  };
+  const [   tempStartDate, setTempStartDate] = useState(
+    parseDate(formattedStartDate),
+  );
+  const [tempEndDate, setTempEndDate] = useState(parseDate(formattedEndDate));
 
   const handleStartDateConfirm = (event, selectedDate) => {
-    hideStartDatePicker();
+    setStartDateVisible(false);
     if (selectedDate) {
-      setSelectedStartDate(selectedDate); // Store selected start date
-      const formattedDate = formatDate(selectedDate);
-
-      // Check if the start date is greater than the end date
-      // if (selectedEndDate && selectedDate > selectedEndDate) {
-        // setErrorVisible(true); // Show error popup
-        // return;
-      // }
-
-      setFormattedStartDate(formattedDate.toString());
+      setTempStartDate(selectedDate);
+      setFormattedStartDate(formatDate(selectedDate));
     }
   };
 
   const handleEndDateConfirm = (event, selectedDate) => {
-    hideEndDatePicker();
+    setEndDateVisible(false);
     if (selectedDate) {
-      setSelectedEndDate(selectedDate); // Store selected end date
-      const formattedDate = formatDate(selectedDate);
-
-      // Check if the end date is less than the start date
-      // if (selectedStartDate && selectedDate < selectedStartDate) {
-      //   setErrorVisible(true); // Show error popup
-      //   return;
-      // }
-
-      setFormattedEndDate(formattedDate.toString());
+      setTempEndDate(selectedDate);
+      setFormattedEndDate(formatDate(selectedDate));
     }
   };
+  useEffect(() => {
+    console.log('dateUpdatess::', tempEndDate);
+  }, [tempEndDate, tempStartDate]);
+
+  // const applyFilter = () => {
+  //   if (tempStartDate > tempEndDate) {
+  //     setErrorVisible(true);
+  //     return;
+  //   }
+
+  //   setFormattedStartDate(formatDate(tempStartDate));
+  //   setFormattedEndDate(formatDate(tempEndDate));
+  // };
 
   return (
     <View style={[styles.container, {flexDirection}]}>
@@ -72,37 +107,40 @@ const DateFilter = ({
           <Text style={styles.labelText}>Group From</Text>
           <Button
             mode="outlined"
-            onPress={showStartDatePicker}
+            onPress={() => setStartDateVisible(true)}
             style={[styles.button, {borderColor: CustomThemeColors.primary}]}
             labelStyle={{color: CustomThemeColors.primary}}
-            contentStyle={styles.buttonContent} // Center button text
-          >
-            {formattedStartDate || 'Select Start Date'}
+            contentStyle={styles.buttonContent}>
+            {!tempStartDate || tempStartDate.getTime() === new Date().getTime()
+              ? formattedStartDate || 'Select Start Date'
+              : new Intl.DateTimeFormat('en-GB').format(tempStartDate) ||
+                'Select Start Date'}
           </Button>
         </View>
       )}
 
       {showEndDate && (
         <View style={styles.buttonWrapper}>
-          <Text style={styles.labelTextEndDate}>Group To</Text>
+          <Text style={styles.labelText}>Group To</Text>
           <Button
             mode="contained"
-            onPress={showEndDatePicker}
+            onPress={() => setEndDateVisible(true)}
             style={[
               styles.button,
-              styles.buttonRight,
               {backgroundColor: CustomThemeColors.primary},
             ]}
-            contentStyle={styles.buttonContent} // Center the text
-          >
-            {formattedEndDate || 'Select End Date'}
+            contentStyle={styles.buttonContent}>
+            {!tempEndDate || tempEndDate.getTime() === new Date().getTime()
+              ? formattedEndDate || 'Select Start Date'
+              : new Intl.DateTimeFormat('en-GB').format(tempEndDate) ||
+                'Select Start Date'}{' '}
           </Button>
         </View>
       )}
 
       {startDateVisible && (
         <DateTimePicker
-          value={selectedStartDate}
+          value={tempStartDate}
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleStartDateConfirm}
@@ -111,12 +149,16 @@ const DateFilter = ({
 
       {endDateVisible && (
         <DateTimePicker
-          value={selectedEndDate}
+          value={tempEndDate}
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleEndDateConfirm}
         />
       )}
+
+      {/* <Button mode="contained" onPress={applyFilter} style={styles.filterButton}>
+        Apply Filter
+      </Button> */}
 
       <Modal
         transparent={true}
@@ -144,25 +186,26 @@ const DateFilter = ({
 const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
-    alignItems: 'center', // Align items centrally in the column layout
+    alignItems: 'center',
     width: 200,
   },
   button: {
     marginVertical: 5,
   },
-  buttonRight: {
-    marginLeft: 20, // Add space between buttons in a row layout
-  },
   buttonContent: {
-    justifyContent: 'center', // Center content inside button
+    justifyContent: 'center',
     alignItems: 'center',
-    height: 50, // Adjust height if needed
+    height: 50,
+  },
+  filterButton: {
+    marginVertical: 10,
+    backgroundColor: CustomThemeColors.primary,
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: 300,
@@ -179,46 +222,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonWrapper: {
-    position: 'relative', // Enables absolute positioning for the label
-    // width: '100%', // Adjust width as needed for layout
-    marginVertical: 10, // Spacing between different rows
+    position: 'relative',
+    marginVertical: 10,
+    marginHorizontal: 20,
   },
   labelText: {
     position: 'absolute',
-    top: -22, // Position the label slightly above the button
-    left: 16, // Adjust as needed for spacing from the button
-    backgroundColor: 'white', // To prevent overlap with button border
-    paddingHorizontal: 4, // Adds padding around text
+    top: -22,
+    left: 16,
+    backgroundColor: 'white',
+    paddingHorizontal: 4,
     color: CustomThemeColors.primary,
-    fontWeight:'600',
-    fontSize: 14, // Adjust size for a label appearance
-  },
-  labelTextEndDate: {
-    position: 'absolute',
-    top: -22, // Position the label slightly above the button
-    left: 45, // Adjust as needed for spacing from the button
-    fontWeight:'600',
-    backgroundColor: 'white', // To prevent overlap with button border
-    paddingHorizontal: 4, // Adds padding around text
-    color: CustomThemeColors.primary,
-    fontSize: 14, // Adjust size for a label appearance
-  },
-  button: {
-    // width: '100%', // Button takes full width of its container
-    justifyContent: 'center', // Centers the button content
-  },
-  buttonContent: {
-    justifyContent: 'center', // Centers the button text within the button
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
 export default DateFilter;
-
-{
-  /* <DateFilter
-  formattedStartDate={formattedStartDate}
-  formattedEndDate={formattedEndDate}
-  setFormattedStartDate={setFormattedStartDate}
-  setFormattedEndDate={setFormattedEndDate}
-/>; */
-}

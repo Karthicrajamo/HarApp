@@ -216,21 +216,6 @@ const ModalTableComponent = ({
   const columns = Object.keys(data[0]); //harish hided and added below line code
   // const columns = Object.keys(data);
 
-  const handlePageChange = pageNumber => {
-    setPage(pageNumber);
-  };
-
-  const handleNextPage = () => {
-    if ((page + 1) * rowsPerPage < data.length) {
-      setPage(page + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (page > 0) {
-      setPage(page - 1);
-    }
-  };
 
   return (
     <View
@@ -238,6 +223,7 @@ const ModalTableComponent = ({
         borderWidth: 1,
         borderRadius: 5,
         borderColor: CustomThemeColors.primary,
+        height:400
       }}>
    
 
@@ -269,14 +255,7 @@ const ModalTableComponent = ({
             style={[
               styles.headerCell,
               {
-                // fontSize:
-                //   sliderValue <= 1.5625
-                //     ? 14
-                //     : sliderValue <= 2.578125
-                //     ? 12
-                //     : sliderValue <= 3.578125
-                //     ? 14
-                //     : 16,
+             
                 fontSize: isTablet ? 14 : 12,
               },
             ]}>
@@ -285,7 +264,6 @@ const ModalTableComponent = ({
         )}
       </View>
       <ScrollView>
-        <ScrollView>
           <View style={[styles.table]}>
             {/* TABLE ROWS */}
             {data
@@ -373,7 +351,6 @@ const ModalTableComponent = ({
                 </TouchableOpacity>
               ))}
           </View>
-        </ScrollView>
       
       </ScrollView>
     </View>

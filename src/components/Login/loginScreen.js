@@ -99,7 +99,7 @@ const LoginScreen = () => {
   const [isactive, setActive] = useState(false); // Keyboard state
   const [showPassword, setShowPassword] = useState(false);
 
-// useEffect(()=>handleLogin,[username])
+// useEffect(()=>handleLogin(),[Password])
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(

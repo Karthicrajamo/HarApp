@@ -27,9 +27,9 @@ import DeviceInfo from 'react-native-device-info';
 import {Alert} from 'react-native';
 
 const IssueGroups = () => {
-  // useEffect(() => {
-  //   fetchTableData();
-  // }, []);
+  useEffect(() => {
+    fetchTableData();
+  }, []);
 
   useEffect(() => {
     console.log('rmiData1>>>' + grpId);
@@ -55,12 +55,17 @@ const IssueGroups = () => {
 
   // Calculate current date minus 30 days
   const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - 30);
+  startDate.setDate(currentDate.getDate() - 31);
 
   // Format the dates as 'DD-MMM-YY'
   const formatDate = date => {
     const options = {year: '2-digit', month: 'short', day: '2-digit'};
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+    const formattedDate = new Intl.DateTimeFormat('en-GB', options).format(
+      date,
+    );
+
+    // Replace any non-alphanumeric character (like commas) with a space
+    return formattedDate.replace(/[^a-zA-Z0-9 ]+/g, '-');
   };
 
   const [formattedStartDate, setFormattedStartDate] = useState(
@@ -114,6 +119,9 @@ const IssueGroups = () => {
   const [selectedArray, setSelectedArray] = useState([]);
   const [activeGroupId, SetActiveGroupId] = useState('');
   const isAdvancePayment = MainType === 'advance payment';
+  const [selectedFilters, setSelectedFilters] = useState([]);
+
+  const isAnyFilterSelected = selectedFilters.length > 0;
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
@@ -731,11 +739,37 @@ const IssueGroups = () => {
 
     // Check if both dates are valid and start date is less than end date
     // if (startDate < endDate) {
-    fetchTableData();
+    // fetchTableData();
     // }
 
     // Fetch table data whenever the dates change
-  }, [formattedStartDate, formattedEndDate]);
+  }, [formattedEndDate, formattedStartDate]);
+  // useEffect(() => {
+  //   console.log(
+  //     'formattedStartDate: ' +
+  //       formattedStartDate +
+  //       ' (Type: ' +
+  //       typeof formattedStartDate +
+  //       ')',
+  //     'formattedEndDate: ' +
+  //       formattedEndDate +
+  //       ' (Type: ' +
+  //       typeof formattedEndDate +
+  //       ')',
+  //   );
+
+  //   // Convert formatted dates back to Date objects
+  //   const startDate = formattedStartDate;
+  //   const endDate = formattedEndDate;
+  //   console.log('date greatererrrere:', startDate > endDate);
+
+  //   // Check if both dates are valid and start date is less than end date
+  //   // if (startDate < endDate) {
+  //   fetchTableData();
+  //   // }
+
+  //   // Fetch table data whenever the dates change
+  // }, [formattedStartDate]);
 
   const parseFormattedDate = formattedDate => {
     const [day, month, year] = formattedDate.split(' ');
@@ -753,16 +787,16 @@ const IssueGroups = () => {
       'Nov',
       'Dec',
     ];
-  
+
     const monthIndex = monthNames.indexOf(month); // Get the index of the month
     const fullYear = `20${year}`; // Convert 2-digit year to 4-digit year
-  
+
     // Create and return the Date object
     const parsedDate = new Date(fullYear, monthIndex, day);
-  
+
     // Debugging log to check if the date is being parsed correctly
     console.log(`Parsing date: ${formattedDate} -> ${parsedDate}`);
-    
+
     return parsedDate;
   };
 
@@ -770,27 +804,59 @@ const IssueGroups = () => {
   const fetchTableData = async () => {
     try {
       setIsLoading(true);
+
+      // Fetch the JWT token from Keychain
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials.password;
-      const parsedEndDate = parseFormattedDate(formattedEndDate);
 
-      // Increment the end date by 1 day
-      const incrementedEndDate = new Date(parsedEndDate);
-      incrementedEndDate.setDate(incrementedEndDate.getDate() + 1);
+      // Ensure the formatted dates are not empty
+      if (!formattedStartDate || !formattedEndDate) {
+        console.log('Start date or end date is not provided.');
+        return;
+      }
 
-      console.log("dte::",formattedEndDate)
-  
-      // Format the incremented end date to 'DD-MMM-YY'
-      const formatDate = date => {
-        const options = { year: '2-digit', month: 'short', day: '2-digit' };
-        return new Intl.DateTimeFormat('en-GB', options).format(date);
-      };
-      const incrementedEndDateFormatted = formatDate(incrementedEndDate);
-  
-      // Construct the URL with the incremented end date
-      const url = `${API_URL}/api/issueGroup/getAllpaymentGroups?fromDate=${formattedStartDate}&toDate=${incrementedEndDateFormatted}`;
-      console.log('Fetching data from URL:', url); // Log the constructed URL
+      // Parse and format the dates
+      let updatedStartDate, updatedEndDate;
 
+      // Handle Start Date
+      if (tempFormattedStartDate.includes(' ')) {
+        let startdateParts = tempFormattedStartDate.split(' ');
+        const day = startdateParts[0].padStart(2, '0'); // Format day with leading zero if needed
+        const month = startdateParts[1];
+        const year = startdateParts[2];
+
+        updatedStartDate = `${day} ${month} ${year}`;
+      } else if (tempFormattedStartDate.includes('-')) {
+        let startdateParts = tempFormattedStartDate.split('-');
+        const day = startdateParts[0].padStart(2, '0'); // Format day with leading zero if needed
+        const month = startdateParts[1];
+        const year = startdateParts[2];
+
+        updatedStartDate = `${day}-${month}-${year}`;
+      }
+
+      // Handle End Date
+      if (tempFormattedEndDate.includes(' ')) {
+        let dateParts = tempFormattedEndDate.split(' ');
+        let day = (parseInt(dateParts[0], 10) + 1).toString().padStart(2, '0'); // Increment and format day
+        const month = dateParts[1];
+        const year = dateParts[2];
+
+        updatedEndDate = `${day} ${month} ${year}`;
+      } else if (tempFormattedEndDate.includes('-')) {
+        let dateParts = tempFormattedEndDate.split('-');
+        let day = (parseInt(dateParts[0], 10) + 1).toString().padStart(2, '0'); // Increment and format day
+        const month = dateParts[1];
+        const year = dateParts[2];
+
+        updatedEndDate = `${day}-${month}-${year}`;
+      }
+
+      // Construct the URL with the updated start and end dates
+      const url = `${API_URL}/api/issueGroup/getAllpaymentGroups?fromDate=${updatedStartDate}&toDate=${updatedEndDate}`;
+      console.log('Fetching data from URL:', url);
+
+      // Fetch the data from the API
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -803,25 +869,61 @@ const IssueGroups = () => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const data = await response.json();
-      const sortedData = data;
-      // console.log("kjksdgjodjg:",sortedData)
-      // console.log('DATA:::', sortedData);
-      // .map(item => {
-      //   return Object.keys(item)
-      //     .sort() // Sort keys alphabetically
-      //     .reduce((acc, key) => {
-      //       acc[key] = item[key]; // Rebuild object with sorted keys
-      //       return acc;
-      //     }, {});
-      // });
+      // Check if the response has any content
+      const responseText = await response.text();
+
+      // If the response body is empty or invalid, handle that gracefully
+      if (!responseText) {
+        setTableData([]);
+        setTableDataForFilter([]);
+        setFilteredMainData([]);
+        console.log('Received empty response body');
+        return;
+      }
+
+      let responseData;
+      try {
+        // Try to parse the JSON data
+        responseData = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Error parsing JSON:', jsonError);
+        return;
+      }
+
+      // Check if data is available
+      if (!responseData || Object.keys(responseData).length === 0) {
+        console.log('No data found in the response.');
+        return;
+      }
+
+      // If data exists, process and store it
+      console.log('Response main data:', responseData);
+      console.log('selectedFilter.length main data:', selectedFilters.length);
+      let sortedData = [];
+      if (selectedFilters.length > 0) {
+        sortedData = responseData.filter(item =>
+          selectedFilters.includes(item.type),
+        );
+        // console.log('Sorted Data with len:', sortedData);
+      } else {
+        sortedData = responseData; // You can process the sorted data as needed
+        // console.log('Sorted Data:', sortedData);
+      }
+
       setTableData(sortedData);
       setTableDataForFilter(sortedData);
       setFilteredMainData(sortedData); // Initialize filtered data
     } catch (error) {
-      console.error('Error fetching table data date:', error);
+      // Handle errors by clearing the data and logging the error
+      setTableData([]);
+      setTableDataForFilter([]);
+      setFilteredMainData([]);
+
+      if (error.message !== 'Response is not JSON') {
+        console.error('Error fetching table data date:', error);
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Ensure loading state is reset
     }
   };
 
@@ -855,13 +957,11 @@ const IssueGroups = () => {
   };
 
   const handleFilterSelect = filter => {
-    setSelectedFilters(prevFilters => {
-      if (prevFilters.includes(filter)) {
-        // Deselect the filter
-        return prevFilters.filter(item => item !== filter);
+    setSelectedFilters(prevSelectedFilters => {
+      if (prevSelectedFilters.includes(filter)) {
+        return prevSelectedFilters.filter(item => item !== filter); // Deselect filter
       } else {
-        // Select the filter
-        return [...prevFilters, filter];
+        return [...prevSelectedFilters, filter]; // Select filter
       }
     });
   };
@@ -1107,6 +1207,7 @@ const IssueGroups = () => {
       if (!Array.isArray(originalArray) || originalArray.length === 0) {
         throw new Error('No data available');
       }
+      console.log('third table data:::', originalArray);
 
       // Define mapping keys based on order type
       const poKeys = [
@@ -1174,26 +1275,31 @@ const IssueGroups = () => {
           : joKeys;
 
       // Map the values to keys, skipping index 1 if orderType is 'SO'
-      const mappedObject = originalArray[0].reduce((obj, value, index) => {
-        if (activeDataPdf.orderType === 'SO' && index === 1) {
-          // Skip index 1 when orderType is 'SO'
-          return obj;
-        }
+      let mapObject = originalArray.map(data => {
+        return data.reduce((obj, value, index) => {
+          if (activeDataPdf.orderType === 'SO' && index === 1) {
+            // Skip index 1 when orderType is 'SO'
+            return obj; // Skip this index and return the accumulator object
+          }
 
-        if (index < mappingKeys.length) {
-          // Safely convert value to string and handle null/undefined
-          obj[mappingKeys[index]] = value != null ? String(value) : '';
-        }
+          if (index < mappingKeys.length) {
+            // Safely convert value to string and handle null/undefined
+            obj[mappingKeys[index]] = value != null ? String(value) : '';
+          }
 
-        return obj;
-      }, {});
+          return obj; // Return the accumulated object for the next iteration
+        }, {}); // Initial accumulator is an empty object
+      });
 
-      const mappedData = [mappedObject];
+      // console.log(mapObject); // To check the final mapped result
+
+      const mappedData = mapObject;
+      console.log('mapped data:::', mapObject);
 
       // Update state only if we have valid data
       if (mappedData.length > 0) {
         setSelectedModelData([]); // Clear previous data
-        setSelectedModelData(mappedData); // Set new data
+        setSelectedModelData(mapObject); // Set new data
         // isModel(true);
         setSelectedSubRow(null);
       } else {
@@ -1626,13 +1732,13 @@ const IssueGroups = () => {
     }
   };
 
-  const [selectedFilters, setSelectedFilters] = useState([
-    'Advance Payment',
-    'Bills Payment',
-    'Tax Payment',
-    'Fund Transfer',
-    'Paysheet Payment',
-  ]);
+  // const [selectedFilters, setSelectedFilters] = useState([
+  //   'Advance Payment',
+  //   'Bills Payment',
+  //   'Tax Payment',
+  //   'Fund Transfer',
+  //   'Paysheet Payment',
+  // ]);
   useEffect(() => {
     console.log('selected filter', selectedFilters);
     filterMainData(selectedFilters);
@@ -1641,8 +1747,9 @@ const IssueGroups = () => {
   const applySelectedFilters = () => {
     // Here you can process the selected filters and perform necessary actions
     console.log('Selected filteredResults:', filteredTempData);
-    setTableData(filteredTempData);
-    setFilteredMainData(filteredTempData);
+    // setTableData(filteredTempData);
+    // setFilteredMainData(filteredTempData);
+    fetchTableData();
     // Optionally, trigger data fetch or any actions needed when filters are applied
     // fetchTableData(); // Assuming this fetches data based on selected filters
   };
@@ -1878,64 +1985,63 @@ const IssueGroups = () => {
         </TouchableOpacity>
       </View>
 
-      <View>
-        <Modal
-          visible={isFilterModalVisible}
-          onRequestClose={() => setFilterModalVisible(false)}
-          transparent={true}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              {/* Center the DateFilter component */}
-              <View
+      <Modal
+        visible={isFilterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+        transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View
+              style={{
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginVertical: 10,
+              }}>
+              <DateFilter
+                formattedStartDate={formattedStartDate}
+                formattedEndDate={formattedEndDate}
+                setFormattedStartDate={setTempFormattedStartDate}
+                setFormattedEndDate={setTempFormattedEndDate}
+              />
+            </View>
+            <Text>Select Payment Filter</Text>
+
+            {/* Select All / Deselect All Button */}
+            <TouchableOpacity
+              onPress={handleSelectAllToggle}
+              style={[
+                styles.selectAllButton,
+                {
+                  borderColor: allSelected
+                    ? CustomThemeColors.primary
+                    : 'black',
+                  borderWidth: allSelected ? 1 : 0,
+                },
+              ]}>
+              <Text
                 style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  marginVertical: 10,
+                  color: allSelected ? CustomThemeColors.primary : 'black',
                 }}>
-                <DateFilter
-                  formattedStartDate={tempFormattedStartDate}
-                  formattedEndDate={tempFormattedEndDate}
-                  setFormattedStartDate={setTempFormattedStartDate}
-                  setFormattedEndDate={setTempFormattedEndDate}
-                />
-              </View>
-              <Text>Select Payment Filter</Text>
+                {allSelected ? 'Deselect All' : 'Select All'}
+              </Text>
+            </TouchableOpacity>
 
-              {/* Select All / Deselect All Button */}
+            {/* List of Filter Options */}
+            {filterOptions.map(filter => (
               <TouchableOpacity
-                onPress={handleSelectAllToggle}
-                style={[
-                  styles.selectAllButton,
-                  {
-                    borderColor: allSelected
-                      ? CustomThemeColors.primary
-                      : 'black',
-                    borderWidth: allSelected ? 1 : 0,
-                  },
-                ]}>
-                <Text
-                  style={{
-                    color: allSelected ? CustomThemeColors.primary : 'black',
-                    // fontWeight: 'bold',
-                  }}>
-                  {allSelected ? 'Deselect All' : 'Select All'}
-                </Text>
+                key={filter}
+                onPress={() => handleFilterSelect(filter)}
+                style={
+                  isFilterSelected(filter)
+                    ? styles.selectedOption
+                    : styles.option
+                }>
+                <Text style={{color: 'black'}}>{filter}</Text>
               </TouchableOpacity>
-              {/* List of Filter Options */}
-              {filterOptions.map(filter => (
-                <TouchableOpacity
-                  key={filter}
-                  onPress={() => handleFilterSelect(filter)}
-                  style={
-                    isFilterSelected(filter)
-                      ? styles.selectedOption
-                      : styles.option
-                  }>
-                  <Text style={{color: 'black'}}>{filter}</Text>
-                </TouchableOpacity>
-              ))}
+            ))}
 
-              {/* Centered Apply and Close Buttons */}
+            {/* Conditionally render the Filter button if any filters are selected */}
+            {isAnyFilterSelected ? (
               <View
                 style={{
                   flexDirection: 'row',
@@ -1944,10 +2050,10 @@ const IssueGroups = () => {
                 }}>
                 <TouchableOpacity
                   style={{
-                    backgroundColor: '#2196F3', // Button color
+                    backgroundColor: '#2196F3',
                     paddingHorizontal: 30,
                     paddingVertical: 10,
-                    borderRadius: 5, // Optional: round the corners
+                    borderRadius: 5,
                     alignItems: 'center',
                   }}
                   onPress={() => {
@@ -1960,19 +2066,19 @@ const IssueGroups = () => {
                       setFormattedEndDate(tempFormattedEndDate);
                     }
                     setFilterModalVisible(false);
-                    applySelectedFilters();
                     setMainTableSelectedIndex([]);
                     setSelectedSubData([]);
                     setModelButton(false);
+                    applySelectedFilters();
                   }}>
                   <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{
-                    backgroundColor: '#2196F3', // Button color
+                    backgroundColor: '#2196F3',
                     paddingHorizontal: 30,
                     paddingVertical: 10,
-                    borderRadius: 5, // Optional: round the corners
+                    borderRadius: 5,
                     alignItems: 'center',
                     marginLeft: 10,
                   }}
@@ -1980,10 +2086,41 @@ const IssueGroups = () => {
                   <Text style={{color: 'white', fontSize: 16}}>Close</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            ) : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  marginVertical: 10,
+                }}>
+                <View
+                  style={{
+                    backgroundColor: 'grey',
+                    paddingHorizontal: 30,
+                    paddingVertical: 10,
+                    borderRadius: 5,
+                    alignItems: 'center',
+                  }}>
+                  <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
+                </View>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#2196F3',
+                    paddingHorizontal: 30,
+                    paddingVertical: 10,
+                    borderRadius: 5,
+                    alignItems: 'center',
+                    marginLeft: 10,
+                  }}
+                  onPress={() => setFilterModalVisible(false)}>
+                  <Text style={{color: 'white', fontSize: 16}}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        </Modal>
-      </View>
+        </View>
+      </Modal>
+      <View></View>
 
       {/* <View> */}
       {isPaymentGroupModal && (
@@ -2343,7 +2480,6 @@ const IssueGroups = () => {
                 noModel={false}
                 showCheckBox={false}
                 excludeColumns={['ID', 'ExtraField']}
-
               />
             )}
 
