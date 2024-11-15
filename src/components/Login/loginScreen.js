@@ -89,7 +89,7 @@ const LoginScreen = () => {
     fetchLoggedUserId();
   }, []);
 
-  const [Password, setPassword] = useState('hdplqa');
+  const [Password, setPassword] = useState('');
   const [checked, setChecked] = useState(false);
   const navigation = useNavigation();
   const {width, height} = Dimensions.get('window');
@@ -99,7 +99,7 @@ const LoginScreen = () => {
   const [isactive, setActive] = useState(false); // Keyboard state
   const [showPassword, setShowPassword] = useState(false);
 
-// useEffect(()=>handleLogin(),[Password])
+  // useEffect(()=>handleLogin(),[Password])
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -256,8 +256,8 @@ const LoginScreen = () => {
         }
 
         // Alert.alert('Success', 'Login successful');
-        // navigation.navigate('HomeScreen', {username});
-        navigation.navigate('IssueGroups', {username});
+        navigation.navigate('HomeScreen', {username});
+        // navigation.navigate('IssueGroups', {username});
       }
     } catch (error) {
       setIsLoading(false); //stopping loading, if  network error happens,
@@ -334,7 +334,7 @@ const LoginScreen = () => {
         ) : null}
 
         {/* SECONDARY HEADER */}
-        <View style={[styles.middleContainer, {marginTop: 0}]}>
+        <View style={[styles.middleContainer, {marginTop: 150}]}>
           <Text style={styles.thirdHeading}>
             Jay Jay Mills (Bangladesh) Private Limited
           </Text>
@@ -350,7 +350,7 @@ const LoginScreen = () => {
             style={styles.emailInput}
             value={username}
             placeholder="Username"
-            placeholderTextColor="darkgray"
+            placeholderTextColor="#3788E5"
             onChangeText={text => setUsername(text)}
           />
 
@@ -446,84 +446,6 @@ const LoginScreen = () => {
   );
 };
 
-//   return (
-//   <View  style={styles.maincontainer} >
-//         <ImageBackground source={require('../../images/harness_background.png')} style={styles.background}>
 
-//     <View style={styles.subcontainer1} >
-//       {/* LOGO AND COMPANY NAME FOR JJ MILLS ADISHTAM */}
-
-//       <View style={styles.companylogo}>
-//             <Image source={require('../../images/logo.png')} style={styles.companylogocircle} />
-//       </View>
-//             <Text style={styles.companyname}>JJ Mills Private Limited Bangladesh</Text>
-
-//       {/* LOGO AND COMPANY NAME FOR HARNESS-ERP */}
-
-//       {/* <View style={styles.av_logo}>
-//             <Image source={require('../../images/logo.png')} style={styles.circleImage} />
-//       </View>
-//             <Text style={styles.JJ}>Harness Digitech Private Limited</Text> */}
-
-//     </View>
-
-// <View style={styles.logincontainer}>
-//   <View style={styles.subcontainer2}>
-//     {/* <Text style={styles.username}>username</Text> */}
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Username"
-//         onChangeText={(text) => setUsername(text)}
-//         value={username}
-//       />
-//     {/* <Text style={styles.password}>password</Text> */}
-//       <TextInput
-//         style={styles.input}
-//         placeholder="Password"
-//         onChangeText={(text) => setPassword(text)}
-//         value={Password}
-//         secureTextEntry={true}
-//       />
-
-//   <View style={styles.checkboxContainer}>
-//       <CheckBox
-//         checked={checked}
-//         onPress={() => setChecked(!checked)}
-//         containerStyle={styles.checkbox}
-//         checkedColor="white"
-//       />
-//       <Text style={styles.checkboxtext}>Keep me signed in</Text>
-//   </View>
-//       {/* <Button style={styles.login} title="Login" onPress={handleLogin} /> */}
-//       <TouchableOpacity style={styles.loginbutton} onPress={handleLogin}>
-//             <Text style={styles.loginbuttonText}>Login</Text>
-//       </TouchableOpacity>
-//       <TouchableOpacity  onPress={handleResetpassword}>
-//             <Text style={styles.resetpassword}>Reset Password</Text>
-//       </TouchableOpacity>
-//   </View>
-//   </View>
-
-//   <View style={styles.harnessdetailscon}>
-// {/* <View style={styles.harnesscontainer}> */}
-//           <View style={styles.harnessimagecircle}>
-//             <Image source={require('../../images/logo.png')} style={styles.harnessimage} />
-//           </View>
-//           <View style={styles.harnessdetailscontainer}>
-//           <Text style={styles.harnessdetails}>Harness Digitech Private limited</Text>
-//           <Text style={styles.harnessdetails}>ERP, HRMS AND PAYROLL</Text>
-//           <Text style={styles.harnessdetails}>"The Potential Of technology"</Text>
-//           <Text style={styles.harnessdetails}></Text>
-//           <Text style={styles.harnessdetails}>App Version 1.2.6</Text>
-//           </View>
-// {/* </View> */}
-//   </View>
-
-//          </ImageBackground>
-//          {isLoading && <LoadingIndicator />}
-//   </View>
-
-//   );
-// };
 
 export default LoginScreen;

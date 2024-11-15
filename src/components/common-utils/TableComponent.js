@@ -61,7 +61,8 @@ const TableComponent = ({
   showCheckBox = false,
   onRowIndexSelectDataLoad,
   mainTableSelectedIndex,
-  setMainTableSelectedIndex
+  setMainTableSelectedIndex,
+  setMainTableSelectAll
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -153,7 +154,7 @@ const TableComponent = ({
 
     // Toggle the selection state
     updatedSelection[actualIndex] = !isSelected;
-
+    setMainTableSelectAll(true)
     // Update the selected state
     setTableIndex(actualIndex);
     setSelectedRow(data[actualIndex]);
@@ -209,6 +210,7 @@ const TableComponent = ({
  
 
   const handleSelectAllCheckbox = () => {
+    setMainTableSelectAll(isChecked)
     const newIsChecked = !isChecked;
     setIsChecked(newIsChecked);
 
@@ -223,16 +225,7 @@ const TableComponent = ({
     // Pass the selected indices to the parent function if required
     if (newIsChecked) {
       setMainTableSelectedIndex([])
-      const processRowsInChunks = async (data, onRowIndexSelect, chunkSize = 10) => {
-        for (let i = 0; i < data.length; i += chunkSize) {
-          const chunk = data.slice(i, i + chunkSize);
-          await Promise.all(chunk.map((_, index) => onRowIndexSelect(i + index)));
-        }
-      };
-      
-      // Call the function
-      processRowsInChunks(data, onRowIndexSelect);
-       // Pass all indices
+      data.forEach((_, index) => setTimeout(() => {onRowIndexSelect(index)},100)); // Pass all indices
       // onPressCheckBoxHandle(true)
     } else {
       onRowIndexSelect([]); // Pass empty array if none are selected
@@ -288,7 +281,7 @@ const TableComponent = ({
       </View>
 
       {/* <ScrollView horizontal> */}
-      <View style={[styles.table, {borderWidth: 1, borderRadius: 8,borderColor:CustomThemeColors.primary}]}>
+      <View style={[styles.table, {borderWidth: 1, borderRadius: 8,borderColor:CustomThemeColors.primary,marginRight:4}]}>
         <View style={styles.headerRow}>
           {columns.map((column, index) => (
             <Text
@@ -421,6 +414,7 @@ const TableComponent = ({
                           if(selectedRows.length<1){
                             setIsChecked(false)
                           }
+                          setMainTableSelectAll(true)
 
                           // If a row is checked or unchecked, manage the "Select All" checkbox state
                           // const allSelected = updatedSelection.every(Boolean);

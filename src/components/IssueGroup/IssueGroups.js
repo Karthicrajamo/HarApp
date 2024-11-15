@@ -25,6 +25,7 @@ import {CustomThemeColors} from '../CustomThemeColors';
 import ModalTableComponent from './ModalTableComponent';
 import DeviceInfo from 'react-native-device-info';
 import {Alert} from 'react-native';
+import {ToastAndroid} from 'react-native';
 
 const IssueGroups = () => {
   useEffect(() => {
@@ -81,8 +82,6 @@ const IssueGroups = () => {
     formatDate(currentDate),
   );
 
-  // const paymentId
-
   const [selectedDataGroupId, setSelectedDataGroupId] = useState([]);
   const [selectedDataPaymentType, setSelectedDataDataPaymentType] = useState(
     [],
@@ -93,6 +92,7 @@ const IssueGroups = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [selectedData, setSelectedData] = useState([]);
   const [mainTableSelectedIndex, setMainTableSelectedIndex] = useState([]);
+  const [mainTableSelectAll, setMainTableSelectAll] = useState(true);
 
   const [selectedSubRow, setSelectedSubRow] = useState(null);
   const [selectedSubData, setSelectedSubData] = useState([]);
@@ -124,6 +124,14 @@ const IssueGroups = () => {
   const isAnyFilterSelected = selectedFilters.length > 0;
 
   useEffect(() => {
+    console.log('selectedModelData::', selectedModelData);
+    if (selectedModelData.length > 0) {
+      setModelButton(true);
+      setIsLoading(false);
+    }
+  }, [selectedModelData]);
+
+  useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
   }, [selectedPayments]);
   useEffect(() => {
@@ -149,22 +157,27 @@ const IssueGroups = () => {
     if (!isPaymentGroupModal) setIsLoading(false);
   }, [isPaymentGroupModal]);
   useEffect(() => {
-    // console.log('isPaymentGroupModal::::', isPaymentGroupModal);
-    if (selectedPaymentType.length > 0) PrintGroupPdf();
+    console.log('selectedPaymentType::::', selectedPaymentType);
+    // if (selectedPaymentType.length > 0) {
+    //   PrintGroupPdf();
+    //   // } else {
+    //   //   setIsLoading(false);
+    //   //   Alert.alert('Note', 'Please select atleast one payment to print PDF');
+    // }
   }, [selectedPaymentType]);
   useEffect(() => {
     // fetchModelTableData()
-    console.log('taxdata______', taxData);
     if (taxData.length > 0) {
       console.log('Tax data has been updated:', MainType);
-      if (MainType == 'Fund Transfer') {
-        console.log('sdfjskf');
-      } else if (MainType == 'Advance Payment') {
+      if (MainType == 'Advance Payment') {
         fetchModelAdvPay();
       } else if (MainType == 'Tax Payment') {
         fetchSubTableTax();
-      } else {
+      } else if (MainType == 'Paysheet Payment') {
+        console.log('taxdata______', MainType);
         fetchModelTableData();
+      } else if (MainType == 'Bills Payment') {
+        fetchBillsPaymentDetailsData();
       }
 
       // You can perform any other actions here
@@ -239,10 +252,22 @@ const IssueGroups = () => {
     console.log('selectedModelSubData pridn__________________' + subData);
   }, [subData]);
 
+  const showIssuedMessage = () => {
+    console.log('Showing issued successful message!!! ');
+    // Showing toast when button is pressed while disabled
+    ToastAndroid.showWithGravity(
+      `Payment Issued Successfully.`,
+      ToastAndroid.SHORT,
+      ToastAndroid.CENTER,
+    );
+  };
+
   const handleRefresh = async () => {
+    setIsLoading(true);
     setTimeout(() => {
       navigation.replace('IssueGroups');
     }, 1000);
+    // setIsLoading(false)
   };
 
   const handleHomeScreen = async () => {
@@ -252,11 +277,6 @@ const IssueGroups = () => {
   //-------------------------Working and also has only 3 payments -------------------------------------------------------------------
   // PrintPaymentDetailedPDF
   const PrintDetailedPdf = async () => {
-    console.log('selectedDataPaymentType' + selectedDataPaymentType);
-    if (activeDataPdf.length < 1) {
-      Alert.alert('Note', 'Please select atleast one payment to print PDF');
-      return;
-    }
     let apiurl = ``;
     let requestbody = '';
 
@@ -290,12 +310,6 @@ const IssueGroups = () => {
   //----------------------------------- Need to Work has 5 Payment ---------------------------------------------------------------------------
   // PrintPaymentdGroupPDF
   const PrintGroupPdf = async () => {
-    console.log('Pdf button');
-    console.log('selectedDataPaymentType>>>>>>>>', selectedDataPaymentType);
-    if (MainType.length < 1) {
-      Alert.alert('Note', 'Please select atleast one payment to print PDF');
-      return;
-    }
     let apiurl = ``;
     let requestbody = '';
 
@@ -400,10 +414,13 @@ const IssueGroups = () => {
     } catch (err) {}
   };
 
+ 
+  // PrintPrintPaymentPdf
+
+
   const PrintPaymentPdf = async () => {
     if (activeDataPdf.length < 1) {
       Alert.alert('Note', 'Please select atleast one payment to print PDF');
-
       return;
     }
 
@@ -871,6 +888,7 @@ const IssueGroups = () => {
 
       // Check if the response has any content
       const responseText = await response.text();
+      console.log('dataaaa::', responseText);
 
       // If the response body is empty or invalid, handle that gracefully
       if (!responseText) {
@@ -1087,7 +1105,7 @@ const IssueGroups = () => {
     return newObj;
   };
 
-  // Third Sub Table Api
+  // Third Sub Table Api --- Paysheet Payment
   const fetchModelTableData = async () => {
     try {
       setIsLoading(true);
@@ -1095,19 +1113,23 @@ const IssueGroups = () => {
       const token = credentials.password;
       console.log('token with berarer issue Model data : ', `${token}`);
       console.log(
-        ' selectedSubData.payId sdff',
+        ' selectedSubData.paymentId sdff',
         `${selectedSubData[selectedSubRow]}`,
       );
       console.log(' tax sdff', `${JSON.stringify(taxData)}`);
+      console.log(
+        'print it>>>>',
+        `${API_URL}/api/issueGroup/getSelectedSubPaymentGroups?paymentId=${selectedSubData[selectedSubRow].paymentId}&paymentType=${tableData[selectedRow].type}&taxId=${taxData[0].BILL_PO_SO_JO_NO}&amountPaid=${taxData[0].AMOUNT_PAID}`,
+      );
 
       const response = await fetch(
         `${API_URL}/api/issueGroup/getSelectedSubPaymentGroups?paymentId=${selectedSubData[selectedSubRow].paymentId}&paymentType=${tableData[selectedRow].type}&taxId=${taxData[0].BILL_PO_SO_JO_NO}&amountPaid=${taxData[0].AMOUNT_PAID}`,
-
+        // 'http://192.168.0.107:8087/api/issueGroup/getSelectedSubPaymentGroups?paymentId=2557&paymentType=Bills Payment&taxId=SUP-1041&amountPaid=20',
         {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `${token}`,
+            // Authorization: `${token}`,
           },
         },
       );
@@ -1117,29 +1139,34 @@ const IssueGroups = () => {
 
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
+      console.log('response>>>>>>>>>', response);
       const data = await response.json();
       console.log(
         'response model table adv tax : ===============>>>>>>>>>> ',
         data,
+        'response____',
+        response,
       );
-      const formattedData =
-        data.paymentIssueGroupDetailsTableData.map(convertToSnakeCase);
+      // const formattedData = data.map(convertToReadableFormat);
 
       // Sort the keys of each object in paymentIssueGroupDetailsTableData in ascending order
-      const sortedModelData = formattedData.map(item => {
-        return Object.keys(item)
-          .sort() // Sort keys alphabetically
-          .reduce((acc, key) => {
-            acc[key] = item[key]; // Rebuild object with sorted keys
-            return acc;
-          }, {});
-      });
+      // const sortedModelData = formattedData.map(item => {
+      //   return Object.keys(item)
+      //     .sort() // Sort keys alphabetically
+      //     .reduce((acc, key) => {
+      //       acc[key] = item[key]; // Rebuild object with sorted keys
+      //       return acc;
+      //     }, {});
+      // });
 
       setSelectedModelData([]); // Clear previous data
-      setSelectedModelData(sortedModelData); // Set sorted data
+      setSelectedModelData(data); // Set sorted data
 
-      console.log('SelectedModelData-=-=-=-=-=-=---=-', sortedModelData);
+      // console.log('SelectedModelData-=-=-=-=-=-=---=-', sortedModelData);
+      console.log(
+        'SelectedModelData check >>>-=-=-=-=-=-=---=-',
+        selectedModelData,
+      );
 
       // if (sortedModelData.length > 0) isModel(true);
       setSelectedSubRow(null); // Clear the sub row selection
@@ -1150,7 +1177,112 @@ const IssueGroups = () => {
       // Always hide loading indicator after login attempt (success or failure)
     }
   };
-  // From Harish Nov 6
+
+  // Thrid Table Bills Payment
+  const fetchBillsPaymentDetailsData = async () => {
+    try {
+      setIsLoading(true);
+      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+      const token = credentials.password;
+      console.log('token with berarer issue Model data : ', `${token}`);
+      console.log(
+        ' selectedSubData.paymentId sdff',
+        `${selectedSubData[selectedSubRow]}`,
+      );
+      console.log(' tax sdff', `${JSON.stringify(taxData)}`);
+      console.log(
+        'print it>>>>',
+        `${API_URL}/api/issueGroup/getPayDetails?payment_id=${2592}&dataFor=${'BillPayMainSubTable'}`,
+      );
+
+      const response = await fetch(
+        `${API_URL}/api/issueGroup/getPayDetails?payment_id=${
+          selectedSubData[selectedSubRow].paymentId
+        }&dataFor=${'BillPayMainSubTable'}`,
+        // 'http://192.168.0.107:8087/api/issueGroup/getSelectedSubPaymentGroups?paymentId=2557&paymentType=Bills Payment&taxId=SUP-1041&amountPaid=20',
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Authorization: `${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        setIsLoading(true);
+
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      console.log('response>>>>>>>>>', response);
+      const data = await response.json();
+      console.log(
+        'response bills payment details : ===============>>>>>>>>>> ',
+        data,
+        'response____',
+        response,
+      );
+
+      const billsDetailsKeys = [
+        'Payment Id',
+        'Bill No', //column 1
+        'Bill Date', //column 2
+        'Bill Type', //column 3
+        'Party Bill', //column 4
+        'Party Name', //column 5
+        'Bill Value', //column 6
+        'Discount', //column 7
+        'Charges Amt', //column 8
+        'Adjustment', //column 9
+        'Bill Amt', //column 10
+        'Debit Amt', //column 11
+        'Passed Amt', //column 12
+        'Payable Amt', //column 13
+        'Paid Amt', //column 14
+        'TDS Amt', //column 15
+        'Currency', //column 16
+        'Due Date', //column 17
+        'Bill Status', //column 18
+      ];
+
+      const mappedData = data.map(row => {
+        return billsDetailsKeys.reduce((obj, key, index) => {
+          // Safely convert value to string and handle null/undefined
+          obj[key] = row[index] != null ? String(row[index]) : '';
+          return obj;
+        }, {});
+      });
+
+      if (mappedData.length > 0) {
+        setSelectedModelData([]); // Clear previous data
+        setSelectedModelData(mappedData); // Set new data
+        // isModel(true);
+        // setSelectedSubRow(null);
+      }
+
+      // console.log('SelectedModelData-=-=-=-=-=-=---=-', sortedModelData);
+      console.log(
+        'SelectedModelData check >>>-=-=-=-=-=-=---=-',
+        selectedModelData,
+      );
+
+      // if (sortedModelData.length > 0) isModel(true);
+      setSelectedSubRow(null); // Clear the sub row selection
+    } catch (error) {
+      console.error('Error fetching bills payment details table data:', error);
+    } finally {
+      setIsLoading(false);
+      // Always hide loading indicator after login attempt (success or failure)
+    }
+  };
+  useEffect(() => {
+    console.log('selectedModelData:::', selectedModelData);
+
+    // setSelectedCheckBoxData(selectedCheckBoxData.filter(dataa=>dataa.length !=0))
+  }, [selectedModelData]);
+  //-------------------------------
+
+  //----------------------------------------------------------------- From Harish Nov 6
   // ADVANCE PAYMENT ----- Third Sub Table Api
   const fetchModelAdvPay = async () => {
     try {
@@ -1211,26 +1343,26 @@ const IssueGroups = () => {
 
       // Define mapping keys based on order type
       const poKeys = [
-        'advanceamount',
-        'advancepaid',
-        'color',
-        'currency',
-        'discountpercentage',
-        'matno',
-        'payableamount',
-        'poamount',
-        'podiscount',
-        'pono',
-        'priceperuom',
-        'qtyordered',
-        'refno',
-        'size',
-        'specs',
-        'supdiscount',
-        'suppamount',
-        'tdsamt',
-        'type',
-        'uom',
+        'PO NO',
+        'partyName',
+        'Mat No',
+        'Color',
+        'Size',
+        'Ref No',
+        'Type',
+        'Material Spec',
+        'Qty',
+        'UOM',
+        'Rate',
+        'Discount %',
+        'Discount(PO)',
+        'Discount',
+        'Total Amount(PO)',
+        'Total Amount',
+        'Payable Amount',
+        'Advance Amount',
+        'TDS Amount',
+        'Currency',
       ];
 
       const soKeys = [
@@ -1253,17 +1385,26 @@ const IssueGroups = () => {
         'Currency',
       ];
       const joKeys = [
-        'Pay Id',
-        'Batch No',
-        'Order Type',
-        'Party Name',
-        'Date',
-        'Payable Amt',
-        'TDS Amt',
-        'Advance Paid',
+        'JO NO',
+        'serviceName',
+        'Job Id',
+        'Work Center',
+        'Process',
+        'Item No',
+        'Mat No',
+        'Material Spec',
+        'Qty',
+        'UOM',
+        'Rate',
+        'Discount %',
+        'Discount(JO)',
+        'Discount',
+        'Total Amount(JO)',
+        'Total Amount',
+        'Payable Amount',
+        'Advance Amount',
+        'TDS Amount',
         'Currency',
-        'Bank Name',
-        'Pay Mode',
       ];
 
       // Select appropriate keys based on order type
@@ -1310,14 +1451,16 @@ const IssueGroups = () => {
       // You might want to add error handling UI feedback here
       setSelectedModelData([]);
       isModel(false);
-    } finally {
-      setIsLoading(false);
+      // } finally {
+      //   setIsLoading(false);
     }
   };
 
   //------------------------------ TAX Thrid Table Data -----------------fetchSubTableTax-------------------------
   const fetchSubTableTax = async () => {
     try {
+      setIsLoading(true);
+
       console.log('check>>>>', subTabPaymentId);
       const queryBody = {
         query:
@@ -1515,6 +1658,7 @@ const IssueGroups = () => {
           body: JSON.stringify({items: selectedPayments}),
         },
       );
+      showIssuedMessage();
 
       console.log(
         'response for response data : ===============>>>>>>>>>> ',
@@ -1858,6 +2002,10 @@ const IssueGroups = () => {
   };
 
   const handleIssue = () => {
+    if (mainTableSelectedIndex.length < 1) {
+      Alert.alert('Note', 'Select Atleast One Group And Payment To Issue');
+      return;
+    }
     const preparedItemsForIssue = prepareSelectedItemsForIssue(
       selectedItemsForIssue,
       tableData,
@@ -1880,8 +2028,8 @@ const IssueGroups = () => {
       issueData(preparedItemsForIssue);
       setTimeout(() => handleRefresh(), 100);
     } else {
-      console.log('itsd not issued');
-      Alert.alert('Note', 'Please select atleast one payment to print PDF');
+      // console.log('itsd not issued');
+      Alert.alert('Note', 'Already Issued');
     }
     // issueData();
   };
@@ -2058,6 +2206,15 @@ const IssueGroups = () => {
                   }}
                   onPress={() => {
                     // Close Modal and Apply Filters
+                    // if (tempFormattedEndDate < tempFormattedStartDate) {
+                    //   // setFormattedStartDate(tempFormattedStartDate);
+                    //   // setFormattedEndDate(tempFormattedEndDate);
+                    //   Alert.alert(
+                    //     'Note',
+                    //     'Start Date cannot be greater than End Date',
+                    //   );
+                    // }
+                    //  else
                     if (
                       formattedStartDate !== tempFormattedStartDate ||
                       formattedEndDate !== tempFormattedEndDate
@@ -2123,7 +2280,7 @@ const IssueGroups = () => {
       <View></View>
 
       {/* <View> */}
-      {isPaymentGroupModal && (
+      {/* {isPaymentGroupModal && (
         <PdfComponent
           placeholder="Print Payment Group PDF"
           setIsModal={setIsPaymentGroupModal}
@@ -2136,7 +2293,7 @@ const IssueGroups = () => {
             <Text style={styles.optionText}>Payment Mode</Text>
           </TouchableOpacity>
         </PdfComponent>
-      )}
+      )} */}
       <Modal
         visible={PDFModalVisible}
         onRequestClose={() => setPDFModalVisible(false)}
@@ -2144,32 +2301,108 @@ const IssueGroups = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {/* <Text>Select Filter</Text> */}
+            <View
+              style={{
+                borderWidth: 1,
+                borderColor: '#ccc',
+                padding: 5,
+                borderRadius: 5,
+                marginBottom: 10,
+                // backgroundColor: '#9BC3F2',
+              }}>
+              <Text
+                style={[
+                  styles.optionText,
+                  {marginBottom: 4, fontSize: 16, padding: 5},
+                ]}>
+                Print Payment Group PDF
+              </Text>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    // setIsPaymentGroupModal(true);
+                    if (mainTableSelectedIndex.length < 1) {
+                      setPDFModalVisible(false);
+                      Alert.alert(
+                        'Note',
+                        'Please select atleast one payment to print PDF',
+                      );
+                    } else {
+                      setIsLoading(true);
+                      setPDFModalVisible(false);
 
-            <TouchableOpacity
-              onPress={() => {
-                setIsPaymentGroupModal(true);
-                setPDFModalVisible(false);
-              }}
-              // onPress={() => PrintGroupPdf()}
-              style={styles.option}>
-              <Text style={styles.optionText}>Print Payment Group PDF</Text>
-            </TouchableOpacity>
+                      // setSelectedPaymentType('');
+                      setSelectedPaymentType('Payment Id');
+                      // setSelectedPaymentType('');
+                      PrintGroupPdf();
+                    }
+                  }}
+                  // onPress={() => PrintGroupPdf()}
+                  style={styles.pdfSubOption}>
+                  <Text style={styles.subOptionText}>Payment Id</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    // setIsPaymentGroupModal(true);
+                    if (mainTableSelectedIndex.length < 1) {
+                      setPDFModalVisible(false);
+                      Alert.alert(
+                        'Note',
+                        'Please select atleast one payment to print PDF',
+                      );
+                    } else {
+                      setIsLoading(true);
+
+                      setPDFModalVisible(false);
+
+                      setSelectedPaymentType('Payment Mode');
+                      PrintGroupPdf();
+                    }
+                  }}
+                  // onPress={() => PrintGroupPdf()}
+                  style={styles.pdfSubOption}>
+                  <Text style={styles.subOptionText}>Payment Mode</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             {(MainType == 'Advance Payment' ||
               MainType === 'Bills Payment' ||
               MainType === 'Tax Payment' ||
               MainType === 'Paysheet Payment') && (
               <TouchableOpacity
-                onPress={() => PrintPaymentPdf()}
+                onPress={() => {
+                  if (activeDataPdf.length < 1) {
+                    setPDFModalVisible(false);
+                    Alert.alert(
+                      'Note',
+                      'Please select atleast one payment to print PDF',
+                    );
+                  } else {
+                    PrintPaymentPdf();
+                    setPDFModalVisible(false);
+                  }
+                }}
                 style={styles.option}>
                 <Text style={styles.optionText}>Print Payment PDF</Text>
               </TouchableOpacity>
             )}
-
             {(MainType === 'Bills Payment' ||
               MainType === 'Tax Payment' ||
               MainType === 'Paysheet Payment') && (
               <TouchableOpacity
-                onPress={() => PrintDetailedPdf()}
+                onPress={() => {
+                  if (activeDataPdf.length < 1) {
+                    setPDFModalVisible(false);
+                    Alert.alert(
+                      'Note',
+                      'Please select atleast one payment to print PDF',
+                    );
+                  } else {
+                    PrintDetailedPdf();
+                    setPDFModalVisible(false);
+                  }
+                }}
                 style={styles.option}>
                 <Text style={styles.optionText}>
                   Print Detailed Payment PDF
@@ -2200,7 +2433,7 @@ const IssueGroups = () => {
         }}>
         {/* First TableComponent */}
         <View style={{maxHeight: 120, marginTop: 0}}>
-          {filteredMainData.length > 0 && (
+          {filteredMainData.length > 0 ? (
             <TableComponent
               key={filteredMainData.length}
               initialData={filteredMainData}
@@ -2212,6 +2445,8 @@ const IssueGroups = () => {
                 setMainType(tableData[value].type);
                 SetActiveGroupId(tableData[value].groupId);
                 setModelButton(false);
+
+                setActiveDataPdf([]);
               }}
               onRowIndexSelect={value => {
                 if (value.length < 1) {
@@ -2219,13 +2454,15 @@ const IssueGroups = () => {
                   setMainTableSelectedIndex([]);
                   setSelectedCheckBoxData([]);
                   setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                  setActiveDataPdf([]);
                 } else {
+                  setActiveDataPdf([]);
                   setSelectedRow(value);
                   setMainType(tableData[value]?.type);
                   const groupId = tableData[value]?.groupId;
                   GroupTransformObject(tableData[value]);
                   SetActiveGroupId(tableData[value].groupId);
-
+                  console.log('rowdataaa::', value);
                   setMainTableSelectedIndex(prev => {
                     if (prev.includes(groupId)) {
                       const groupKey = `groupId:${groupId}`;
@@ -2246,6 +2483,7 @@ const IssueGroups = () => {
                         }
                         return acc;
                       }, {});
+                      console.log('filteredData::', filteredData);
                       setSelectedCheckBoxData(filterMainData);
                       // Log the entire object after filtering
                       console.log(
@@ -2270,8 +2508,14 @@ const IssueGroups = () => {
               noModel={false}
               showCheckBox={true}
               onlyFetchData={true}
+              setMainTableSelectAll={setMainTableSelectAll}
               style={{marginTop: 20}}
             />
+          ) : (
+            <View style={{marginTop:20,justifyContent: 'center', alignItems: 'center'}}>
+  <Text style={{textAlign: 'center',color:'black',fontSize:16}}>No Data To Display</Text>
+</View>
+
           )}
         </View>
 
@@ -2356,9 +2600,9 @@ const IssueGroups = () => {
 
                     return updatedState;
                   });
-                  if (MainType !== 'Fund Transfer') {
-                    setModelButton(true);
-                  }
+                  // if (MainType !== 'Fund Transfer') {
+                  //   setModelButton(true);
+                  // }
                 }
               }}
               setSelectedCheckBoxData={setSelectedCheckBoxData}
@@ -2379,10 +2623,11 @@ const IssueGroups = () => {
               toggleData={index => {
                 const dataa = selectedSubData[index];
                 setSelectedSubRow(index);
+                console.log('toggledata::', index);
                 setActiveDataPdf(dataa);
-                if (MainType !== 'Fund Transfer') {
-                  setModelButton(true);
-                }
+                // if (MainType !== 'Fund Transfer') {
+                //   setModelButton(true);
+                // }
               }}
               RowDataForIssue={data => {
                 const {transferId, paymentId} = data;
@@ -2420,6 +2665,7 @@ const IssueGroups = () => {
                   });
                 }
               }}
+              mainTableSelectAll={mainTableSelectAll}
             />
           )}
         </View>
@@ -2479,7 +2725,7 @@ const IssueGroups = () => {
                 }}
                 noModel={false}
                 showCheckBox={false}
-                excludeColumns={['ID', 'ExtraField']}
+                excludeColumns={['Payment Id', 'partyName', 'serviceName']}
               />
             )}
 
@@ -2566,12 +2812,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalTableContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
+
   modalContent: {
     width: '80%',
     padding: 20,
@@ -2588,7 +2829,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: 'black',
   },
-  optionText: {color: 'black'},
+  pdfSubOption: {
+    width: '45%',
+    padding: 10,
+    backgroundColor: 'white',
+    borderColor: CustomThemeColors.primary,
+    borderWidth: 2,
+    borderRadius: 15,
+    marginBottom: 10,
+
+    color: 'black',
+  },
+  subOptionText: {color: 'black', fontWeight: '400'},
+  optionText: {color: 'black', fontWeight: 'bold'},
   selectedOption: {
     padding: 10,
     backgroundColor: '#d3f3d3', // Change this color as needed
@@ -2633,11 +2886,17 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    // maxHeight: 600,
+    // marginTop:20,
+    paddingVertical: 20,
+    paddingBottom: 150,
+    paddingTop: 100,
+    paddingHorizontal: 5,
   },
   modalTableContent: {
     flex: 1, // This ensures the content takes full screen
     width: '100%', // Full width
-    padding: 20,
+    padding: 5,
     backgroundColor: 'white', // Background color for modal content
     justifyContent: 'flex-start', // Align content from top
     borderRadius: 10,

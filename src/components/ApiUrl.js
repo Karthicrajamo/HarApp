@@ -20,8 +20,8 @@
 // const API_URL = 'http://103.44.98.58:8081';
 
 //Dev - Surya
-const API_URL = 'http://192.168.0.107:8084';
-// const API_URL = 'http://192.168.0.107:8087';
+// const API_URL = 'http://192.168.0.107:8084';
+const API_URL = 'http://192.168.0.107:8085';
 
 //Dev Harish
 // const API_URL = 'http://192.168.0.169:8084';

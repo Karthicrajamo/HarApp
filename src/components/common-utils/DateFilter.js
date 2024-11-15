@@ -3,6 +3,8 @@ import {View, StyleSheet, Platform, Modal, Text} from 'react-native';
 import {Button} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {CustomThemeColors} from '../CustomThemeColors';
+import CustomAlert from './CustomAlert';
+import { Alert } from 'react-native';
 
 // Helper function to parse a formatted date string into a Date object
 const parseDate = dateStr => {
@@ -88,6 +90,7 @@ const DateFilter = ({
   };
   useEffect(() => {
     console.log('dateUpdatess::', tempEndDate);
+   
   }, [tempEndDate, tempStartDate]);
 
   // const applyFilter = () => {

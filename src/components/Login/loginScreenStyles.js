@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingVertical: 10,
     paddingHorizontal: 15,
-    fontSize: 16,
+    fontSize: 14,
     marginBottom: height * 0.02,
     color: 'black',
     borderColor: 'lightgrey',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: 'rgb(55, 136, 229)',
     borderRadius: 15,
-    paddingVertical: height * 0.02,
+    paddingVertical: 10,
     alignItems: 'center',
   },
 

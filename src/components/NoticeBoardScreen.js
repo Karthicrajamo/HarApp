@@ -1011,9 +1011,11 @@ const NoticeBoardScreen = ({group, userId, prevMessageHistory, userName}) => {
     );
     console.log(
       'DELETE MESSAGE API : llhmkkkoophh943n',
-      `${API_URL}/deleteMessage?nbid=${group.noticeBoardId}&usrid=${userId}`,
+      `${API_URL}/api/noticeBoard/deleteMessage/${
+        group.noticeBoardId
+      }/${userId}?admin=${group.isAdmin || false}`,
     );
-
+    console.log('message ids for deletion 453545364653252 : ', messageIds);
     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
     const token = credentials.password;
     console.log(
@@ -1022,7 +1024,7 @@ const NoticeBoardScreen = ({group, userId, prevMessageHistory, userName}) => {
     );
 
     fetch(
-      `${API_URL}/api/noticeBoard/deleteMessage/${group.noticeBoardId}/${userId}`,
+      `${API_URL}/api/noticeBoard/deleteMessage/${group.noticeBoardId}/${userId}?admin=${group.isAdmin}`,
       {
         method: 'DELETE',
         headers: {
@@ -1147,6 +1149,7 @@ const NoticeBoardScreen = ({group, userId, prevMessageHistory, userName}) => {
   const toggleSelection = messageId => {
     if (selectedMessageIds.includes(messageId)) {
       setSelectedMessageIds(selectedMessageIds.filter(id => id !== messageId));
+      console.log('selectedMessageIds 5893859849543 : ', selectedMessageIds);
     } else {
       setSelectedMessageIds([...selectedMessageIds, messageId]);
     }

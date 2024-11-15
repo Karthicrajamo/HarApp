@@ -84,8 +84,11 @@ import Toast from 'react-native-toast-message';
 import {useNavigation} from '@react-navigation/native';
 import useOrientation from './src/components/customHooks/useOrientation';
 import DocumentApproverMain from './src/components/DocumentApproval/DocumentApproverMain';
+import {requestStoragePermission} from './src/components/common-utils/requestStoragePermission';
 // Load the sound file
 Sound.setCategory('Playback');
+
+
 // Initialize the Sound object
 const notificationSound = new Sound(
   'notification_new.mp3',
@@ -131,10 +134,10 @@ const GROUP_STORAGE_KEY = 'NoticeBoardData';
 const App = () => {
   useOrientation();
   // const navigation = useNavigation();
-
+  
   const [responseNewMessageDetails, setResponseNewMessageDetails] =
-    useState(null);
-
+  useState(null);
+  
   const [appState, setAppState] = useState(AppState.currentState);
 
   useEffect(() => {
@@ -168,7 +171,10 @@ const App = () => {
 
   //AUTO-LOGIN
   // const [loggedInUserPassword, setLoggedInUserPassword] = useState(null);
-
+  
+  useEffect(() => {
+    requestStoragePermission();
+  }, []);
   // useEffect(() => {
   //   const handleAutoLogin = async (username, password) => {
   //     try {
