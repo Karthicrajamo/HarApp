@@ -225,7 +225,7 @@ const TableComponent = ({
     // Pass the selected indices to the parent function if required
     if (newIsChecked) {
       setMainTableSelectedIndex([])
-      data.forEach((_, index) => setTimeout(() => {onRowIndexSelect(index)},100)); // Pass all indices
+      data.forEach((_, index) => setTimeout(() => {onRowIndexSelect(index)},1000)); // Pass all indices
       // onPressCheckBoxHandle(true)
     } else {
       onRowIndexSelect([]); // Pass empty array if none are selected

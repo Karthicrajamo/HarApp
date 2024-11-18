@@ -284,7 +284,7 @@ const IssueGroups = () => {
       apiurl = `${API_URL}/api/issueGroup/billsprintDetailedPdf_group`;
       requestbody = JSON.stringify({
         payment_id: subTabPaymentId,
-        message: partyName[0],
+        message: partyName,
         company_id: '1',
       });
     } else if (selectedDataPaymentType == 'Tax Payment') {
@@ -389,7 +389,7 @@ const IssueGroups = () => {
       console.log('supplierName 8978989890', query);
 
       const response = await fetch(
-        `http://192.168.0.169:8084/api/common/finloadContentsjson`,
+        `${API_URL}/api/common/finloadContentsjson`,
 
         {
           method: 'POST',
@@ -414,9 +414,17 @@ const IssueGroups = () => {
     } catch (err) {}
   };
 
- 
   // PrintPrintPaymentPdf
-
+  const headers = [
+    'Group Id',
+    'Created Date',
+    'Reference No',
+    'Type',
+    'No Of Payments',
+    'Issued',
+    'Total Value',
+    'Group Issue Status',
+  ];
 
   const PrintPaymentPdf = async () => {
     if (activeDataPdf.length < 1) {
@@ -1460,8 +1468,6 @@ const IssueGroups = () => {
   const fetchSubTableTax = async () => {
     try {
       setIsLoading(true);
-
-      console.log('check>>>>', subTabPaymentId);
       const queryBody = {
         query:
           'select distinct BILL_PO_SO_JO_NO from payment_info where payment_id=' +
@@ -1497,70 +1503,63 @@ const IssueGroups = () => {
       console.log('Response data:', data); // Debug log
       // settaxparam(data);
       const flattenedData = data.flat();
-      console.log('54545656>2>>', flattenedData);
-
-      // to get paid amt
-      // const paidamt = {
-      //   query:
-      //     '      select pf.bill_po_so_jo_no, coalesce(pf.actual_amount_paid, 0)as actual_paid from payment_info pf where pf.payment_id not in (select pf.payment_id from a_payment_details pf) and pf.bill_po_so_jo_no in('TPANO-PT-58') and payment_id=' +
-      //     subTabPaymentId +
-      //     ' union select pf.bill_po_so_jo_no, coalesce(pf.actual_amount_paid, 0)as already_paid from a_payment_info pf where bill_po_so_jo_no in ('TPANO-PT-58') and payment_id=' +
-      //     subTabPaymentId +
-      //     '',
-      // };
-
-      // console.log('Request body:', paidamt); // Debug log
-
-      // const paidamtresponse = await fetch(
-      //   `${API_URL}/api/issueGroup/finLoadVectorwithContentsjson`,
-
-      //   // 'http://192.168.0.169:8080/harness/approval/finLoadVectorwithContentsjson',
-      //   {
-      //     method: 'POST',
-      //     headers: {
-      //       Accept: 'application/json',
-      //       'Content-Type': 'application/json',
-      //       // Authorization: `${token}`,
-      //     },
-      //     body: JSON.stringify(flattenedData),
-      //   },
-      // );
-
-      // if (!paidamtresponse.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`);
-      // }
-      // console.log('Response response>>>>:', response); // Debug log
-
-      // const paidamtdata = await paidamtresponse.json();
-      // console.log('Response data:', data); // Debug log
-      // // settaxparam(data);
-      // const paidamtdataDatas = paidamtdata.flat();
-      // console.log('54545656>>>', paidamtdataDatas);
-      // //--------
+      console.log('54545656>>>', flattenedData);
+      const formattedBILL_PO_SO_JO_NOList = flattenedData
+        .map(item => `'${item}'`)
+        .join(',\n');
 
       const queryBodyFinal = {
-        query: `SELECT 
-          tax_advice_id,
-          tax_payment_advice_no,
-          'Tax Payment' AS type,
-          to_char(tax_advice_date, 'DD-MON-YY'),
-          tax_dept_name,
-          to_char(tax_amount, 'fm99999999999990.9990') AS tax_amount,
-          '' AS paid_amount,
-          currency,
-          to_char(due_date, 'DD-MON-YY'),
-          (
-            CASE
-              WHEN payment_status = 'Paid' THEN 'Paid'
-              WHEN payment_status = 'Partially Paid' THEN 'Partially Paid'
-              WHEN payment_status = 'Pending' THEN 'Pending'
-              ELSE 'Passed'
-            END
-          ) AS status,
-          '' AS payment_id 
-        FROM tax_advice_details 
-        WHERE tax_payment_advice_no IN ('${flattenedData.join("','")}')
-        ORDER BY tax_advice_id`,
+        query: `SELECT
+  tad.tax_advice_id,
+  tad.tax_payment_advice_no,
+  'Tax Payment' AS type,
+  to_char(tad.tax_advice_date, 'DD-MON-YY') AS tax_advice_date,
+  tad.tax_dept_name,
+  to_char(tad.tax_amount, 'fm99999999999990.9990') AS tax_amount,
+  coalesce(pf.actual_paid, 0) AS paid_amount,
+  tad.currency,
+  to_char(tad.due_date, 'DD-MON-YY') AS due_date,
+  CASE
+      WHEN tad.payment_status = 'Paid'           THEN
+          'Paid'
+      WHEN tad.payment_status = 'Partially Paid' THEN
+          'Partially Paid'
+      WHEN tad.payment_status = 'Pending'        THEN
+          'Pending'
+      ELSE
+          'Passed'
+  END AS status
+FROM
+  tax_advice_details tad
+  LEFT JOIN (
+      SELECT
+          pf.bill_po_so_jo_no,
+          coalesce(pf.actual_amount_paid, 0) AS actual_paid
+      FROM
+          payment_info pf
+      WHERE
+          pf.payment_id NOT IN (
+              SELECT
+                  pf.payment_id
+              FROM
+                  a_payment_details pf
+          )
+          AND pf.bill_po_so_jo_no IN (${formattedBILL_PO_SO_JO_NOList})
+          AND payment_id = ${subTabPaymentId}
+      UNION
+      SELECT
+          pf.bill_po_so_jo_no,
+          coalesce(pf.actual_amount_paid, 0) AS already_paid
+      FROM
+          a_payment_info pf
+      WHERE
+          pf.bill_po_so_jo_no IN (${formattedBILL_PO_SO_JO_NOList})
+          AND payment_id = ${subTabPaymentId}
+  ) pf ON tad.tax_payment_advice_no = pf.bill_po_so_jo_no
+WHERE
+  tad.tax_payment_advice_no IN (${formattedBILL_PO_SO_JO_NOList})
+ORDER BY
+  tad.tax_advice_id`,
       };
       console.log('978>>>', queryBodyFinal);
       const responseFinal = await fetch(
@@ -1619,7 +1618,7 @@ const IssueGroups = () => {
 
       console.log('Mapped Data:', mappedData);
       // const mappedData = [mappedObject];
-      // console.log('mapped data', mappedData);
+      console.log('mapped data', mappedData);
       // Update state only if we have valid data
       if (mappedData.length > 0) {
         setSelectedModelData([]); // Clear previous data
@@ -1664,14 +1663,15 @@ const IssueGroups = () => {
         'response for response data : ===============>>>>>>>>>> ',
         response,
       );
-      if (!response.ok) {
-        // setIsLoading(true);
+      // if (!response.ok) {
+      //   // setIsLoading(true);
 
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+      //   throw new Error(`HTTP error! Status: ${response.status}`);
+      // }
 
       const data = await response.json();
       console.log('response for issue data : ===============>>>>>>>>>> ', data);
+      setTimeout(() => handleRefresh(), 1000);
     } catch (error) {
       // console.error('Error fetching table data:', error);
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -2026,11 +2026,13 @@ const IssueGroups = () => {
 
     if (selectedArray.length !== totalLength) {
       issueData(preparedItemsForIssue);
-      setTimeout(() => handleRefresh(), 100);
+
+      setTimeout(() => handleRefresh(), 1500);
     } else {
       // console.log('itsd not issued');
       Alert.alert('Note', 'Already Issued');
     }
+    setTimeout(() => handleRefresh(), 1500);
     // issueData();
   };
   useEffect(() => {
@@ -2306,7 +2308,7 @@ const IssueGroups = () => {
                 borderWidth: 1,
                 borderColor: '#ccc',
                 padding: 5,
-                borderRadius: 5,
+                borderRadius: 15,
                 marginBottom: 10,
                 // backgroundColor: '#9BC3F2',
               }}>
@@ -2316,6 +2318,9 @@ const IssueGroups = () => {
                   {marginBottom: 4, fontSize: 16, padding: 5},
                 ]}>
                 Print Payment Group PDF
+              </Text>
+              <Text style={[{marginBottom: 4, fontSize: 14, padding: 5}]}>
+                Report Order By
               </Text>
               <View
                 style={{flexDirection: 'row', justifyContent: 'space-around'}}>
@@ -2512,10 +2517,21 @@ const IssueGroups = () => {
               style={{marginTop: 20}}
             />
           ) : (
-            <View style={{marginTop:20,justifyContent: 'center', alignItems: 'center'}}>
-  <Text style={{textAlign: 'center',color:'black',fontSize:16}}>No Data To Display</Text>
-</View>
+            <View style={styles.container}>
+              {/* Table Header */}
+              <View style={styles.headerRow}>
+                {headers.map((header, index) => (
+                  <Text key={index} style={styles.headerText}>
+                    {header}
+                  </Text>
+                ))}
+              </View>
 
+              {/* Table Data */}
+              <View style={styles.dataRow}>
+                <Text style={styles.dataText}>No Data to Display</Text>
+              </View>
+            </View>
           )}
         </View>
 
@@ -2571,8 +2587,13 @@ const IssueGroups = () => {
                   // }
                 } else {
                   const {transferId, paymentId} = data;
-                  const type = tableData[selectedRow].type;
-                  const groupId = tableData[selectedRow].groupId;
+                  // const type = tableData[selectedRow].type;
+                  const groupId = data.groupId;
+                  const type =
+                    tableData.find(item => item.groupId === groupId)?.type ||
+                    'No data to display';
+
+                  console.log('matchingType--', type);
                   const selectedId = transferId || paymentId; // Use either transferId or paymentId
                   // const issuedStus =
                   //   data.paymentStatus === 'Issued' ? data : null;
@@ -2585,13 +2606,16 @@ const IssueGroups = () => {
                   setSelectedGroupId(prev => ({...prev, groupId: groupId}));
 
                   setSelectedPayments(prevPayments => {
+                    console.log('selectedPayments---::::', selectedId);
                     const key = `${type}:${groupId}`;
                     const currentIds = prevPayments[key] || [];
                     const updatedIds = currentIds.includes(selectedId)
-                      ? currentIds.filter(id => id == selectedId)
+                      ? currentIds.filter(id => id !== selectedId) // Corrected condition to remove selectedId
                       : [...currentIds, selectedId];
 
                     const updatedState = {...prevPayments};
+                    console.log('updatedState::', updatedState);
+                    console.log('key::', key);
                     if (updatedIds.length > 0) {
                       updatedState[key] = updatedIds;
                     } else {
@@ -2666,6 +2690,7 @@ const IssueGroups = () => {
                 }
               }}
               mainTableSelectAll={mainTableSelectAll}
+              setIsLoading={setIsLoading}
             />
           )}
         </View>
@@ -2725,7 +2750,13 @@ const IssueGroups = () => {
                 }}
                 noModel={false}
                 showCheckBox={false}
-                excludeColumns={['Payment Id', 'partyName', 'serviceName']}
+                excludeColumns={[
+                  'Payment Id',
+                  'partyName',
+                  'serviceName',
+                  'ID',
+                  'ExtraField',
+                ]}
               />
             )}
 
@@ -2825,7 +2856,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 15,
     marginBottom: 10,
     color: 'black',
   },
@@ -2889,7 +2920,7 @@ const styles = StyleSheet.create({
     // maxHeight: 600,
     // marginTop:20,
     paddingVertical: 20,
-    paddingBottom: 150,
+    paddingBottom: 130,
     paddingTop: 100,
     paddingHorizontal: 5,
   },
@@ -2907,6 +2938,39 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     color: 'black',
+  },
+  container: {
+    padding: 10,
+  },
+  headerRow: {
+    borderTopEndRadius: 10,
+    borderTopStartRadius: 10,
+    backgroundColor: CustomThemeColors.primary,
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    // borderColor: 'red',
+    padding: 5,
+    // paddingBottom:0,
+    // marginBottom: 5,
+  },
+  headerText: {
+    color: 'white',
+    flex: 1,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  dataRow: {
+    flexDirection: 'row',
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderBottomStartRadius: 5,
+    borderBottomEndRadius: 5,
+  },
+  dataText: {
+    flex: 1,
+    textAlign: 'center',
+    color: 'gray',
   },
 });
 

@@ -66,7 +66,7 @@ const SubTableComponent = ({
   activeIndex,
   selectedPaymentType,
   toggleData,
-  RowDataForIssue,mainTableSelectAll
+  RowDataForIssue,mainTableSelectAll,setIsLoading
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -87,19 +87,24 @@ const SubTableComponent = ({
   const [page, setPage] = useState(0); // Current page
   const rowsPerPage = 100; // Number of rows per page
   const [totalColumnWidths, setTotalColumnWidths] = useState(0);
+  // const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     // if (selectedCheckBoxData.length > 0) {
-    console.log('present', selectedCheckBoxData);
-    console.log('selectedPaymentTypedf', selectedPaymentType);
-
-    // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
-
-    // }
-  }, []);
-  useEffect(() => {
+      console.log('present', selectedCheckBoxData);
+      console.log('selectedPaymentTypedf', selectedPaymentType);
+      
+      // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
+      
+      // }
+    }, []);
+    useEffect(() => {
+    setIsLoading(true)
     console.log('initialDataz;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
+    setIsLoading(false)
+
   }, [initialData]);
 
   useEffect(() => {
@@ -265,6 +270,7 @@ const SubTableComponent = ({
     // Send either all data or an empty array based on newIsChecked state
     const dataToSend = newIsChecked ? data : [];
     console.log('SelectAllCheckBox::', dataToSend);
+    
     dataToSend.map(dataa => {
       onRowIndexSelect(dataa);
       RowDataForIssue(dataa);
@@ -564,7 +570,7 @@ const SubTableComponent = ({
   </View> */}
             </ScrollView>
           </View></>
-          }
+           } 
     </View>
   );
 };

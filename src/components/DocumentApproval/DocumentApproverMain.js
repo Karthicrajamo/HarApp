@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import TitleBar from '../common-utils/TitleBar';
 import {
   TouchableOpacity,
@@ -26,6 +26,16 @@ import {GetFileExtension} from '../common-utils/smallcomponents/GetFileExtension
 import {requestStoragePermission} from '../common-utils/requestStoragePermission';
 import DeviceInfo from 'react-native-device-info';
 const DocumentApproverMain = () => {
+  const scrollViewRef = useRef(null);
+
+  // Effect to reset scroll when `showUploadedDocuments` changes
+  useEffect(() => {
+    if (showUploadedDocuments && scrollViewRef.current) {
+      // Scroll to the start (x: 0) position
+      scrollViewRef.current.scrollTo({x: 0, y: 0, animated: true});
+    }
+  }, [showUploadedDocuments]);
+
   const isTablet = DeviceInfo.isTablet();
   console.log('89372873773 ', isTablet);
   const navigation = useNavigation(); //For Nagivation
@@ -97,30 +107,6 @@ const DocumentApproverMain = () => {
     }
   }, [selectedMainTableRowIndex]); // Fetch sub table data when a new row is selected
 
-  // useEffect(() => {}, [subTableData]);
-  // useEffect(() => {}, [selectedSubRowIndex]);
-  // useEffect(() => {}, [filteredMainData]);
-  // useEffect(() => {}, [selectedSubData]);
-
-  //   useEffect(() => console.log('selecterrow data::', selectedRow));
-  // useEffect(() => {
-  //   console.log('ruyuewr747 Selected Row:', selectedRow);
-
-  //   if (
-  //     selectedRow !== null &&
-  //     selectedRow >= 0 &&
-  //     selectedRow < tableData.length
-  //   ) {
-  //     // //   setSelectedDataGroupId(tableData[selectedRow].groupId);
-  //     // //   setSelectedDataDataPaymentType(tableData[selectedRow].type);
-  //     //   setSelectedData([tableData[selectedRow]]);
-  //     //   console.log(
-  //     //     'selectdsfsfsfedData __________' + tableData[selectedRow].groupId,
-  //     //   );
-  //     fetchSubTableData();
-  //   }
-  // }, [selectedRow]);
-
   const handleRefresh = () => {
     setTimeout(() => {
       navigation.replace('DocumentApproverMain');
@@ -160,128 +146,6 @@ const DocumentApproverMain = () => {
       //   setIsLoading(false);
     }
   };
-  // Second table
-  // const fetchSubTableData = async () => {
-  //   try {
-  //     setIsLoading(true);
-  //     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
-  //     const token = credentials.password;
-  //     console.log('token with berarer issue sub data : ', `${token}`);
-  //     console.log(
-  //       ' selectedDataDocumentId sdggf',
-  //       JSON.stringify(tableData[selectedRow].documentId),
-  //     );
-
-  //     const response = await fetch(
-  //       `${API_URL}/api/documentApproval/documentData?docId=${tableData[selectedRow].documentId}`,
-  //       {
-  //         method: 'GET',
-  //         headers: {
-  //           'Content-Type': 'application/json',
-  //           Authorization: `${token}`,
-  //         },
-  //       },
-  //     );
-
-  //     if (!response.ok) {
-  //       setIsLoading(true);
-
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-
-  //     const data = await response.json();
-  //     console.log(
-  //       'response documentAp sub table adv : ===============>>>>>>>>>> ',
-  //       data,
-  //     );
-
-  //     //   Sort the keys of each object in paymentIssueGroupSubTableData in ascending order
-  //     const sortedData = data.map(item => {
-  //       return Object.keys(item)
-  //         .sort() // Sort keys alphabetically
-  //         .reduce((acc, key) => {
-  //           acc[key] = item[key]; // Rebuild object with sorted keys
-  //           return acc;
-  //         }, {});
-  //     });
-
-  //     //   setSelectedSubData([]); // Clear previous data
-  //     setSelectedSubData(sortedData); // Set sorted data
-  //   } catch (error) {
-  //     console.error('Error fetching table sub data:', error);
-  //   } finally {
-  //     setIsLoading(false);
-  //     // Always hide loading indicator after login attempt (success or failure)
-  //   }
-  // };
-
-  // const fetchBlobData = async index => {
-  //   try {
-  //     setIsDownloadLoading(true);
-  //     setDownloadProgress(0); // Reset progress before starting
-
-  //     // Fetch token (ensure that token exists and is valid)
-  //     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
-  //     if (!credentials) {
-  //       throw new Error('No credentials found');
-  //     }
-
-  //     const token = credentials.password;
-  //     const url = `http://localhost:8100/rest/approval/viewpdffilemain/`; // API URL
-
-  //     const requestBody = {
-  //       trans_id: 173,
-  //       table_refname: '',
-  //       file_name: '4945_Detailed.pdf',
-  //       file_chooser_col_name: 'FOR_SIGN_DOC',
-  //       custom_master_id: 257,
-  //     };
-
-  //     // Use RNFetchBlob to download the file
-  //     const {config, fs} = RNFetchBlob;
-  //     const downloadDir = fs.dirs.DownloadDir; // Save to download directory
-
-  //     console.log('Starting download from:', url);
-
-  //     const response = await RNFetchBlob.config({
-  //       fileCache: false, // Disable caching to force re-download every time
-  //       appendExt: 'pdf', // Use pdf extension
-  //       path: `${downloadDir}/HarnessERP/document_${selectedSubData[index].docSubId}.pdf`, // Save with proper file name
-  //     })
-  //       .fetch('POST', url, {
-  //         Authorization: `${token}`,
-  //         'Content-Type': 'application/octet-stream', // Ensure binary stream
-  //       })
-  //       .progress((received, total) => {
-  //         // Log received bytes and total bytes
-  //         console.log(`Received: ${received}, Total: ${total}`);
-
-  //         if (total > 0) {
-  //           // Calculate and update download progress
-  //           let progressPercent = Math.floor((received / total) * 100);
-  //           setDownloadProgress(progressPercent);
-  //           console.log('Download progress:', progressPercent, '%');
-  //         }
-  //       });
-
-  //     const statusCode = response.info().status;
-
-  //     if (statusCode === 200) {
-  //       const filePath = response.path(); // Get file path after download
-  //       console.log('File downloaded successfully to:', filePath);
-
-  //       // Optionally open the file after download (Android only)
-  //       RNFetchBlob.android.actionViewIntent(filePath, 'application/pdf');
-  //     } else {
-  //       console.error('Error: File download failed with status', statusCode);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching and downloading the file:', error);
-  //   } finally {
-  //     setIsDownloadLoading(false);
-  //     setDownloadProgress(0); // Reset progress when done
-  //   }
-  // };
 
   const fetchBlobData = async (index, selectedFileName) => {
     try {
@@ -541,6 +405,20 @@ const DocumentApproverMain = () => {
     }
   };
 
+  const handleSubTableRowSelect = index => {
+    console.log('Row selected:', index);
+    console.log('Data for selected row:', subTableData[index]);
+    setSelectedSubRow(selectedSubData[index]);
+    setSelectedSubRowIndex(index);
+    setIsDownloadButton(true);
+    setSelectedSubData(subTableData[index]);
+    setShowUploadedDocuments(true);
+
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({x: 0, y: 0, animated: true});
+    }
+  };
+
   return (
     <SafeAreaView style={{flex: 1, padding: 10}}>
       <TitleBar
@@ -636,16 +514,8 @@ const DocumentApproverMain = () => {
                   key={JSON.stringify(subTableData)}
                   initialData={subTableData}
                   onRowIndexSelect={index => {
-                    console.log('Row selected:', index);
-                    console.log(
-                      'Data for selected row:',
-                      selectedSubData[index],
-                    );
-                    setSelectedSubRow(selectedSubData[index]);
-                    setSelectedSubRowIndex(index);
-                    setIsDownloadButton(true);
-                    setSelectedSubData(subTableData[index]);
-                    setShowUploadedDocuments(true);
+                    handleSubTableRowSelect(index);
+
                     //   setCurrentModalPage(0);
                   }}
                   excludeColumns={['fileMetaData', 'documentId']}
@@ -684,6 +554,7 @@ const DocumentApproverMain = () => {
                     flexDirection: 'row',
                   }}>
                   <ScrollView
+                    ref={scrollViewRef}
                     horizontal
                     showsHorizontalScrollIndicator={true} // Hide horizontal scroll indicator (optional)
                     contentContainerStyle={{flexDirection: 'row'}}>

@@ -69,6 +69,7 @@ const ModalTableComponent = ({
     return data.map(item => {
       let filteredItem = {...item};
       excludeFields.forEach(field => delete filteredItem[field]);
+      console.log('9849329049  : ', item);
       return filteredItem;
     });
   };
@@ -78,7 +79,8 @@ const ModalTableComponent = ({
     excludeColumns.length > 0
       ? excludeFields(initialData, excludeColumns)
       : initialData,
-  );  const [columnWidths, setColumnWidths] = useState({});
+  );
+  const [columnWidths, setColumnWidths] = useState({});
   const [calculated, setCalculated] = useState(false);
   const [sliderValue, setSliderValue] = useState(0); // Initial value for the slider (scale factor)
   const [tableIndex, setTableIndex] = useState(-1);
@@ -116,8 +118,6 @@ const ModalTableComponent = ({
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
 
     console.log('slide values:>>>', sliderValue);
-
- 
 
     setColumnWidths(calculatedWidths);
     setIsModel(noModel);
@@ -216,17 +216,14 @@ const ModalTableComponent = ({
   const columns = Object.keys(data[0]); //harish hided and added below line code
   // const columns = Object.keys(data);
 
-
   return (
     <View
       style={{
         borderWidth: 1,
         borderRadius: 5,
         borderColor: CustomThemeColors.primary,
-        height:400
+        height: 400,
       }}>
-   
-
       <View style={styles.selectSlide}></View>
       <View style={styles.headerRow}>
         {columns.map((column, index) => (
@@ -255,7 +252,6 @@ const ModalTableComponent = ({
             style={[
               styles.headerCell,
               {
-             
                 fontSize: isTablet ? 14 : 12,
               },
             ]}>
@@ -264,94 +260,89 @@ const ModalTableComponent = ({
         )}
       </View>
       <ScrollView>
-          <View style={[styles.table]}>
-            {/* TABLE ROWS */}
-            {data
-              .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-              .map((row, rowIndex) => (
-                <TouchableOpacity
-                  key={rowIndex}
-                  onPress={() => {
-                    toggleRowSelection(rowIndex);
-                  }}
-                  onLongPress={() => {
-                    // longPressIndex(rowIndex);
-                  }}>
-                  <View
-                    style={
-                      selectedRows[page * rowsPerPage + rowIndex] === false &&
-                      tableIndex === page * rowsPerPage + rowIndex
-                        ? styles.activeSelect
-                        : tableIndex === page * rowsPerPage + rowIndex
-                        ? styles.activeSelect
-                        : rowIndex % 2 === 0
-                        ? styles.oddRow
-                        : styles.evenRow
-                    }>
-                    {columns.map((column, cellIndex) => (
-                      <Text
-                        key={cellIndex}
-                        style={[
-                          cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
-                          {
-                            width:
-                              sliderValue == 0
-                                ? (columnWidths[column] / totalColumnWidths) *
-                                    screenWidth -
-                                  (showCheckBox ? 6 : 2)
-                                : columnWidths[column] - 35,
+        <View style={[styles.table]}>
+          {/* TABLE ROWS */}
+          {data
+            .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+            .map((row, rowIndex) => (
+              <TouchableOpacity
+                key={rowIndex}
+                onPress={() => {
+                  toggleRowSelection(rowIndex);
+                }}
+                onLongPress={() => {
+                  // longPressIndex(rowIndex);
+                }}>
+                <View
+                  style={
+                    selectedRows[page * rowsPerPage + rowIndex] === false &&
+                    tableIndex === page * rowsPerPage + rowIndex
+                      ? styles.activeSelect
+                      : tableIndex === page * rowsPerPage + rowIndex
+                      ? styles.activeSelect
+                      : rowIndex % 2 === 0
+                      ? styles.oddRow
+                      : styles.evenRow
+                  }>
+                  {columns.map((column, cellIndex) => (
+                    <Text
+                      key={cellIndex}
+                      style={[
+                        cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
+                        {
+                          width:
+                            sliderValue == 0
+                              ? (columnWidths[column] / totalColumnWidths) *
+                                  screenWidth -
+                                (showCheckBox ? 6 : 2)
+                              : columnWidths[column] - 35,
 
-                      
-                            fontSize: isTablet ? 14 : 8,
-                            fontWeight: '400',
-                            color: '#000000',
-                            borderRightWidth:
-                              cellIndex === columns.length - 1 ? 0 : 0.5,
-                          },
-                        ]}>
-                        {row[column] !== null ? String(row[column]) : ''}
-                      </Text>
-                    ))}
-                    {showCheckBox && (
-                      <CheckBox
-                        checked={
-                          selectedRows[page * rowsPerPage + rowIndex] || false
-                        }
-                        onPress={() => {
-                          const actualIndex = page * rowsPerPage + rowIndex;
-                          const updatedSelection = [...selectedRows];
-                          updatedSelection[actualIndex] =
-                            !updatedSelection[actualIndex];
+                          fontSize: isTablet ? 14 : 8,
+                          fontWeight: '400',
+                          color: '#000000',
+                          borderRightWidth:
+                            cellIndex === columns.length - 1 ? 0 : 0.5,
+                        },
+                      ]}>
+                      {row[column] !== null ? String(row[column]) : ''}
+                    </Text>
+                  ))}
+                  {showCheckBox && (
+                    <CheckBox
+                      checked={
+                        selectedRows[page * rowsPerPage + rowIndex] || false
+                      }
+                      onPress={() => {
+                        const actualIndex = page * rowsPerPage + rowIndex;
+                        const updatedSelection = [...selectedRows];
+                        updatedSelection[actualIndex] =
+                          !updatedSelection[actualIndex];
 
-                          console.log(
-                            'actualIndex->',
-                            actualIndex,
-                            'updatedIndex:',
-                            updatedSelection,
-                          );
-                          setSelectedRows(updatedSelection);
-                          toggleRowSelection(actualIndex);
+                        console.log(
+                          'actualIndex->',
+                          actualIndex,
+                          'updatedIndex:',
+                          updatedSelection,
+                        );
+                        setSelectedRows(updatedSelection);
+                        toggleRowSelection(actualIndex);
 
-                          // If a row is checked or unchecked, manage the "Select All" checkbox state
-                          const allSelected = updatedSelection.every(Boolean);
-                          setIsChecked(allSelected);
-                        }}
-                        containerStyle={{
-                          backgroundColor: 'transparent',
-                          borderWidth: 0,
-                          padding: 0,
-                        }}
-                        size={
-                       
-                          isTablet ? 14 : 12
-                        }
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
-          </View>
-      
+                        // If a row is checked or unchecked, manage the "Select All" checkbox state
+                        const allSelected = updatedSelection.every(Boolean);
+                        setIsChecked(allSelected);
+                      }}
+                      containerStyle={{
+                        backgroundColor: 'transparent',
+                        borderWidth: 0,
+                        padding: 0,
+                      }}
+                      size={isTablet ? 14 : 12}
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -569,4 +560,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ModalTableComponent
+export default ModalTableComponent;
