@@ -135,6 +135,9 @@ const IssueGroups = () => {
     console.log('selectedPayments::', selectedPayments);
   }, [selectedPayments]);
   useEffect(() => {
+    console.log('mainTableSelectAll::', mainTableSelectAll);
+  }, [mainTableSelectAll]);
+  useEffect(() => {
     console.log('Updated onPressCheckBoxHandle----:', onPressCheckBoxHandle);
   }, [onPressCheckBoxHandle]);
   useEffect(() => {
@@ -410,7 +413,8 @@ const IssueGroups = () => {
 
       console.log('4583495j90549 :: ', result);
 
-      return result[0];
+      // return result[0];
+      return result[0] || '';
     } catch (err) {}
   };
 
@@ -516,11 +520,27 @@ const IssueGroups = () => {
       apiurl = `${API_URL}/api/issueGroup/PaymentPdf`;
 
       query = `
-
-      select address, contact_person, contact_number, email from party_link where link_name='${partyName}'`;
+      SELECT
+      a.street
+      || ','
+      || a.city
+      || ','
+      || a.state
+      || ','
+      || a.country
+      || ','
+      || a.postal_code AS address
+  FROM
+      supplier           s,
+      supplier_address   sa,
+      address            a
+  WHERE
+      s.name = '${partyName}'
+      AND sa.address_no = a.address_no
+      AND sa.supplier_name = s.name`;
 
       const partyAddress = await executeQuery(query);
-
+      console.log('success-------------', partyAddress);
       requestbody = JSON.stringify({
         param_names: [
           'payment_id',
@@ -1124,11 +1144,11 @@ const IssueGroups = () => {
         ' selectedSubData.paymentId sdff',
         `${selectedSubData[selectedSubRow]}`,
       );
-      console.log(' tax sdff', `${JSON.stringify(taxData)}`);
-      console.log(
-        'print it>>>>',
-        `${API_URL}/api/issueGroup/getSelectedSubPaymentGroups?paymentId=${selectedSubData[selectedSubRow].paymentId}&paymentType=${tableData[selectedRow].type}&taxId=${taxData[0].BILL_PO_SO_JO_NO}&amountPaid=${taxData[0].AMOUNT_PAID}`,
-      );
+      // console.log(' tax sdff', `${JSON.stringify(taxData)}`);
+      // console.log(
+      //   'print it>>>>',
+      //   `${API_URL}/api/issueGroup/getSelectedSubPaymentGroups?paymentId=${selectedSubData[selectedSubRow].paymentId}&paymentType=${tableData[selectedRow].type}&taxId=${taxData[0].BILL_PO_SO_JO_NO}&amountPaid=${taxData[0].AMOUNT_PAID}`,
+      // );
 
       const response = await fetch(
         `${API_URL}/api/issueGroup/getSelectedSubPaymentGroups?paymentId=${selectedSubData[selectedSubRow].paymentId}&paymentType=${tableData[selectedRow].type}&taxId=${taxData[0].BILL_PO_SO_JO_NO}&amountPaid=${taxData[0].AMOUNT_PAID}`,
@@ -1283,12 +1303,12 @@ const IssueGroups = () => {
       // Always hide loading indicator after login attempt (success or failure)
     }
   };
-  useEffect(() => {
-    console.log('selectedModelData:::', selectedModelData);
+  // useEffect(() => {
+  //   console.log('selectedModelData:::', selectedModelData);
 
-    // setSelectedCheckBoxData(selectedCheckBoxData.filter(dataa=>dataa.length !=0))
-  }, [selectedModelData]);
-  //-------------------------------
+  //   // setSelectedCheckBoxData(selectedCheckBoxData.filter(dataa=>dataa.length !=0))
+  // }, [selectedModelData]);
+  // //-------------------------------
 
   //----------------------------------------------------------------- From Harish Nov 6
   // ADVANCE PAYMENT ----- Third Sub Table Api
@@ -1857,10 +1877,10 @@ ORDER BY
     selectedModelData.length > 0 ? Object.keys(selectedModelData[0]) : [];
 
   // Get the current page's data
-  const currentPageData = selectedModelData.slice(
-    currentModalPage * itemsPerPage,
-    (currentModalPage + 1) * itemsPerPage,
-  )[0];
+  // const currentPageData = selectedModelData.slice(
+  //   currentModalPage * itemsPerPage,
+  //   (currentModalPage + 1) * itemsPerPage,
+  // )[0];
 
   // Function to go to the next page
   const goToNextPage = () => {
@@ -2461,6 +2481,7 @@ ORDER BY
                   setTimeout(() => setOnPressCheckBoxHandle(false), 0);
                   setActiveDataPdf([]);
                 } else {
+                  
                   setActiveDataPdf([]);
                   setSelectedRow(value);
                   setMainType(tableData[value]?.type);
@@ -2553,6 +2574,7 @@ ORDER BY
                     .map(item => item.paymentId || item.transferId)
                     .filter(Boolean);
                   console.log('IDs:', ids);
+                  setSelectedPayments([]);
 
                   // Remove the activeGroupId from the mainTableSelectedIndex
                   setMainTableSelectedIndex(prev => {

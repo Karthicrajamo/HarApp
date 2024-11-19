@@ -78,6 +78,8 @@ const TableComponent = ({
   const [page, setPage] = useState(0); // Current page
   const rowsPerPage = 5000; // Number of rows per page
   const [totalColumnWidths, setTotalColumnWidths] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     // console.log('initialDataz;' + JSON.stringify(initialData));
@@ -179,6 +181,7 @@ const TableComponent = ({
     const updatedSelection = [...selectedRows];
     const isSelected = updatedSelection[actualIndex];
 
+    console.log("isSelected::",isSelected)
     // Toggle the selection state
     updatedSelection[actualIndex] = !isSelected;
 
@@ -192,6 +195,7 @@ const TableComponent = ({
       onRowIndexSelect(actualIndex);
     }
     if (isSelected) {
+      console.log("checkkk::")
       onPressCheckBoxHandle(true);
     }
 
@@ -238,6 +242,7 @@ const TableComponent = ({
 
   return (
     <View>
+      {isLoading ? <Text>Loading...</Text> : <></>}
       <View style={styles.selectSlide}>
         {/* <View style={styles.sliderContainer}> */}
         {/* <Slider
@@ -389,6 +394,7 @@ const TableComponent = ({
                     <View style={{borderBottomWidth: .5}}>
                       <CheckBox
                         checked={
+                          // Karthic Nov 19
                           mainTableSelectedIndex.includes(
                             data[page * rowsPerPage + rowIndex].groupId,
                           )
@@ -398,11 +404,15 @@ const TableComponent = ({
                           // selectedRows[page * rowsPerPage + rowIndex] || false
                         }
                         onPress={() => {
+                          console.log("selectedRows length",selectedRows.length,"--selectedRows:::",selectedRows)
                           const actualIndex = page * rowsPerPage + rowIndex;
                           const updatedSelection = [...selectedRows];
                           updatedSelection[actualIndex] =
-                            !updatedSelection[actualIndex];
-
+                          !updatedSelection[actualIndex];
+                          // console.log("data[actualIndex]:::",mainTableSelectedIndex.includes(data[actualIndex].groupId))
+                          // if(mainTableSelectedIndex.includes(data[actualIndex].groupId)){
+                          //   updatedSelection[actualIndex]=false
+                          // }
                           console.log(
                             'actualIndex->',
                             actualIndex,
@@ -413,6 +423,7 @@ const TableComponent = ({
                           toggleRowSelectionCheckBox(actualIndex);
                           if(selectedRows.length<1){
                             setIsChecked(false)
+                            
                           }
                           setMainTableSelectAll(true)
 

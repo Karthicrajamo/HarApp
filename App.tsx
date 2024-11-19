@@ -47,6 +47,8 @@ import QrScanner from './src/components/common-utils/QrScanner';
 import ComponentWithCropFreeIcon from './src/components/commonUtils/ComponentWithCropFreeIcon';
 import TestScreen from './src/components/common-utils/TestScreen';
 import IssueGroupMainScreen from './src/components/IssueGroup/IssueGroups';
+import paymentGroupsMain from './src/components/PaymentGroups/paymentGroupsMain';
+import paymentGroupsDetails from './src/components/PaymentGroups/paymentGroupsDetails';
 import Test from './src/components/common-utils/test';
 // import IssueGroups from './src/components/common-utils/IssueGroups';
 import IssueGroups from './src/components/IssueGroup/IssueGroups';
@@ -1196,6 +1198,7 @@ const App = () => {
                   <Stack.Navigator
                     initialRouteName={
                       isLoggedIn ? 'HomeScreen' : 'LoginScreen'
+                      // 'paymentGroupsMain' 
                     }>
                     <Stack.Screen
                       name="HomeScreen"
@@ -1223,6 +1226,15 @@ const App = () => {
                       component={DocumentApproverMain}
                       options={{headerShown: false}}
                     />
+                    {/* <Stack.Screen
+                      name="paymentGroupsMain"
+                      component={paymentGroupsMain}
+                      options={{headerShown: false}}
+                    /><Stack.Screen
+                      name="paymentGroupsDetails"
+                      component={paymentGroupsDetails}
+                      options={{headerShown: false}}
+                    /> */}
                     {/* <Stack.Screen
                 name="AssetAuditDetails"
                 component={AssetAuditDetails}

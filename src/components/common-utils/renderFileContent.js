@@ -268,7 +268,8 @@ const renderFileContent = ({message, sender, isUploading, uploadProgress}) => {
   // Open file with associated apps
   const openFile = async filePath => {
     try {
-      await FileViewer.open(filePath, {
+      await FileViewer.open(`file://${filePath}`, {
+        displayName: 'Please choose the associated app',
         showOpenWithDialog: true,
       });
     } catch (error) {

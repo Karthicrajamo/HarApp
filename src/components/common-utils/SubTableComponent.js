@@ -269,12 +269,23 @@ const SubTableComponent = ({
 
     // Send either all data or an empty array based on newIsChecked state
     const dataToSend = newIsChecked ? data : [];
-    console.log('SelectAllCheckBox::', dataToSend);
+    console.log('sub table SelectAllCheckBox::', dataToSend);
     
-    dataToSend.map(dataa => {
-      onRowIndexSelect(dataa);
-      RowDataForIssue(dataa);
-    });
+    if(dataToSend.length == 0){
+      console.log(
+        'empty::'
+      )
+      onRowIndexSelect([]);
+      dataToSend.map(dataa => {
+        RowDataForIssue(dataa);
+      });
+    }else{
+
+      dataToSend.map(dataa => {
+        onRowIndexSelect(dataa);
+        RowDataForIssue(dataa);
+      });
+    }
 
     setSelectedCheckBoxData(prev => {
       const updatedCheckBoxData = {...prev};

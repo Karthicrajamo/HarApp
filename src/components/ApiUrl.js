@@ -14,15 +14,17 @@
 // const API_URL = 'http://103.44.97.154:8080';
 
 //Demo Application support
-const API_URL = 'http://103.44.98.58:8083';
+// const API_URL = 'http://103.44.98.58:8083';
 
 //IMS
 // const API_URL = 'http://103.44.98.58:8081';
 
 //Dev - Surya
-// const API_URL = 'http://192.168.0.107:8084';
+const API_URL = 'http://192.168.0.107:8084';
+// const API_URL = 'http://192.168.0.107:8087';
 // const API_URL = 'http://192.168.0.107:8085';
 
+// const API_URL = 'http://192.168.0.207:8001';
 //Dev Harish
 // const API_URL = 'http://192.168.0.169:8084';
 

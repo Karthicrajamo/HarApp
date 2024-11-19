@@ -28,8 +28,8 @@ import CustomAlert from '../common-utils/CustomAlert';
 import {sharedData} from './UserId';
 import TabupsidedownEllipse from '../../images/Ellipse.png';
 import topLogoImage from '../../images/logo.png';
-// import jjmils from '../../images/jj_logo.png';
-// import av from '../../images/AV_logo.png';
+import jjmils from '../../images/jj_logo.png';
+import av from '../../images/AV_logo.png';
 import harness from '../../images/logo.png';
 import TabEllipse from '../../images/Ellipsef.png';
 import DeviceInfo from 'react-native-device-info';
@@ -337,7 +337,7 @@ const LoginScreen = () => {
 
         {/* SECONDARY HEADER */}
         <View style={[styles.middleContainer, {marginTop: 150}]}>
-          {/* <Text style={styles.thirdHeading}>
+          <Text style={styles.thirdHeading}>
             Jay Jay Mills (Bangladesh) Private Limited
           </Text>
           <Image
@@ -346,7 +346,7 @@ const LoginScreen = () => {
               styles.bottomLogo,
               {width: isTablet ? 50 : 60, height: isTablet ? 50 : 60},
             ]}
-          /> */}
+          />
 
           {/* <Text style={styles.thirdHeading}>ADISHTAM VENTURES</Text>
           <Image
@@ -357,7 +357,7 @@ const LoginScreen = () => {
             ]}
           /> */}
 
-          <Text style={styles.thirdHeading}>
+          {/* <Text style={styles.thirdHeading}>
             Harness Textile Private Limited
           </Text>
           <Image
@@ -366,7 +366,7 @@ const LoginScreen = () => {
               styles.bottomLogo,
               {width: isTablet ? 50 : 60, height: isTablet ? 50 : 60},
             ]}
-          />
+          /> */}
 
           <TextInput
             style={styles.emailInput}
