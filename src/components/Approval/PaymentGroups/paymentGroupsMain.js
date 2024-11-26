@@ -278,13 +278,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#3788E5',
   },
-  input: {
-    // borderWidth: 1,
-    // borderColor: '#ccc',
-    padding: 0,
-    // marginTop: 10,
-    // borderRadius: 5,
-  },
+  
 });
 
 export default PaymentDetails;

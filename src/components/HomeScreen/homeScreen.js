@@ -504,7 +504,7 @@ const GridIcons = ({privileges}) => {
     // task            : () => navigation.navigate('About'),
     // chart           : () => navigation.navigate('About'),
     // notes           : () => navigation.navigate('About'),
-    // approval        : () => navigation.navigate('About'),
+    approval: () => navigation.navigate('ApprovalMainScreen'),
     documentApproval: () => navigation.navigate('DocumentApproverMain'),
     issueGroup: () => navigation.navigate('IssueGroups'),
     // tracking        : () => navigation.navigate('About'),

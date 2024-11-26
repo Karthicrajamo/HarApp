@@ -14,6 +14,8 @@ import AssetListSort from './src/components/AssetListSort/assetListSort';
 import AssetListFilter from './src/components/AssetListFilter/assetListFilter';
 import AssetListDetails from './src/components/AssetListDetails/assetListDetails';
 import AssetListImage from './src/components/AssetListImage/assetListImage';
+import ApprovalMainScreen from './src/components/Approval/ApprovalMainScreen';
+import {AdvancePayment} from './src/components/Approval/Payment/AdvancePayment';
 import AssetSkel from './src/components/AssetListDetails/AssetListDetailsSkeleton';
 import NetInfo from '@react-native-community/netinfo';
 import {sharedData} from './src/components/Login/UserId';
@@ -90,7 +92,6 @@ import {requestStoragePermission} from './src/components/common-utils/requestSto
 // Load the sound file
 Sound.setCategory('Playback');
 
-
 // Initialize the Sound object
 const notificationSound = new Sound(
   'notification_new.mp3',
@@ -136,10 +137,10 @@ const GROUP_STORAGE_KEY = 'NoticeBoardData';
 const App = () => {
   useOrientation();
   // const navigation = useNavigation();
-  
+
   const [responseNewMessageDetails, setResponseNewMessageDetails] =
-  useState(null);
-  
+    useState(null);
+
   const [appState, setAppState] = useState(AppState.currentState);
 
   useEffect(() => {
@@ -173,7 +174,7 @@ const App = () => {
 
   //AUTO-LOGIN
   // const [loggedInUserPassword, setLoggedInUserPassword] = useState(null);
-  
+
   useEffect(() => {
     requestStoragePermission();
   }, []);
@@ -716,18 +717,18 @@ const App = () => {
             label="Charts"
             onPress={() => navigation.navigate('ChartScreen')}
           />
-          <DrawerItem
-            // icon={({ color, size }) => <MaterialIcons name="approval" color={color} size={size} />}
-            icon={({size}) => (
-              <MaterialIcons
-                name="approval"
-                color={CustomThemeColors.menuIconColor}
-                size={size}
-              />
-            )}
-            label="Approval"
-            onPress={() => navigation.navigate('ApprovalScreen')}
-          /> */}
+          // <DrawerItem
+          //   // icon={({ color, size }) => <MaterialIcons name="approval" color={color} size={size} />}
+          //   icon={({size}) => (
+          //     <MaterialIcons
+          //       name="approval"
+          //       color={CustomThemeColors.menuIconColor}
+          //       size={size}
+          //     />
+          //   )}
+          //   label="Approval"
+          //   onPress={() => navigation.navigate('ApprovalScreen')}
+          // /> */}
           <DrawerItem
             // icon={({ color, size }) => <MaterialIcons name="logout" color={color} size={size} />}
             icon={({size}) => (
@@ -1197,8 +1198,13 @@ const App = () => {
                 <>
                   <Stack.Navigator
                     initialRouteName={
-                      isLoggedIn ? 'HomeScreen' : 'LoginScreen'
-                      // 'paymentGroupsMain' 
+                      // isLoggedIn ? 'HomeScreen' : 'LoginScreen'
+                      isLoggedIn ? 'ApprovalMainScreen' : 'LoginScreen'
+                      // isLoggedIn ? 'AdvancePayment' : 'LoginScreen'
+                      // 'TestScreen'
+                      // 'AdvancePayment'
+                      // 'ApprovalMainScreen'
+
                     }>
                     <Stack.Screen
                       name="HomeScreen"
@@ -1356,6 +1362,15 @@ const App = () => {
                     <Stack.Screen
                       name="IssueGroupMainScreen"
                       component={IssueGroupMainScreen}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="ApprovalMainScreen"
+                      component={ApprovalMainScreen}
+                      options={{headerShown: false}}
+                    /><Stack.Screen
+                      name="AdvancePayment"
+                      component={AdvancePayment}
                       options={{headerShown: false}}
                     />
 

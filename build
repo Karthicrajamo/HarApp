@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Prompt for the environment
+#!/bin/bash
+
+#!/bin/bash
+
+# Display a menu to choose the environment
+echo "Select the environment:"
+echo "1) JJ_MILLS"
+echo "2) JJ_MILLS_PROD"
+echo "3) AV_TEST"
+echo "4) Test"
+echo -n "Enter the number corresponding to your choice: "
+
+# Read the user's choice
+read choice
+
+# Map the choice to the appropriate environment
+case $choice in
+  1)
+    ENVIRONMENT="JJ_MILLS"
+    ;;
+  2)
+    ENVIRONMENT="JJ_MILLS_PROD"
+    ;;
+  3)
+    ENVIRONMENT="AV_TEST"
+    ;;
+  4)
+    ENVIRONMENT="Test"
+    ;;
+  *)
+    echo "Invalid choice. Please select 1, 2, 3, or 4."
+    exit 1
+    ;;
+esac
+
+# Display the selected environment
+echo "Selected environment: $ENVIRONMENT"
+
+# Write the environment to the .env file
+echo "ENVIRONMENT=$ENVIRONMENT" > .env
+
+echo ".env file updated with ENVIRONMENT=$ENVIRONMENT"
+
+# Navigate to the android directory
+cd android
+
+# Execute the Gradle assemble release command
+./gradlew assemblerelease

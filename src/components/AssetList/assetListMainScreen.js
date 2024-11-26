@@ -631,7 +631,6 @@ const AssetListMainScreen = () => {
 
   // Search Modal
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
 
   const openSearchModal = () => setSearchModalVisible(true);
   const closeSearchModal = () => setSearchModalVisible(false);

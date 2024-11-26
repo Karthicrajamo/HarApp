@@ -23,12 +23,13 @@ import styles from './loginScreenStyles';
 import * as Keychain from 'react-native-keychain';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
 // import { API_URL } from '@env';
-import {fetchApiUrl, API_URL} from '../ApiUrl';
+import {CompanyName, API_URL, logo, pass} from '../ApiUrl';
+// import {useDynamicEnvironment} from '../ApiUrl';
 import CustomAlert from '../common-utils/CustomAlert';
 import {sharedData} from './UserId';
 import TabupsidedownEllipse from '../../images/Ellipse.png';
 import topLogoImage from '../../images/logo.png';
-import jjmils from '../../images/jj_logo.png';
+import jjmills from '../../images/jj_logo.png';
 import av from '../../images/AV_logo.png';
 import harness from '../../images/logo.png';
 import TabEllipse from '../../images/Ellipsef.png';
@@ -44,6 +45,8 @@ import Svg, {
 } from 'react-native-svg';
 import {CustomThemeColors} from '../CustomThemeColors';
 const LoginScreen = () => {
+  // const { API_URL, CompanyName, logo, pass } = useDynamicEnvironment();
+
   const isTablet = DeviceInfo.isTablet();
   useEffect(() => {
     const backAction = () => {
@@ -91,7 +94,7 @@ const LoginScreen = () => {
     fetchLoggedUserId();
   }, []);
 
-  const [Password, setPassword] = useState('');
+  const [Password, setPassword] = useState(pass);
   const [checked, setChecked] = useState(false);
   const navigation = useNavigation();
   const {width, height} = Dimensions.get('window');
@@ -135,6 +138,7 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       // Check if username and password are entered
+      console.log('Api_url::', API_URL);
       if (!username || !Password) {
         handleAlert();
         // Alert.alert('Alert', 'Please enter username and password to proceed.');
@@ -337,7 +341,15 @@ const LoginScreen = () => {
 
         {/* SECONDARY HEADER */}
         <View style={[styles.middleContainer, {marginTop: 150}]}>
-          <Text style={styles.thirdHeading}>
+          <Text style={styles.thirdHeading}>{CompanyName}</Text>
+          <Image
+            source={logo == 'jjmills' ? jjmills : av}
+            style={[
+              styles.bottomLogo,
+              {width: isTablet ? 50 : 60, height: isTablet ? 50 : 60},
+            ]}
+          />
+          {/* <Text style={styles.thirdHeading}>
             Jay Jay Mills (Bangladesh) Private Limited
           </Text>
           <Image
@@ -346,7 +358,7 @@ const LoginScreen = () => {
               styles.bottomLogo,
               {width: isTablet ? 50 : 60, height: isTablet ? 50 : 60},
             ]}
-          />
+          /> */}
 
           {/* <Text style={styles.thirdHeading}>ADISHTAM VENTURES</Text>
           <Image
