@@ -25,7 +25,7 @@ const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 // Karthic Nov 25
-export const AdvancePayment = ({route}) => {
+export const BillsPayment = ({route}) => {
   const {transName, transId, status} = route.params || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
@@ -33,9 +33,60 @@ export const AdvancePayment = ({route}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentId, setPaymentId] = useState('');
 
+  const [showInfoPairs, setShowInfoPairs] = useState(true);
+  const [billsPay, setBillsPay] = useState([]);
+  const [excluseTblTwo, setExcluseTblTwo] = useState([]);
 
   useEffect(() => {
     fetchAdvancePaymentDetails();
+    fetchBillsPayTable();
+    fetchExcludeTable();
+
+    //   Bills selected to Pay api
+    fetchTableData(
+      `http://192.168.0.169:8084/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+      [
+        'Bill No',
+        'Bill Date',
+        'Party Bill No',
+        'Party Name',
+        'Bill Value',
+        'Discount',
+        'Charges Amt',
+        'Adjustment Amt',
+        'Total Bill Amt',
+        'Debit Amt',
+        'Passed Amt',
+        'Payable Amt',
+        'Actual Amt',
+        'Already Paid',
+        'TDS Amount',
+        'Remaining Balance',
+        'Currency',
+        'Due Date',
+        'Bill Status',
+      ],
+      [0, 14, 21],
+      setBillsPay,
+    );
+
+    //   Selected Table to exclude
+    fetchTableData(
+      'http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=2633',
+      [
+        'Bill No',
+        'Tax Name',
+        'Rate',
+        'Tax Amount',
+        'TDS Amount',
+        'Paid Tax Amt',
+        'Remaining Tax Amt',
+        'Inclusive Tax',
+        'Apply TDS',
+      ],
+      [0, 8, 9, 10],
+      setExcluseTblTwo,
+    );
   }, []);
 
   useEffect(() => {
@@ -62,7 +113,6 @@ export const AdvancePayment = ({route}) => {
       userNgame: 'admin',
     },
   ];
-  const [showInfoPairs, setShowInfoPairs] = useState(true);
 
   const handleButtonClick = () => {
     setShowInfoPairs(!showInfoPairs); // Toggle visibility
@@ -113,21 +163,21 @@ export const AdvancePayment = ({route}) => {
           const transactionDetails = processData(parsedTransObj[3]);
           const poDetails = processData(parsedTransObj[2][0]);
 
+          setPaymentId(mainData[0]);
+
           console.log('Final mainData::', mainData);
           console.log('Final transactionDetails:', transactionDetails);
           console.log('Final poDetails:', poDetails);
 
-          setPaymentId(mainData[0]);
-
           const formattedData = {
             'Payment date': mainData[1],
-            'Payment Amount (INR)': poDetails[3],
+            'Actual Amount (INR)': mainData[6],
             'Actual Amount-Slab Tax Amount (INR)': poDetails[2],
-            'Actual Paid After Adjustment': mainData[6],
             'TT Ref No': transactionDetails[3],
-            'Party Name': mainData[3],
+            'Favor of': mainData[3],
             'TT Date': mainData[1],
-            'TT Amt (INR)': mainData[6],
+            // 'TT Amt (INR)': poDetails[2],
+            'Cheque Amt (USD)': mainData[6],
           };
 
           setPairsData([formattedData]);
@@ -140,10 +190,163 @@ export const AdvancePayment = ({route}) => {
     }
   };
 
+  //   Bills selected to Pay api
+  const fetchBillsPayTable = async () => {
+    const headers = [
+      'Bill No',
+      'Bill Date',
+      'Party Bill No',
+      'Party Name',
+      'Bill Value',
+      'Discount',
+      'Charges Amt',
+      'Adjustment Amt',
+      'Total Bill Amt',
+      'Debit Amt',
+      'Passed Amt',
+      'Payable Amt',
+      'Actual Amt',
+      'Already Paid',
+      'TDS Amount',
+      'Remaining Balance',
+      'Currency',
+      'Due Date',
+      'Bill Status',
+    ];
+
+    try {
+      const response = await axios.get(
+        `http://192.168.0.169:8084/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+      );
+
+      // Check if the response has the expected data
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const apiResponse = response.data;
+
+        console.log('apiResponse::', apiResponse);
+
+        // Process the API response for all rows
+        const result = apiResponse.map(innerArray => {
+          // Filter the row to exclude specific indices
+          const filteredRow = innerArray.filter(
+            (_, index) =>
+              index !== 0 && index !== 14 && index !== innerArray.length - 1,
+          );
+
+          // Map the filtered row to the headers
+          return headers.reduce((acc, header, index) => {
+            acc[header] = filteredRow[index] || 0.0; // Assign null if there is no corresponding value
+            return acc;
+          }, {});
+        });
+
+        console.log('Bills table::', result);
+
+        // Update the state with the processed data
+        setBillsPay(result);
+      } else {
+        console.error('Invalid response data', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching payment details:', error);
+    }
+  };
+
+  //   Selected Table to exclude
+  const fetchExcludeTable = async () => {
+    const headers = [
+      'Bill No',
+      'Tax Name',
+      'Rate',
+      'Tax Amount',
+      'TDS Amount',
+      'Paid Tax Amt',
+      'Remaining Tax Amt',
+      'Inclusive Tax',
+      'Apply TDS',
+    ];
+    try {
+      const response = await axios.get(
+        `http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=2633`,
+      );
+
+      // Check if the response has the expected data
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const apiResponse = response.data;
+
+        // Remove first and last elements from the array
+        console.log('apiResponse exclude::', apiResponse); // You can now use 'result' to display or process the data
+        const result = apiResponse.map(innerArray => {
+          // Filter the row to exclude specific indices
+          const filteredRow = innerArray.filter(
+            (_, index) =>
+              index !== 0 && index !== 8 && index !== 9 && index !== 10,
+          );
+
+          // Map the filtered row to the headers
+          return headers.reduce((acc, header, index) => {
+            acc[header] = filteredRow[index] || 0.0; // Assign null if there is no corresponding value
+            return acc;
+          }, {});
+        });
+
+        console.log('exclude Bills table one::', result); // You can now use 'result' to display or process the data
+        setExcluseTblTwo(result);
+      } else {
+        console.error('Invalid response data exclude', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching payment details:', error);
+    }
+  };
+  // Karthic Nov 27 2k24
+  const fetchTableData = async (apiUrl, headers, excludedIndexes, setData) => {
+    try {
+      const response = await axios.get(apiUrl);
+
+      // Validate the API response
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const apiResponse = response.data;
+
+        // Process the API response
+        const result = apiResponse.map(innerArray => {
+          const filteredRow = innerArray.filter(
+            (_, index) => !excludedIndexes.includes(index),
+          );
+
+          // Map the filtered row to the headers
+          return headers.reduce((acc, header, index) => {
+            acc[header] = filteredRow[index] || 0.0;
+            return acc;
+          }, {});
+        });
+
+        console.log('Processed Table Data:', result);
+        setData(result);
+      } else {
+        console.error('Invalid response data:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching table data:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TitleBar
-        text={`Add Advance Payment - ${paymentId}`}
+        text={`Add Payment - ${paymentId}`}
         showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
@@ -151,10 +354,7 @@ export const AdvancePayment = ({route}) => {
       />
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
-        <>
-          {console.log('dsfsfsf::', pairsData)}
-          <InfoPairs data={pairsData} />
-        </>
+        <InfoPairs data={pairsData} />
       ) : (
         <>
           <ScrollView style={styles.scrollContainer}>
@@ -175,12 +375,12 @@ export const AdvancePayment = ({route}) => {
               <Text style={commonStyles.disableButtonText}>Apply</Text>
             </View>
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={billsPay}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={'Bills Selected to Pay'}
             />
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={excluseTblTwo}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={'Selected Taxes to Exclude'}
             />

@@ -16,6 +16,7 @@ import AssetListDetails from './src/components/AssetListDetails/assetListDetails
 import AssetListImage from './src/components/AssetListImage/assetListImage';
 import ApprovalMainScreen from './src/components/Approval/ApprovalMainScreen';
 import {AdvancePayment} from './src/components/Approval/Payment/AdvancePayment';
+import {BillsPayment} from './src/components/Approval/Payment/BillsPayment';
 import AssetSkel from './src/components/AssetListDetails/AssetListDetailsSkeleton';
 import NetInfo from '@react-native-community/netinfo';
 import {sharedData} from './src/components/Login/UserId';
@@ -49,8 +50,8 @@ import QrScanner from './src/components/common-utils/QrScanner';
 import ComponentWithCropFreeIcon from './src/components/commonUtils/ComponentWithCropFreeIcon';
 import TestScreen from './src/components/common-utils/TestScreen';
 import IssueGroupMainScreen from './src/components/IssueGroup/IssueGroups';
-import paymentGroupsMain from './src/components/PaymentGroups/paymentGroupsMain';
-import paymentGroupsDetails from './src/components/PaymentGroups/paymentGroupsDetails';
+import PaymentGroupsMain from './src/components/Approval/PaymentGroups/paymentGroupsMain';
+import PaymentGroupsDetails from './src/components/Approval/PaymentGroups/paymentGroupsDetails';
 import Test from './src/components/common-utils/test';
 // import IssueGroups from './src/components/common-utils/IssueGroups';
 import IssueGroups from './src/components/IssueGroup/IssueGroups';
@@ -1203,8 +1204,8 @@ const App = () => {
                       // isLoggedIn ? 'AdvancePayment' : 'LoginScreen'
                       // 'TestScreen'
                       // 'AdvancePayment'
+                      // 'BillsPayment'
                       // 'ApprovalMainScreen'
-
                     }>
                     <Stack.Screen
                       name="HomeScreen"
@@ -1232,15 +1233,16 @@ const App = () => {
                       component={DocumentApproverMain}
                       options={{headerShown: false}}
                     />
-                    {/* <Stack.Screen
-                      name="paymentGroupsMain"
-                      component={paymentGroupsMain}
+                    <Stack.Screen
+                      name="PaymentGroupsMain"
+                      component={PaymentGroupsMain}
                       options={{headerShown: false}}
-                    /><Stack.Screen
-                      name="paymentGroupsDetails"
-                      component={paymentGroupsDetails}
+                    />
+                    <Stack.Screen
+                      name="PaymentGroupsDetails"
+                      component={PaymentGroupsDetails}
                       options={{headerShown: false}}
-                    /> */}
+                    />
                     {/* <Stack.Screen
                 name="AssetAuditDetails"
                 component={AssetAuditDetails}
@@ -1368,9 +1370,14 @@ const App = () => {
                       name="ApprovalMainScreen"
                       component={ApprovalMainScreen}
                       options={{headerShown: false}}
-                    /><Stack.Screen
+                    />
+                    <Stack.Screen
                       name="AdvancePayment"
                       component={AdvancePayment}
+                      options={{headerShown: false}}
+                    /><Stack.Screen
+                      name="BillsPayment"
+                      component={BillsPayment}
                       options={{headerShown: false}}
                     />
 

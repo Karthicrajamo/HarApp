@@ -17,9 +17,6 @@ import * as Keychain from 'react-native-keychain';
 import {sharedData} from '../../Login/UserId';
 import CustomButton from '../../common-utils/CustomButton';
 import {CustomThemeColors} from '../../CustomThemeColors';
-import RNFetchBlob from 'rn-fetch-blob';
-import RNFS from 'react-native-fs';
-import CustomModal from '../../common-utils/modal';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -41,8 +38,6 @@ const PaymentGroupsMain = ({route}) => {
   const [paymentSubData, setPaymentSubData] = useState([]);
   console.log('paymentSubData>>>', paymentSubData);
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedPaymentType, setSelectedPaymentType] = useState('');
 
   useEffect(() => {
     fetchPaymentMainData();
@@ -135,177 +130,6 @@ const PaymentGroupsMain = ({route}) => {
     }
   };
 
-  //----------------------------------- Need to Work has 5 Payment ---------------------------------------------------------------------------
-  // PrintPaymentdGroupPDF
-  const PrintGroupPdf = async () => {
-    let apiurl = ``;
-    let requestbody = '';
-
-    // if (selectedDataPaymentType == 'Advance Payment') {
-    apiurl = `${API_URL}/api/issueGroup/PaymentIssueGroupDetailedPDF`;
-    requestbody = JSON.stringify({
-      jcmb_OrderBy: selectedPaymentType,
-      numberFm: '.90',
-      user: sharedData.userName,
-      group_id: [groupId],
-      sst_groupTable: [],
-      payDetailData: [],
-      HMGroupDetails: {},
-    });
-
-    console.log('url>>>', apiurl, '---', 'requestbody>>>', requestbody);
-    const fileName = await PrintDetailedPaymentPDF(apiurl, requestbody);
-    console.log('filename group>>>>>>>', fileName);
-    // downloadPdfFile(fileName);
-    if (fileName) {
-      downloadAndViewPdf(fileName);
-    }
-  };
-
-  // PDF Print Data
-  const PrintDetailedPaymentPDF = async (apiurl, requestbody) => {
-    try {
-      setIsLoading(true);
-
-      // Retrieve token for authorization
-      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
-      if (!credentials) {
-        throw new Error('Authorization credentials not found.');
-      }
-      const token = credentials.password;
-      console.log('Token with Bearer printPdf:', token);
-
-      // Make the request to get the PDF as blob data
-      const response = await fetch(
-        // `${API_URL}/api/issueGroup/paysheetprintdetailedpdf_Group`,
-        apiurl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${token}`,
-          },
-          body: requestbody,
-        },
-      );
-
-      console.log('response for tax apyment pdf', response);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      // Parse the response as blob data
-      const blobData = await response.json();
-      console.log('blob data', blobData);
-      const fileNameWithExtention = blobData[1];
-      console.log('Extracted filename:', fileNameWithExtention);
-      // Create a URL for the blob object to allow downloading or preview
-      const fileName = fileNameWithExtention.trim().replace(/\.pdf$/, ''); // Removes the .pdf extension
-      console.log('Filename without extension:', fileName);
-
-      //     // Use RNFetchBlob to download the file
-      const {config, fs} = RNFetchBlob;
-      const downloadDir = fs.dirs.DownloadDir; // Save to download directory
-      console.log('downloadDir', downloadDir);
-
-      console.log('Starting download from:', blobData);
-      const folderPath = `${downloadDir}/HarnessERP/`;
-      const folderExists = await RNFS.exists(folderPath);
-      if (!folderExists) {
-        await RNFS.mkdir(folderPath); // Create the directory if it doesn't exist
-        console.log('Folder created: ', folderPath);
-      }
-
-      downloadAndViewPdf(fileName);
-    } catch (error) {
-      console.error(
-        'Error fetching and downloading the file detailed tax:',
-        error,
-      );
-    } finally {
-      setIsDownloadLoading(false);
-      setDownloadProgress(0); // Reset progress when done
-    }
-  };
-
-  const [isDownloadLoading, setIsDownloadLoading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0); // To store the progress percentage
-
-  const downloadAndViewPdf = async fileName => {
-    const fileNamePrefix = 'app_paygrp';
-    try {
-      setIsLoading(true);
-      setIsDownloadLoading(true);
-      setDownloadProgress(0); // Reset progress before starting
-
-      // Fetch token (ensure that token exists and is valid)
-      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
-      if (!credentials) {
-        throw new Error('No credentials found');
-      }
-
-      const token = credentials.password;
-      const url = `${API_URL}/api/issueGroup/downloadFile/${fileName}`; // API URL
-
-      // Use RNFetchBlob to download the file
-      const {config, fs} = RNFetchBlob;
-      const downloadDir = fs.dirs.DownloadDir; // Save to download directory
-
-      console.log('Starting download from:', url);
-
-      const folderPath = `${downloadDir}/HarnessERP`;
-      const folderExists = await RNFS.exists(folderPath);
-      if (!folderExists) {
-        await RNFS.mkdir(folderPath); // Create the directory if it doesn't exist
-        console.log('Folder created: ', folderPath);
-      }
-
-      const filePath = `${downloadDir}/HarnessERP/${fileNamePrefix}${fileName}.pdf`;
-      const response = await RNFetchBlob.config({
-        fileCache: false, // Disable caching to force re-download every time
-        appendExt: 'pdf', // Use pdf extension
-        path: filePath, // Save with proper file name
-      })
-        .fetch('GET', url, {
-          Authorization: `${token}`,
-          'Content-Type': 'application/octet-stream', // Ensure binary stream
-        })
-        .progress((received, total) => {
-          // Log received bytes and total bytes
-          console.log(`Received: ${received}, Total: ${total}`);
-
-          if (total > 0) {
-            // Calculate and update download progress
-            let progressPercent = Math.floor((received / total) * 100);
-            setDownloadProgress(progressPercent);
-            console.log('Download progress:', progressPercent, '%');
-          }
-        });
-
-      const statusCode = response.info().status;
-
-      if (statusCode === 200) {
-        // const filePath = response.path(); // Get file path after download
-        // console.log('File downloaded successfully to:', filePath);
-
-        // Optionally open the file after download (Android only)
-        RNFetchBlob.android.actionViewIntent(filePath, 'application/pdf');
-        setIsLoading(false);
-      } else {
-        setIsLoading(false);
-        console.error('Error: File download failed with status', statusCode);
-      }
-    } catch (error) {
-      setIsLoading(false);
-      console.error('Error fetching and downloading the file:', error);
-    } finally {
-      setIsLoading(false);
-      setIsDownloadLoading(false);
-      setDownloadProgress(0); // Reset progress when done
-    }
-  };
-
   return (
     <>
       <TitleBar
@@ -322,7 +146,7 @@ const PaymentGroupsMain = ({route}) => {
       <Modal
         visible={PDFModalVisible}
         onRequestClose={() => setPDFModalVisible(false)}
-        transparent={true}>
+rrrrc        transparent={true}>
         <View style={styles.modalContainer}>
           <View
             style={{
@@ -347,21 +171,46 @@ const PaymentGroupsMain = ({route}) => {
               style={{flexDirection: 'row', justifyContent: 'space-around'}}>
               <TouchableOpacity
                 onPress={() => {
-                  setIsLoading(true);
-                  setPDFModalVisible(false);
-                  setSelectedPaymentType('Payment Id');
-                  PrintGroupPdf();
+                  // setIsPaymentGroupModal(true);
+                  if (mainTableSelectedIndex.length < 1) {
+                    setPDFModalVisible(false);
+                    Alert.alert(
+                      'Note',
+                      'Please select atleast one payment to print PDF',
+                    );
+                  } else {
+                    setIsLoading(true);
+                    setPDFModalVisible(false);
+
+                    // setSelectedPaymentType('');
+                    setSelectedPaymentType('Payment Id');
+                    // setSelectedPaymentType('');
+                    PrintGroupPdf();
+                  }
                 }}
+                // onPress={() => PrintGroupPdf()}
                 style={styles.pdfSubOption}>
                 <Text style={styles.subOptionText}>Payment Id</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
-                  setIsLoading(true);
-                  setPDFModalVisible(false);
-                  setSelectedPaymentType('Payment Mode');
-                  PrintGroupPdf();
+                  // setIsPaymentGroupModal(true);
+                  if (mainTableSelectedIndex.length < 1) {
+                    setPDFModalVisible(false);
+                    Alert.alert(
+                      'Note',
+                      'Please select atleast one payment to print PDF',
+                    );
+                  } else {
+                    setIsLoading(true);
+
+                    setPDFModalVisible(false);
+
+                    setSelectedPaymentType('Payment Mode');
+                    PrintGroupPdf();
+                  }
                 }}
+                // onPress={() => PrintGroupPdf()}
                 style={styles.pdfSubOption}>
                 <Text style={styles.subOptionText}>Payment Mode</Text>
               </TouchableOpacity>
@@ -371,12 +220,7 @@ const PaymentGroupsMain = ({route}) => {
                 setPDFModalVisible(false);
                 setIsLoading(false);
               }}>
-              <View
-                style={{
-                  alignContent: 'center',
-                  alignItems: 'center',
-                  height: 50,
-                }}>
+              <View style={{alignContent: 'center', alignItems: 'center'}}>
                 <CustomButton>Close</CustomButton>
               </View>
             </TouchableOpacity>
@@ -394,6 +238,7 @@ const PaymentGroupsMain = ({route}) => {
             <Text style={styles.bodyText}>{paymentMainData.PAYMENT_TYPE}</Text>
           </View>
         </View>
+
         {/* Second Container */}
         <View style={styles.box}>
           <View style={styles.row}>
@@ -409,6 +254,7 @@ const PaymentGroupsMain = ({route}) => {
             </Text>
           </View>
         </View>
+
         {/* Third Container */}
         <View style={styles.box}>
           <View style={styles.row}>
@@ -426,6 +272,7 @@ const PaymentGroupsMain = ({route}) => {
             <Text style={styles.bodyText}>{paymentMainData.STATUS}</Text>
           </View>
         </View>
+
         {/* New Container for Key-Value Pairs */}
         <View style={styles.middleContainer}>
           <View style={styles.keyValueRow}>
@@ -440,14 +287,12 @@ const PaymentGroupsMain = ({route}) => {
             <Text style={styles.keyText}>Remarks</Text>
             <Text style={styles.valueText}>{paymentMainData.REMARKS}</Text>
           </View>
-          {transName !== 'AddPaymentGroup' && (
-            <View style={styles.keyValueRow}>
-              <Text style={styles.keyText}>Reason For Modify</Text>
-              <Text style={styles.valueText}>
-                {paymentMainData.REASON_FOR_MOD_DEL}
-              </Text>
-            </View>
-          )}
+          <View style={styles.keyValueRow}>
+            <Text style={styles.keyText}>Reason For Modify</Text>
+            <Text style={styles.valueText}>
+              {paymentMainData.REASON_FOR_MOD_DEL}
+            </Text>
+          </View>
           <View style={styles.keyValueRow}>
             <Text style={styles.keyText}>Approver Remarks</Text>
             <TextInput
@@ -458,117 +303,80 @@ const PaymentGroupsMain = ({route}) => {
             />
           </View>
         </View>
+
         {/* Header */}
+
         {/* Content */}
         <Text style={styles.headerHeadText}>Paysheet Payment Details</Text>
-        <View style={{marginBottom: 20}}>
-          {paymentSubData.map(paymentData => (
-            <TouchableOpacity
-            style={{marginBottom:10}}
-              onPress={() =>
-                navigation.navigate('PaymentGroupsDetails', {
-                  transName: route.params.transName,
-                  paymentType: paymentMainData.PAYMENT_TYPE,
-                  groupId: paymentData[0],
-                })
-              }>
-              <View style={[styles.content]}>
-                <View style={styles.header}>
-                  <Text style={styles.headerText}>{paymentData[3]}</Text>
-                </View>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    padding: 10,
-                  }}>
-                  {/* Text Information Section */}
-                  <View>
-                    <View style={styles.line}>
-                      <Text style={styles.lineText}>
-                        ID: {paymentData[0]} | Date: {paymentData[1]} |
-                      </Text>
-                    </View>
-                    <View style={styles.line}>
-                      <Text style={styles.lineText}>
-                        {paymentData[4]} | {paymentData[15]}: {paymentData[8]} |
-                        Date: {paymentData[17]}
-                      </Text>
-                    </View>
-                    <View style={styles.line}>
-                      <Text style={styles.lineText}>
-                        Paid Value: {paymentData[12]} {paymentData[13]} | Fx
-                        rate: {paymentData[14]}
-                      </Text>
-                    </View>
-                    <View style={styles.line}>
-                      <Text style={styles.lineText}>
-                        {transName === 'AddPaymentGroup' &&
-                          `No of Employees: ${paymentData[2]} | `}
-                        {paymentData[6]} | {paymentData[5]}
-                      </Text>
-                    </View>
-                    <View style={styles.line}>
-                      <Text style={styles.lineText}>
-                        Narration: {paymentData[7]}
-                      </Text>
-                    </View>
+        {paymentSubData.map(paymentData => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('PaymentGroupsDetails', {
+                transName: route.params.transName,
+                paymentType: paymentMainData.PAYMENT_TYPE,
+                groupId: paymentData[0],
+              })
+            }>
+            <View style={[styles.content]}>
+              <View style={styles.header}>
+                <Text style={styles.headerText}>{paymentData[3]}</Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  padding: 10,
+                }}>
+                {/* Text Information Section */}
+                <View>
+                  <View style={styles.line}>
+                    <Text style={styles.lineText}>
+                      ID: {paymentData[0]} | Date: {paymentData[1]} |
+                    </Text>
                   </View>
+                  <View style={styles.line}>
+                    <Text style={styles.lineText}>
+                      {paymentData[4]} | {paymentData[15]}: {paymentData[8]} |
+                      Date: {paymentData[17]}
+                    </Text>
+                  </View>
+                  <View style={styles.line}>
+                    <Text style={styles.lineText}>
+                      Paid Value: {paymentData[12]} {paymentData[13]} | Fx rate:{' '}
+                      {paymentData[14]}
+                    </Text>
+                  </View>
+                  <View style={styles.line}>
+                    <Text style={styles.lineText}>
+                      No of Employees: {paymentData[2]} | {paymentData[6]} |{' '}
+                      {paymentData[5]}
+                    </Text>
+                  </View>
+                  <View style={styles.line}>
+                    <Text style={styles.lineText}>
+                      Narration: {paymentData[7]}
+                    </Text>
+                  </View>
+                </View>
 
-                  {/* Arrow & Amount Section */}
-                  <View style={styles.amountRow}>
-                    <MaterialIcons
-                      name="arrow-forward"
-                      size={24}
-                      color="#3788E5"
-                      style={styles.arrow}
-                    />
-                    <View style={styles.amountContainer}>
-                      <Text style={styles.amountText}>
-                        {paymentData[11]} {paymentData[9]}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => setIsModalVisible(!isModalVisible)}>
-                      <MaterialIcons
-                        name="menu"
-                        size={24}
-                        color="#3788E5"
-                        style={styles.DetailsMenu}
-                      />
-                    </TouchableOpacity>
+                {/* Arrow & Amount Section */}
+                <View style={styles.amountRow}>
+                  <MaterialIcons
+                    name="arrow-forward"
+                    size={24}
+                    color="#3788E5"
+                    style={styles.arrow}
+                  />
+                  <View style={styles.amountContainer}>
+                    <Text style={styles.amountText}>
+                      {paymentData[11]} {paymentData[9]}
+                    </Text>
                   </View>
                 </View>
               </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <CustomModal
-          isVisible={isModalVisible}
-          onClose={() => setIsModalVisible(!isModalVisible)}
-          title="Select an Option">
-          <TouchableOpacity
-            onPress={() => {
-              console.log('hiii');
-            }}
-            style={styles.option}>
-            <Text style={styles.optionText}>Print Payment PDF</Text>
+            </View>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              console.log('hiii');
-            }}
-            style={styles.option}>
-            <Text style={styles.optionText}>Print Detailed Payment PDF</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              console.log('hiii');
-            }}
-            style={styles.option}>
-            <Text style={styles.optionText}>Remove Payment</Text>
-          </TouchableOpacity>
-        </CustomModal>
+        ))}
       </ScrollView>
     </>
   );
@@ -690,10 +498,6 @@ const styles = StyleSheet.create({
   arrow: {
     marginRight: 10,
   },
-  DetailsMenu: {
-    marginRight: 10,
-    width: 6,
-  },
   amountContainer: {
     justifyContent: 'center',
   },
@@ -759,16 +563,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
   },
-  option: {
-    padding: 10,
-    backgroundColor: 'white',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 15,
-    marginBottom: 10,
-    color: 'black',
-  },
-  optionText: {color: 'black', fontWeight: 'bold'},
 });
 
 export default PaymentGroupsMain;

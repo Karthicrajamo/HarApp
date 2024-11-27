@@ -60,7 +60,6 @@ const ApprovalScreen = () => {
   );
   const [searchModalVisible, setSearchModalVisible] = useState(false);
 
-
   useEffect(() => {
     console.log('approval formattedStartDate::', formattedStartDate);
     fetchApprovalList();
@@ -133,43 +132,113 @@ const ApprovalScreen = () => {
     navigation.navigate('HomeScreen');
   };
 
-  const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.itemContainer}
-      onPress={() => console.log('Item pressed:', item)}>
-      <View style={styles.infoContainer}>
-        <View style={styles.row}>
-          <View style={commonStyles.flexRowNoPadd}>
+  const navigateToScreen = (transName, transId, status, identification) => {
+    return () => {
+      if (
+        transName === 'AddPaymentGroup' ||
+        transName === 'ModPaymentGroup' ||
+        transName === 'DelPaymentGroup'
+      ) {
+        navigation.navigate('PaymentGroupsMain', {
+          transName: transName,
+          transId: transId,
+          status: status,
+        });
+      } else if (transName === 'AddPayment') {
+        const firstWord = identification.trim().split(' ')[0];
+        if (firstWord === 'Adv') {
+          navigation.navigate('AdvancePayment', {
+            transName: transName,
+            transId: transId,
+            status: status,
+          });
+        } else if(firstWord === 'Bill'){
+          navigation.navigate('BillsPayment', {
+            transName: transName,
+            transId: transId,
+            status: status,
+          });
+        }
+      }
+    };
+    
+  };
 
-          <Text style={styles.transId}>{item.TRANS_ID} | </Text>
-          <Text style={styles.transName}>{item.TRANS_NAME}</Text>
+  const renderItem = ({item}) => {
+    let formattedIdentification = item.IDENTIFICATION;
+
+    // Debugging the original data
+    console.log('Original IDENTIFICATION:', formattedIdentification);
+
+    // Check if IDENTIFICATION matches the specific format
+    if (
+      formattedIdentification.startsWith('Payment Group Id=') &&
+      formattedIdentification.includes('Payment Type=') &&
+      formattedIdentification.includes('No of Payments=')
+    ) {
+      // Debugging condition match
+      console.log('Formatting IDENTIFICATION:', formattedIdentification);
+
+      // Reformat the string
+      formattedIdentification = formattedIdentification
+        .replace('Payment Group Id=', 'Group Id=') // Replace 'Payment Group Id=' with 'Group Id='
+        .replace('Payment Type=', '') // Remove 'Payment Type='
+        .replace('No of Payments=', '') // Remove 'No of Payments='
+        .replace(/\s*,\s*/g, ', ') // Normalize spaces around commas
+        .trim() // Trim any extra spaces
+        .replace(/,([^,]*)$/, ' $1 Payments'); // Add 'Payments' to the last number
+
+      // Debugging the transformed data
+      console.log('Transformed IDENTIFICATION:', formattedIdentification);
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.itemContainer}
+        onPress={navigateToScreen(
+          item.TRANS_NAME,
+          item.TRANS_ID,
+          item.STATUS,
+          item.IDENTIFICATION,
+        )}>
+        <View style={styles.infoContainer}>
+          <View style={styles.row}>
+            <View style={commonStyles.flexRowNoPadd}>
+              <Text style={styles.transId}>{item.TRANS_ID} | </Text>
+              <Text style={styles.transName}>{item.TRANS_NAME}</Text>
+            </View>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.paymentText}>{formattedIdentification}</Text>
+            {/* Use formatted string */}
+          </View>
+          <View style={styles.row}>
+            <Text style={[styles.paymentText, {marginRight: 3}]}>
+              No of levels: {item.NO_OF_LEVELS}
+            </Text>
+            <Text style={styles.paymentText}>
+              Current level: {item.CURRENT_LEVEL}
+            </Text>
           </View>
         </View>
-        <View style={styles.row}>
-          <Text style={styles.paymentText}>{item.IDENTIFICATION}</Text>
+        <View
+          style={{
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
+          {item.TRANS_NAME === 'AddPayment' && (
+            <Image
+              source={pdfPreviewImage}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          )}
         </View>
-        <View style={styles.row}>
-          <Text style={styles.paymentText}>
-            No of levels: {item.NO_OF_LEVELS}
-          </Text>
-          <Text style={styles.paymentText}>
-            Current level: {item.CURRENT_LEVEL}
-          </Text>
-        </View>
-      </View>
-      <View style={{flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-
-          <Text style={[styles.date,{marginBottom:10}]}>{item.ITIME}</Text>
-          {item.TRANS_NAME == "AddPayment" &&
-      <Image
-      source={pdfPreviewImage}
-      style={styles.image}
-      resizeMode="contain"
-      />
-    }
-        </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={{flex: 1}}>
@@ -180,17 +249,17 @@ const ApprovalScreen = () => {
         showRefreshIcon={true}
         onRefreshPress={handleRefresh}
         showSearchIcon={true}
-        onSearchPress={()=>setSearchModalVisible(true)}
+        onSearchPress={() => setSearchModalVisible(true)}
         showCloseIcon={true}
         onClose={handleHomeScreen}
       />
-      {searchModalVisible&&
-      <SearchComponent
-      onClose={setSearchModalVisible}
-      data={filteredApprovalData}
-      setFilteredDataApproval={setTempFilteredApprovalData}
-      />
-    }
+      {searchModalVisible && (
+        <SearchComponent
+          onClose={setSearchModalVisible}
+          data={filteredApprovalData}
+          setFilteredDataApproval={setTempFilteredApprovalData}
+        />
+      )}
       <View style={{alignItems: 'center'}}>
         <ApprovalDateFilter
           setFormattedStartDate={setFormattedStartDate}
