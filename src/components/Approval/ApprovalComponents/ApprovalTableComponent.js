@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import React, {useState} from 'react';
+import {View, Text, ScrollView, StyleSheet, Dimensions} from 'react-native';
+import {Checkbox} from 'react-native-paper';
 import commonStyles from './../ApprovalCommonStyles';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
-const ApprovalTableComponent = ({ tableData, highlightVal=[], heading='' }) => {
+const ApprovalTableComponent = ({
+  tableData,
+  highlightVal = [],
+  heading = '',
+}) => {
   // Sample Data
   const [data, setData] = useState(tableData);
 
@@ -25,8 +30,8 @@ const ApprovalTableComponent = ({ tableData, highlightVal=[], heading='' }) => {
   return (
     <View style={styles.container}>
       <Text style={commonStyles.heading}>{heading}</Text>
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={true} // Always show horizontal scroll indicator
         persistentScrollbar={true} // Make sure it always persists
       >
@@ -34,30 +39,55 @@ const ApprovalTableComponent = ({ tableData, highlightVal=[], heading='' }) => {
           {/* Header Row */}
           <View style={styles.headerRow}>
             {headers.map((header, index) => (
-              <Text
+              <View
                 key={index}
-                style={[styles.headerCell, { width: columnWidths[index] }]}>
-                {header}
-              </Text>
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  width: columnWidths[index],
+                }}>
+                <Text style={[styles.headerCell, {width: columnWidths[index]}]}>
+                  {header}
+                </Text>
+                {/* Render a disabled checkbox in the header if any value is true */}
+                {tableData.some(row => row[header] === true) && (
+                  <Checkbox
+                    status="checked"
+                    disabled={true}
+                    style={{marginLeft: 5}}
+                  />
+                )}
+              </View>
             ))}
           </View>
 
           {/* Data Rows */}
-          <ScrollView 
+          <ScrollView
             showsVerticalScrollIndicator={true} // Always show vertical scroll indicator
             persistentScrollbar={true} // Make sure it always persists
           >
             {tableData.map((row, rowIndex) => (
               <View key={rowIndex} style={styles.dataRow}>
                 {headers.map((header, colIndex) => (
-                  <Text
+                  <View
                     key={colIndex}
+                    style={{flexDirection: 'row', alignItems: 'center'}}>
+                    
+                    {/* Render a disabled checkbox if the value is true */}
+                    {row[header] === true ? (
+                      <Checkbox
+                        status="checked"
+                        disabled={true}
+                        style={{marginLeft: 5}} // Adjust margin as needed
+                      />
+                    ):<Text
                     style={[
                       getCellStyle(header),
-                      { width: columnWidths[colIndex] },
+                      {width: columnWidths[colIndex]},
                     ]}>
                     {row[header]}
-                  </Text>
+                  </Text>}
+                  </View>
                 ))}
               </View>
             ))}

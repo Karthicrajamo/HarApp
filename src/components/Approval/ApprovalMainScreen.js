@@ -102,11 +102,12 @@ const ApprovalScreen = () => {
 
       const filteredData = data.filter(item =>
         [
-          'AddPaymentGroup',
-          'ModPaymentGroup',
-          'DelPaymentGroup',
+          // 'AddPaymentGroup',
+          // 'ModPaymentGroup',
+          // 'DelPaymentGroup',
           'AddPayment',
-          'AddDocumentApproval',
+          'ModPayment',
+          // 'AddDocumentApproval',
         ].includes(item.TRANS_NAME),
       );
       console.log('Ap filteredData:::', filteredData);
@@ -144,7 +145,7 @@ const ApprovalScreen = () => {
           transId: transId,
           status: status,
         });
-      } else if (transName === 'AddPayment') {
+      } else if (transName === 'AddPayment' || 'ModPayment') {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
           navigation.navigate('AdvancePayment', {
@@ -228,7 +229,7 @@ const ApprovalScreen = () => {
             alignItems: 'center',
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
-          {item.TRANS_NAME === 'AddPayment' && (
+          {(item.TRANS_NAME === 'AddPayment' || 'ModPayment') && (
             <Image
               source={pdfPreviewImage}
               style={styles.image}

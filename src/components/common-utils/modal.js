@@ -41,13 +41,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    
   },
   modalContent: {
-    width: width * 0.9,
+    width: 'auto',
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 20,
+    padding: 40,
     alignItems: 'center',
+    margin:10
   },
   modalTitle: {
     fontSize: 18,

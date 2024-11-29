@@ -20,6 +20,14 @@ import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 import {API_URL} from '../../ApiUrl';
+import FetchValueAssignKeysAPI from '../ApprovalComponents/FetchValueAssignKeysAPI';
+import {DateFormatComma} from '../../common-utils/DateFormatComma';
+import {NumToWordsCon} from '../ApprovalComponents/NumToWordsCon';
+import {CustomThemeColors} from '../../CustomThemeColors';
+import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
+import {isTablet} from 'react-native-device-info';
+import LoadingIndicator from '../../commonUtils/LoadingIndicator';
+import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -32,19 +40,56 @@ export const BillsPayment = ({route}) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [paymentId, setPaymentId] = useState('');
+  const [accountNo, setAccountNo] = useState('');
+  const [refNO, setRefNO] = useState('');
+  const [mainData, setMainData] = useState([]);
+  const [transDetails, setTransDetails] = useState([]);
+  const [transValue, setTransValue] = useState([]);
 
   const [showInfoPairs, setShowInfoPairs] = useState(true);
   const [billsPay, setBillsPay] = useState([]);
   const [excluseTblTwo, setExcluseTblTwo] = useState([]);
+  const [slabTax, setSlabTax] = useState([]);
+  const [paidAdjustment, setPaidAdjustment] = useState([]);
+  const [advanceAdjustmentModal, setAdvanceAdjustmentModal] = useState([]);
+  const [supplierBankMain, setSupplierBankMain] = useState([]);
+  const [supplierBankAboveTab, setsupplierBankAboveTabAboveTab] = useState([]);
+  const [PDFModalVisible, setPDFModalVisible] = useState(false);
 
   useEffect(() => {
-    fetchAdvancePaymentDetails();
-    fetchBillsPayTable();
-    fetchExcludeTable();
+    console.log('isLoading:::', isLoading);
+  }, [isLoading]);useEffect(() => {
+    console.log('PDFModalVisible:::', PDFModalVisible);
+  }, [PDFModalVisible]);
 
+  useEffect(() => {
+    console.log('accountNo:::::', accountNo);
+    // Supplier Bank Above Table
+    FetchValueAssignKeysAPI(
+      `http://192.168.0.107:8100/rest/approval/getBillsBankDetails?accountNo=${accountNo}`,
+      [
+        'Bank A/c No',
+        'Account Holder Name',
+        'Account Type',
+        'Bank Name',
+        'State',
+        'Country',
+        'Available Balance',
+        'Effective Balance',
+        'Minimum Balance',
+        'Currency',
+      ],
+      [],
+      setsupplierBankAboveTabAboveTab,
+    );
+  }, [accountNo]);
+  useEffect(() => {
+    console.log('paymentId::', paymentId);
     //   Bills selected to Pay api
-    fetchTableData(
+    FetchValueAssignKeysAPI(
       `http://192.168.0.169:8084/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+      // `http://192.168.0.107:8100/rest/approval/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+
       [
         'Bill No',
         'Bill Date',
@@ -71,8 +116,8 @@ export const BillsPayment = ({route}) => {
     );
 
     //   Selected Table to exclude
-    fetchTableData(
-      'http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=2633',
+    FetchValueAssignKeysAPI(
+      `http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=${paymentId}`,
       [
         'Bill No',
         'Tax Name',
@@ -87,6 +132,88 @@ export const BillsPayment = ({route}) => {
       [0, 8, 9, 10],
       setExcluseTblTwo,
     );
+
+    //   Slab Taxes
+    FetchValueAssignKeysAPI(
+      '',
+      [
+        'Party Name',
+        'Party Type',
+        'Dept Name',
+        'Tax Name',
+        'Rate',
+        'Tax Amount',
+        'Already Paid',
+        'Slab',
+        'Bill Amount',
+        'ST Paid',
+        'Applied ST',
+      ],
+      [],
+      setSlabTax,
+    );
+
+    //Other Changes and Adjustments(without tax)
+    FetchValueAssignKeysAPI(
+      `http://192.168.0.107:8100/rest/approval/getPaidAdjustmentDetails?payment_id=${paymentId}`,
+      [
+        'Adjustment ID',
+        'Adjustment Name',
+        'Adjustment Type',
+        'Description',
+        'Amount',
+        'Remarks',
+      ],
+      [],
+      setPaidAdjustment,
+    );
+
+    // Advance adjustment Modal
+    FetchValueAssignKeysAPI(
+      ``,
+      [
+        'PO No',
+        'PO Status',
+        'PO Value',
+        'PO Currency',
+        'Advance Paid(INR)',
+        'Tax Paid',
+        'Advance %',
+        'Advance Adjusted(INR)',
+        'Remaining Advance(INR)',
+        'XRate',
+        'Remaining Adv(INR)',
+        'Adjust Advance(INR)',
+      ],
+      [],
+      setAdvanceAdjustmentModal,
+    );
+
+    // Select Supplier Bank
+    FetchValueAssignKeysAPI(
+      `http://192.168.0.107:8100/rest/approval/loadVectorwithContentsjson/`,
+      [
+        'Bank A/C No',
+        'Party Name',
+        'Account Holder Name',
+        'Bank Name',
+        'Branch Name',
+        'Country',
+        'Currency',
+        'Swift No',
+      ],
+      [],
+      setSupplierBankMain,
+      {
+        Query:
+          "select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='6528420:::63:::OTP' or bad.account_no='6528420:::63:::OTP' ) and bad.account_category='Party'",
+      },
+      'POST',
+    );
+  }, [paymentId]);
+
+  useEffect(() => {
+    fetchAdvancePaymentDetails();
   }, []);
 
   useEffect(() => {
@@ -95,6 +222,9 @@ export const BillsPayment = ({route}) => {
   // Function to toggle modal visibility
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
+  };
+  const toggleModalPDF = () => {
+    setPDFModalVisible(!PDFModalVisible);
   };
 
   const tableData = [
@@ -143,6 +273,7 @@ export const BillsPayment = ({route}) => {
       );
 
       const approvalDetailsRaw = response.data?.Approval_Details;
+      // console.log("approval Hole data::",response.data)
       if (approvalDetailsRaw) {
         const approvalDetails = JSON.parse(approvalDetailsRaw);
         const {transobj} = approvalDetails;
@@ -159,25 +290,41 @@ export const BillsPayment = ({route}) => {
             return [];
           };
 
-          const mainData = processData(parsedTransObj[1]);
+          const Main = processData(parsedTransObj[1]);
           const transactionDetails = processData(parsedTransObj[3]);
           const poDetails = processData(parsedTransObj[2][0]);
+          setMainData(Main);
+          setTransDetails(transactionDetails);
+          setTransValue(parsedTransObj);
+          setPaymentId(Main[0]);
+          setAccountNo(Main[8]);
+          setRefNO(transactionDetails[3].length < 5 ? 'Cheque' : 'TT');
 
-          setPaymentId(mainData[0]);
-
-          console.log('Final mainData::', mainData);
+          console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
-          console.log('Final poDetails:', poDetails);
+          console.log('Final poDetails:', parsedTransObj);
 
           const formattedData = {
-            'Payment date': mainData[1],
-            'Actual Amount (INR)': mainData[6],
-            'Actual Amount-Slab Tax Amount (INR)': poDetails[2],
-            'TT Ref No': transactionDetails[3],
-            'Favor of': mainData[3],
-            'TT Date': mainData[1],
-            // 'TT Amt (INR)': poDetails[2],
-            'Cheque Amt (USD)': mainData[6],
+            'Payment date': DateFormatComma(Main[1]),
+            [`Actual Amount (${Main[9]})`]: Main[18],
+            'TDS Amount (TK)': 0,
+            ...(transactionDetails[3].length < 5
+              ? {
+                  [`Actual Amount-Slab Tax Amount (${Main[9]})`]: poDetails[2],
+                  'Cheque Ref No': transactionDetails[3],
+                  'Favor of': Main[3],
+                  'Cheque Date': DateFormatComma(Main[1]),
+                  // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
+                  [`Cheque Amt (${Main[9]})`]: Main[6],
+                }
+              : {
+                  [`Actual Amount-Slab Tax Amount (${Main[9]})`]: Main[18],
+                  'TT Ref No': transactionDetails[3],
+                  'Favor of': Main[3],
+                  'TT Date': DateFormatComma(Main[1]),
+                  // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
+                  [`TT Amt (${Main[9]})`]: Main[6],
+                }),
           };
 
           setPairsData([formattedData]);
@@ -190,167 +337,52 @@ export const BillsPayment = ({route}) => {
     }
   };
 
-  //   Bills selected to Pay api
-  const fetchBillsPayTable = async () => {
-    const headers = [
-      'Bill No',
-      'Bill Date',
-      'Party Bill No',
-      'Party Name',
-      'Bill Value',
-      'Discount',
-      'Charges Amt',
-      'Adjustment Amt',
-      'Total Bill Amt',
-      'Debit Amt',
-      'Passed Amt',
-      'Payable Amt',
-      'Actual Amt',
-      'Already Paid',
-      'TDS Amount',
-      'Remaining Balance',
-      'Currency',
-      'Due Date',
-      'Bill Status',
-    ];
-
-    try {
-      const response = await axios.get(
-        `http://192.168.0.169:8084/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
-      );
-
-      // Check if the response has the expected data
-      if (
-        response.data &&
-        Array.isArray(response.data) &&
-        response.data.length > 0
-      ) {
-        const apiResponse = response.data;
-
-        console.log('apiResponse::', apiResponse);
-
-        // Process the API response for all rows
-        const result = apiResponse.map(innerArray => {
-          // Filter the row to exclude specific indices
-          const filteredRow = innerArray.filter(
-            (_, index) =>
-              index !== 0 && index !== 14 && index !== innerArray.length - 1,
-          );
-
-          // Map the filtered row to the headers
-          return headers.reduce((acc, header, index) => {
-            acc[header] = filteredRow[index] || 0.0; // Assign null if there is no corresponding value
-            return acc;
-          }, {});
-        });
-
-        console.log('Bills table::', result);
-
-        // Update the state with the processed data
-        setBillsPay(result);
-      } else {
-        console.error('Invalid response data', response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching payment details:', error);
-    }
-  };
-
-  //   Selected Table to exclude
-  const fetchExcludeTable = async () => {
-    const headers = [
-      'Bill No',
-      'Tax Name',
-      'Rate',
-      'Tax Amount',
-      'TDS Amount',
-      'Paid Tax Amt',
-      'Remaining Tax Amt',
-      'Inclusive Tax',
-      'Apply TDS',
-    ];
-    try {
-      const response = await axios.get(
-        `http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=2633`,
-      );
-
-      // Check if the response has the expected data
-      if (
-        response.data &&
-        Array.isArray(response.data) &&
-        response.data.length > 0
-      ) {
-        const apiResponse = response.data;
-
-        // Remove first and last elements from the array
-        console.log('apiResponse exclude::', apiResponse); // You can now use 'result' to display or process the data
-        const result = apiResponse.map(innerArray => {
-          // Filter the row to exclude specific indices
-          const filteredRow = innerArray.filter(
-            (_, index) =>
-              index !== 0 && index !== 8 && index !== 9 && index !== 10,
-          );
-
-          // Map the filtered row to the headers
-          return headers.reduce((acc, header, index) => {
-            acc[header] = filteredRow[index] || 0.0; // Assign null if there is no corresponding value
-            return acc;
-          }, {});
-        });
-
-        console.log('exclude Bills table one::', result); // You can now use 'result' to display or process the data
-        setExcluseTblTwo(result);
-      } else {
-        console.error('Invalid response data exclude', response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching payment details:', error);
-    }
-  };
   // Karthic Nov 27 2k24
-  const fetchTableData = async (apiUrl, headers, excludedIndexes, setData) => {
-    try {
-      const response = await axios.get(apiUrl);
+  //   const fetchTableData = async (apiUrl, headers, excludedIndexes, setData) => {
+  //     try {
+  //       const response = await axios.get(apiUrl);
 
-      // Validate the API response
-      if (
-        response.data &&
-        Array.isArray(response.data) &&
-        response.data.length > 0
-      ) {
-        const apiResponse = response.data;
+  //       // Validate the API response
+  //       if (
+  //         response.data &&
+  //         Array.isArray(response.data) &&
+  //         response.data.length > 0
+  //       ) {
+  //         const apiResponse = response.data;
 
-        // Process the API response
-        const result = apiResponse.map(innerArray => {
-          const filteredRow = innerArray.filter(
-            (_, index) => !excludedIndexes.includes(index),
-          );
+  //         // Process the API response
+  //         const result = apiResponse.map(innerArray => {
+  //           const filteredRow = innerArray.filter(
+  //             (_, index) => !excludedIndexes.includes(index),
+  //           );
 
-          // Map the filtered row to the headers
-          return headers.reduce((acc, header, index) => {
-            acc[header] = filteredRow[index] || 0.0;
-            return acc;
-          }, {});
-        });
+  //           // Map the filtered row to the headers
+  //           return headers.reduce((acc, header, index) => {
+  //             acc[header] = filteredRow[index] || 0.0;
+  //             return acc;
+  //           }, {});
+  //         });
 
-        console.log('Processed Table Data:', result);
-        setData(result);
-      } else {
-        console.error('Invalid response data:', response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching table data:', error);
-    }
-  };
+  //         console.log('Processed Table Data:', result);
+  //         setData(result);
+  //       } else {
+  //         console.error('Invalid response data:', response.data);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching table data:', error);
+  //     }
+  //   };
 
   return (
     <View style={styles.container}>
       <TitleBar
-        text={`Add Payment - ${paymentId}`}
+        text={`${transName} - ${paymentId}`}
         showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
         onClose={() => navigation.navigate('ApprovalMainScreen')}
+        showFileIcon={true}
+        onFilePress={() => setPDFModalVisible(!PDFModalVisible)}
       />
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
@@ -360,14 +392,16 @@ export const BillsPayment = ({route}) => {
           <ScrollView style={styles.scrollContainer}>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Payment Date</Text>
-              <Text style={commonStyles.oneLineValue}>20 Nov 2024</Text>
+              <Text style={commonStyles.oneLineValue}>
+                {DateFormatComma(mainData[1])}
+              </Text>
             </View>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Bill Amount%</Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="2"
+                value={mainData[5] !== undefined ? mainData[5].toString() : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -376,21 +410,21 @@ export const BillsPayment = ({route}) => {
             </View>
             <ApprovalTableComponent
               tableData={billsPay}
-              highlightVal={['lastMessageSentBy', 'userName']}
+              highlightVal={['Payable Amt']}
               heading={'Bills Selected to Pay'}
             />
             <ApprovalTableComponent
               tableData={excluseTblTwo}
-              highlightVal={['lastMessageSentBy', 'userName']}
+              highlightVal={['TDS Amount']}
               heading={'Selected Taxes to Exclude'}
             />
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={slabTax}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={'Application Slab Taxes(TK Currency)'}
             />
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={paidAdjustment}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={'Other changes & Adjustments(Without Tax)'}
             />
@@ -428,7 +462,9 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={
+                  mainData[18] !== undefined ? mainData[18].toString() : ''
+                }
                 editable={false} // Disables input
               />
             </View>
@@ -439,7 +475,9 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={
+                  mainData[18] !== undefined ? mainData[18].toString() : ''
+                }
                 editable={false} // Disables input
               />
             </View>
@@ -451,7 +489,11 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={
+                  refNO == 'Cheque'
+                    ? mainData[18].toString()
+                    : mainData[6].toString()
+                }
                 editable={false} // Disables input
               />
             </View>
@@ -460,7 +502,11 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="Cheque"
+                value={
+                  transDetails[2] !== undefined
+                    ? transDetails[2].toString()
+                    : ''
+                }
                 editable={false} // Disables input
               />
             </View>
@@ -469,7 +515,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="2465-2564-8794"
+                value={mainData[2] ? mainData[2].toString() : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -478,26 +524,39 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value=""
+                value={
+                  transName !== 'ModPayment' ? mainData[16].toString() : ''
+                }
                 editable={false} // Disables input
               />
             </View>
-            <View style={commonStyles.checkBoxContainer}>
-              <Checkbox
-                status="unchecked" // Set the checkbox to checked
-                onPress={() => {}}
-                disabled={true} // Disables the checkbox
-              />
-              <Text style={commonStyles.label}>A/C Payee</Text>
-            </View>
+            {(transValue[3][0] == 'Y' || 'N') && (
+              <View style={commonStyles.checkBoxContainer}>
+                <Checkbox
+                  status={
+                    transValue[3].AC_Payee == 'Y' ? 'checked' : 'unchecked'
+                  } // Set the checkbox to checked
+                  onPress={() => {}}
+                  disabled={false} // Disables the checkbox
+                />
+                <Text style={commonStyles.label}>A/C Payee</Text>
+              </View>
+            )}
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Select Account</Text>
             </View>
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={supplierBankAboveTab}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={''}
             />
+            {refNO !== 'Cheque' && (
+              <ApprovalTableComponent
+                tableData={supplierBankMain}
+                highlightVal={['lastMessageSentBy', 'userName']}
+                heading={'Select Supplier Bank'}
+              />
+            )}
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Fx Rate</Text>
             </View>
@@ -507,7 +566,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.inputNoBox]}
                 placeholder="" // Placeholder text
-                value="19.5"
+                value={mainData[11] ? mainData[11].toString() : ''}
                 editable={false} // Disables input
               />
               <Text style={commonStyles.heading}>INR</Text>
@@ -518,7 +577,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="19.5"
+                value={mainData[18] ? mainData[18].toString() : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -526,37 +585,90 @@ export const BillsPayment = ({route}) => {
               <Text style={commonStyles.disableButtonText}>Calculate</Text>
             </View>
 
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>
-                Cheque No <Text style={commonStyles.redAsterisk}>*</Text>
-              </Text>
-              <Text style={commonStyles.oneLineValue}>5604</Text>
-            </View>
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>
-                Favor of <Text style={commonStyles.redAsterisk}>*</Text>
-              </Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
-            </View>
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>Cheque Date</Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
-            </View>
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>Cheque Amt (USD)</Text>
-              <TextInput
-                style={[commonStyles.oneLineValue, commonStyles.input]}
-                placeholder="" // Placeholder text
-                value="19.5"
-                editable={false} // Disables input
-              />
-            </View>
+            {/* ---------------------------- Varies for data --------------------- */}
+            {refNO !== 'Cheque' ? (
+              <View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>
+                    TT Ref No <Text style={commonStyles.redAsterisk}>*</Text>
+                  </Text>
+                  <TextInput
+                    style={[commonStyles.oneLineValue, commonStyles.input]}
+                    placeholder="" // Placeholder text
+                    value={transDetails[3].toString()}
+                    editable={true} // Disables input
+                  />
+                </View>
+
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>TT Date</Text>
+                  <Text style={commonStyles.oneLineValue}>
+                    {DateFormatComma(mainData[1])}
+                  </Text>
+                </View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>
+                    TT Amt ({mainData[9]})
+                  </Text>
+                  <TextInput
+                    style={[commonStyles.oneLineValue, commonStyles.input]}
+                    placeholder="" // Placeholder text
+                    value={mainData[6].toString()}
+                    editable={true} // Disables input
+                  />
+                </View>
+              </View>
+            ) : (
+              <View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>
+                    Cheque No <Text style={commonStyles.redAsterisk}>*</Text>
+                  </Text>
+                  <Text style={commonStyles.oneLineValue}>
+                    {transDetails[3]}
+                  </Text>
+                </View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>
+                    Favor of <Text style={commonStyles.redAsterisk}>*</Text>
+                  </Text>
+                  <Text style={commonStyles.oneLineValue}>{mainData[3]}</Text>
+                </View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>Cheque Date</Text>
+                  <Text style={commonStyles.oneLineValue}>
+                    {DateFormatComma(mainData[1])}
+                  </Text>
+                </View>
+                <View style={commonStyles.flexRow}>
+                  <Text style={commonStyles.oneLineKey}>
+                    Cheque Amt ({mainData[9]})
+                  </Text>
+                  <TextInput
+                    style={[commonStyles.oneLineValue, commonStyles.input]}
+                    placeholder="" // Placeholder text
+                    value={mainData[6].toString()}
+                    editable={false} // Disables input
+                  />
+                </View>
+              </View>
+            )}
+
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Amount in words</Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
+              <Text style={commonStyles.oneLineValue}>
+                {NumToWordsCon(mainData[6], mainData[9])}
+                {/* {mainData[9] == 'INR' ? 'Paisa Only' : 'Cents Only'} */}
+              </Text>
             </View>
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Narration</Text>
+              <TextInput
+                style={[commonStyles.oneLineValue, commonStyles.input]}
+                placeholder="" // Placeholder text
+                value={transValue[3].COMMENTS}
+                editable={false} // Disables input
+              />
             </View>
           </ScrollView>
 
@@ -565,15 +677,83 @@ export const BillsPayment = ({route}) => {
             onClose={toggleModal}
             title="Advance Adjustments">
             {/* Children Content */}
-            <Text style={styles.modalBody}>Party Name: accessories</Text>
-            <Text style={styles.modalBody}>Payment Amount: 1500 INR</Text>
+            <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
+            <Text style={styles.modalBody}>
+              Payment Amount: {mainData[18]} ({mainData[9]})
+            </Text>
             <View style={{height: 200}}>
               <ApprovalTableComponent
-                tableData={tableData}
+                tableData={advanceAdjustmentModal}
                 heading={'Advance Details'}
               />
             </View>
           </CustomModal>
+          <CustomModal
+            isVisible={PDFModalVisible}
+            onClose={toggleModalPDF}
+            title="Advance Adjustments">
+            {/* Children Content */}
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  setIsLoading(true); // Set loading to true before starting the operation
+                  setPDFModalVisible(false); // Close the modal
+
+                  const requestUrl = `${API_URL}/api/approval/paymentGroup/billspay_printPdf`;
+
+                  const requestBody = {
+                    tranObject: transValue,
+                    trans_id: transId,
+                  };
+
+                  // Convert requestBody to a JSON string
+                  const requestBodyString = JSON.stringify(requestBody);
+                  console.log('requestBody::', requestBodyString);
+
+                  // Await the execution of BlobFetchComponent
+                  await BlobFetchComponent(requestUrl, requestBodyString);
+                } catch (error) {
+                  console.error('Error executing BlobFetchComponent:', error);
+                } finally {
+                  // Set loading to false after the operation completes, regardless of success or failure
+                  setIsLoading(false);
+                }
+              }}
+              style={styles.pdfSubOption}>
+              <Text style={styles.subOptionText}>Payment Id</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  setIsLoading(true); // Set loading state to true
+                  setPDFModalVisible(false); // Close the modal
+
+                  const requestUrl = `${API_URL}/api/approval/paymentGroup/billspay_printDetailedPdf`;
+                  const requestBody = {
+                    tranObject: transValue,
+                    trans_id: transId,
+                    company_id: 1,
+                  };
+
+                  // Convert requestBody to a JSON string
+                  const requestBodyString = JSON.stringify(requestBody);
+                  console.log('requestBody::', requestBodyString);
+
+                  // Await the execution of BlobFetchComponent
+                  await BlobFetchComponent(requestUrl, requestBodyString);
+                } catch (error) {
+                  console.error('Error executing BlobFetchComponent:', error);
+                } finally {
+                  // Ensure loading state is set to false after the operation
+                  setIsLoading(false);
+                }
+              }}
+              // onPress={() => PrintGroupPdf()}
+              style={styles.pdfSubOption}>
+              <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
+            </TouchableOpacity>
+          </CustomModal>
+          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
         </>
       )}
 
@@ -581,6 +761,13 @@ export const BillsPayment = ({route}) => {
       <View style={styles.buttonContainer}>
         <Button title="Click here for more info" onPress={handleButtonClick} />
       </View>
+      <View>
+            <ApproveRejectComponent
+                approveUrl="https://example.com/approve"
+                rejectUrl="https://example.com/reject"
+                params={{ id: 123 }}
+            />
+        </View>
     </View>
   );
 };
@@ -657,4 +844,17 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  pdfSubOption: {
+    width: isTablet ? 300 : 200,
+    padding: 10,
+    backgroundColor: 'white',
+    paddingHorizontal: 50,
+    borderColor: CustomThemeColors.primary,
+    borderWidth: 2,
+    borderRadius: 15,
+    marginBottom: 10,
+
+    color: 'black',
+  },
+  subOptionText: {color: 'black', fontWeight: '400', textAlign: 'center'},
 });
