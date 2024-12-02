@@ -27,7 +27,7 @@ export const NumToWordsCon = (amount, currency) => {
 };
 
 // Example Usage
-console.log(NumToWordsCon(190000, 'USD')); // Output: Dollars Nineteen only
-console.log(NumToWordsCon(19.5, 'USD')); // Output: Dollars Nineteen and Fifty Cents only
-console.log(NumToWordsCon(19000, 'INR')); // Output: Rupees Nineteen only
-console.log(NumToWordsCon(19.5, 'INR')); // Output: Rupees Nineteen and Fifty Paise only
+// console.log(NumToWordsCon(190000, 'USD')); // Output: Dollars Nineteen only
+// console.log(NumToWordsCon(19.5, 'USD')); // Output: Dollars Nineteen and Fifty Cents only
+// console.log(NumToWordsCon(19000, 'INR')); // Output: Rupees Nineteen only
+// console.log(NumToWordsCon(19.5, 'INR')); // Output: Rupees Nineteen and Fifty Paise only

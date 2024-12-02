@@ -8,7 +8,8 @@ const commonStyles = StyleSheet.create({
     flexDirection: 'row',
     padding: 15,
     alignItems: 'center',
-  }, flexRowNoPadd: {
+  },
+  flexRowNoPadd: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -77,7 +78,6 @@ const commonStyles = StyleSheet.create({
     borderColor: '#ddd', // Light border color for clarity
     marginTop: 5,
     width: 200,
-    
   },
   checkBoxContainer: {
     flexDirection: 'row',

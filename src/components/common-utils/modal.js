@@ -7,10 +7,18 @@ import {
   Text,
   Dimensions,
 } from 'react-native';
+import commonStyles from '../Approval/ApprovalCommonStyles';
 
 const {width} = Dimensions.get('window');
 
-const CustomModal = ({isVisible, onClose, children, title}) => {
+const CustomModal = ({
+  isVisible,
+  onClose,
+  children,
+  title,
+  subBtn = '',
+  subBtnAction,
+}) => {
   return (
     <Modal
       animationType="slide"
@@ -26,9 +34,24 @@ const CustomModal = ({isVisible, onClose, children, title}) => {
           <View style={styles.childrenContainer}>{children}</View>
 
           {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          {subBtn ? (
+            <View style={[commonStyles.flexRow]}>
+              <TouchableOpacity
+                style={[styles.closeButton, {marginHorizontal: 20}]}
+                onPress={subBtnAction}>
+                <Text style={styles.closeButtonText}>{subBtn}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.closeButton, {marginHorizontal: 20}]}
+                onPress={onClose}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -41,7 +64,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
-    
   },
   modalContent: {
     width: 'auto',
@@ -49,7 +71,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 40,
     alignItems: 'center',
-    margin:10
+    margin: 10,
   },
   modalTitle: {
     fontSize: 18,
@@ -75,7 +97,8 @@ const styles = StyleSheet.create({
 
 export default CustomModal;
 
-{/* <CustomModal
+{
+  /* <CustomModal
   isVisible={isModalVisible}
   onClose={toggleModal}
   title="Advance Adjustments">
@@ -84,4 +107,5 @@ export default CustomModal;
   <View style={{height: 200}}>
     <ApprovalTableComponent tableData={tableData} heading={'Advance Details'} />
   </View>
-</CustomModal>; */}
+</CustomModal>; */
+}

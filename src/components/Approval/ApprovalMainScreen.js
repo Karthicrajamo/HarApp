@@ -99,6 +99,7 @@ const ApprovalScreen = () => {
 
       const data = await response.json();
       setApprovalListData(data);
+      console.log("data:::::",data)
 
       const filteredData = data.filter(item =>
         [
@@ -133,7 +134,7 @@ const ApprovalScreen = () => {
     navigation.navigate('HomeScreen');
   };
 
-  const navigateToScreen = (transName, transId, status, identification) => {
+  const navigateToScreen = (transName, transId, status, identification,currentLevel) => {
     return () => {
       if (
         transName === 'AddPaymentGroup' ||
@@ -152,12 +153,14 @@ const ApprovalScreen = () => {
             transName: transName,
             transId: transId,
             status: status,
+            currentLevel:currentLevel
           });
         } else if(firstWord === 'Bill'){
           navigation.navigate('BillsPayment', {
             transName: transName,
             transId: transId,
             status: status,
+            currentLevel:currentLevel
           });
         }
       }
@@ -201,6 +204,7 @@ const ApprovalScreen = () => {
           item.TRANS_ID,
           item.STATUS,
           item.IDENTIFICATION,
+          item.CURRENT_LEVEL
         )}>
         <View style={styles.infoContainer}>
           <View style={styles.row}>

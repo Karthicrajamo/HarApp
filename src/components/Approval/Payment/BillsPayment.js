@@ -28,13 +28,14 @@ import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
 import {isTablet} from 'react-native-device-info';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
+import { ReqBodyConv } from './ReqBodyConv';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 // Karthic Nov 25
 export const BillsPayment = ({route}) => {
-  const {transName, transId, status} = route.params || {};
+  const {transName, transId, status,currentLevel} = route.params || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -55,12 +56,24 @@ export const BillsPayment = ({route}) => {
   const [supplierBankMain, setSupplierBankMain] = useState([]);
   const [supplierBankAboveTab, setsupplierBankAboveTabAboveTab] = useState([]);
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
+  const [approvalRejParams, setApprovalRejParams] = useState([]);
 
   useEffect(() => {
     console.log('isLoading:::', isLoading);
-  }, [isLoading]);useEffect(() => {
+  }, [isLoading]);
+  useEffect(() => {
     console.log('PDFModalVisible:::', PDFModalVisible);
   }, [PDFModalVisible]);
+
+  useEffect(() => {
+    console.log('transValue::', transValue);
+
+    const body = ReqBodyConv({transobj: transValue}, transId, currentLevel);
+    const bodyStringified = JSON.stringify(body._j);
+    setApprovalRejParams(bodyStringified);
+    console.log('body req::', bodyStringified); // Log immediately before updating the state
+
+  }, [transValue]);
 
   useEffect(() => {
     console.log('accountNo:::::', accountNo);
@@ -762,12 +775,12 @@ export const BillsPayment = ({route}) => {
         <Button title="Click here for more info" onPress={handleButtonClick} />
       </View>
       <View>
-            <ApproveRejectComponent
-                approveUrl="https://example.com/approve"
-                rejectUrl="https://example.com/reject"
-                params={{ id: 123 }}
-            />
-        </View>
+      <ApproveRejectComponent
+          approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
+          rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
+          params={approvalRejParams}
+        />
+      </View>
     </View>
   );
 };
