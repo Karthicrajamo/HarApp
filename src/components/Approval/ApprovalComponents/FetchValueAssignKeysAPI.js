@@ -60,14 +60,14 @@ const FetchValueAssignKeysAPI = async (
       console.log('Processed Table Data:', result);
       setData(result);
     } else {
-      console.error(`Invalid response data:`, apiUrl, response.data);
+      // console.error(`Invalid response data:`, apiUrl, response.data);
 
       const emptyResult = [{}];
       headers.forEach(header => {
         emptyResult[0][header] = '';
       });
 
-      console.log('Returning empty data due to invalid response:', emptyResult);
+      // console.log('Returning empty data due to invalid response:', emptyResult);
       setData(emptyResult);
     }
   } catch (error) {

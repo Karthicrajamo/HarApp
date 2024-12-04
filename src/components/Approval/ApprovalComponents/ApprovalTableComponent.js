@@ -71,7 +71,12 @@ const ApprovalTableComponent = ({
                 {headers.map((header, colIndex) => (
                   <View
                     key={colIndex}
-                    style={{flexDirection: 'row', alignItems: 'center'}}>
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center', // Center the checkbox
+                      width: columnWidths[colIndex], // Set the width
+                    }}>
                     {/* Render a disabled checkbox if the value is true */}
                     {row[header] === true || false ? (
                       <Checkbox
@@ -79,13 +84,13 @@ const ApprovalTableComponent = ({
                           row[header] === 'true' ? 'checked' : 'unchecked'
                         }
                         disabled={true}
-                        style={{marginLeft: 5}} // Adjust margin as needed
+                        style={{ alignItems: 'center' }} // Adjust margin as needed
                       />
                     ) : (
                       <Text
                         style={[
                           getCellStyle(header),
-                          {width: columnWidths[colIndex]},
+                          { width: columnWidths[colIndex] },
                         ]}>
                         {row[header]}
                       </Text>

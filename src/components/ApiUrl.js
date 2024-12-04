@@ -38,7 +38,7 @@
 // // const API_URL = 'http://103.44.98.58:8087';
 
 // export {API_URL};
-import { ENVIRONMENT } from '@env';
+import {ENVIRONMENT} from '@env';
 
 let API_URL = null;
 let CompanyName = null;
@@ -69,8 +69,8 @@ switch (ENVIRONMENT) {
     break;
 
   case 'Test':
-    API_URL = 'http://192.168.0.169:8084'; // Harish
-    // API_URL = 'http://192.168.0.107:8087'; // Corrected the IP address
+    // API_URL = 'http://192.168.0.169:8084'; // Harish
+    API_URL = 'http://192.168.0.107:8087'; // Corrected the IP address
     CompanyName = 'Jay Jay Mills (Bangladesh) Private Limited';
     logo = 'jjmills';
     pass = 'hdplqa';
@@ -84,7 +84,9 @@ switch (ENVIRONMENT) {
 
 // Ensure variables are properly assigned
 if (!API_URL || !CompanyName || !logo) {
-  console.error('Configuration error: Missing required values for the environment');
+  console.error(
+    'Configuration error: Missing required values for the environment',
+  );
 }
 
-export { API_URL, CompanyName, logo, pass };
+export {API_URL, CompanyName, logo, pass};

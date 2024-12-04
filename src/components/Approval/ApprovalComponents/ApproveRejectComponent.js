@@ -12,20 +12,23 @@ import {Text} from 'react-native';
 import {TextInput} from 'react-native';
 import CustomButton from '../../common-utils/CustomButton';
 import commonStyles from '../ApprovalCommonStyles';
+import {isTablet} from 'react-native-device-info';
+import {useNavigation} from '@react-navigation/native';
 
-const ApproveRejectComponent = ({approveUrl, rejectUrl, params}) => {
+const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
+  const navigation = useNavigation();
   const [isRejectPop, SetRejectPop] = useState(false);
   const [value, setValue] = useState('');
-  const [rejParams, setRejParams] = useState([]);
+  const [rejectParams, setRejectParams] = useState([]);
 
   const toggleModal = () => {
     SetRejectPop(!isRejectPop);
   };
 
   const updateMessage = newMessage => {
-    const bdData = JSON.parse(params);
+    const bdData = JSON.parse(rejParams);
     bdData.message = newMessage;
-    setRejParams(bdData);
+    setRejectParams(bdData);
     // console.log('Updated JSON:', params);
     // console.log('Updated JSON:', bdData.message);
     console.log('Updated JSON:', bdData);
@@ -42,14 +45,17 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params}) => {
       action === 'approve' ? 'Approve Successfully' : 'Reject Successfully';
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
-
+    console.log(
+      'rejUrl::',
+      action == 'approve' ? params : JSON.stringify(rejectParams),
+    );
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json', // Set the content type to JSON
         },
-        body: action == 'approve' ? params : rejParams, // Convert the body to a JSON string
+        body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
       });
       console.log('response ApRejCom::', response);
 
@@ -60,6 +66,7 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params}) => {
       } else {
         ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
       }
+      navigation.navigate('ApprovalMainScreen');
     } catch (error) {
       console.error('Error:', error);
       ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
@@ -68,17 +75,27 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params}) => {
 
   return (
     <View style={styles.container}>
-      <Button
+      <TouchableOpacity
+        onPress={() => handleAction('approve')}
+        style={{width: isTablet ? 200 : 100}}>
+        <CustomButton>Approve</CustomButton>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => SetRejectPop(true)}
+        style={{width: isTablet ? 200 : 100}}>
+        <CustomButton>Reject</CustomButton>
+      </TouchableOpacity>
+      {/* <Button
         title="Approve"
         onPress={() => handleAction('approve')}
         color={CustomThemeColors.primary}
-      />
-      <Button
+      /> */}
+      {/* <Button
         title="Reject"
         onPress={() => SetRejectPop(true)}
         // onPress={() => handleAction('reject')}
         color={CustomThemeColors.primary}
-      />
+      /> */}
       <CustomModal
         isVisible={isRejectPop}
         onClose={toggleModal}
@@ -108,7 +125,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    margin: 20,
+    marginBottom: 20,
   },
   modalBody: {
     marginBottom: 10,

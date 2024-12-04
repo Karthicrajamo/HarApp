@@ -28,14 +28,21 @@ import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
 import {isTablet} from 'react-native-device-info';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
-import { ReqBodyConv } from './ReqBodyConv';
+import {ReqBodyConv} from './ReqBodyConv';
+import {sharedData} from '../../Login/UserId';
+import CustomButton from '../../common-utils/CustomButton';
+import CurrencyConversion from '../ApprovalComponents/FXRate';
+import LoadContentsAPI from '../ApprovalComponents/LoadContentsAPI';
+import FinLoadContentsAPI from '../ApprovalComponents/FinLoadContentAPI';
+import {ReqBodyRejConv} from '../ApprovalComponents/ReqBodyRejConv';
+
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 // Karthic Nov 25
 export const BillsPayment = ({route}) => {
-  const {transName, transId, status,currentLevel} = route.params || {};
+  const {transName, transId, status, currentLevel} = route.params || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -43,6 +50,7 @@ export const BillsPayment = ({route}) => {
   const [paymentId, setPaymentId] = useState('');
   const [accountNo, setAccountNo] = useState('');
   const [refNO, setRefNO] = useState('');
+  const [currency, setCurrency] = useState('');
   const [mainData, setMainData] = useState([]);
   const [transDetails, setTransDetails] = useState([]);
   const [transValue, setTransValue] = useState([]);
@@ -56,30 +64,111 @@ export const BillsPayment = ({route}) => {
   const [supplierBankMain, setSupplierBankMain] = useState([]);
   const [supplierBankAboveTab, setsupplierBankAboveTabAboveTab] = useState([]);
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
-  const [approvalRejParams, setApprovalRejParams] = useState([]);
+  const [approvalParams, setApprovalParams] = useState([]);
+  const [rejParams, setRejParams] = useState([]);
+  const [fxRate, setFxRate] = useState('');
+  const [tDSCurrency, setTDSCurrency] = useState('');
+  const [calculatedTDS, setCalculatedTDS] = useState('');
+
+  useEffect(() => {
+    if (tDSCurrency.length > 0) {
+      console.log('currency tds::', tDSCurrency); // Logs the first element of the array
+      fetchBillPaymentDetails();
+    } else {
+      console.log('currency tds:: No currency available');
+    }
+  }, [tDSCurrency]);
+
+  useEffect(() => {
+    console.log('excluseTblTwo::', tDSCurrency);
+    const totalTdsAmount = excluseTblTwo.reduce(
+      (sum, item) => sum + Number(item['TDS Amount']),
+      0,
+    );
+    console.log('totalTdsAmount:', totalTdsAmount * fxRate);
+    const tds = totalTdsAmount * fxRate;
+    setCalculatedTDS(tds);
+
+    console.log('calculatedTDS:', calculatedTDS);
+
+    // pairsData[0][`TDS Amount (${tDSCurrency[0]})`] = tds;
+  }, [excluseTblTwo]);
+
+  useEffect(() => {
+    if (transValue.length > 9 && transValue[9].length > 0) {
+      const slabKeys = [
+        'Party Name',
+        'Party Type',
+        'Dept Name',
+        'Tax Name',
+        'Rate',
+        'Tax Amount',
+        'Already Paid',
+        'Slab',
+        'Bill Amount',
+        'ST Paid',
+        'Applied ST',
+      ];
+
+      const slabValues = transValue[9][0]; // Assuming transValue[9][0] is the array of values
+      const slabTaxObject = {};
+
+      // Dynamically map keys to values
+      slabKeys.forEach((key, index) => {
+        slabTaxObject[key] = slabValues[index];
+      });
+
+      console.log('Mapped Slab Tax:', slabTaxObject);
+      setSlabTax([slabTaxObject]); // Pass the mapped object to setSlabTax
+    }
+  }, [transValue]); // Re-run when transValue changes
+
+  useEffect(() => {
+    console.log('tDSCurrency:::', tDSCurrency);
+  }, [tDSCurrency]);
 
   useEffect(() => {
     console.log('isLoading:::', isLoading);
   }, [isLoading]);
+
+  useEffect(() => {
+    console.log('fxRate:::', fxRate);
+    console.log('tDSCurrency:::', tDSCurrency);
+  }, [fxRate]);
+
   useEffect(() => {
     console.log('PDFModalVisible:::', PDFModalVisible);
   }, [PDFModalVisible]);
 
   useEffect(() => {
     console.log('transValue::', transValue);
-
-    const body = ReqBodyConv({transobj: transValue}, transId, currentLevel);
-    const bodyStringified = JSON.stringify(body._j);
-    setApprovalRejParams(bodyStringified);
-    console.log('body req::', bodyStringified); // Log immediately before updating the state
-
+    const body = ReqBodyConv(
+      {transobj: transValue},
+      transId,
+      currentLevel,
+      transName,
+    );
+    const rejBody = ReqBodyRejConv(
+      transValue,
+      transId,
+      currentLevel,
+      transName,
+    );
+    const bodyApprovalStringified = JSON.stringify(body._j);
+    const bodyRejStringified = JSON.stringify(rejBody);
+    console.log('rejBodyJson::', JSON.stringify(rejBody));
+    console.log('rejBody::', rejBody);
+    setRejParams(bodyRejStringified);
+    setApprovalParams(bodyApprovalStringified);
+    console.log('body req::', bodyRejStringified); // Log immediately before updating the state
   }, [transValue]);
 
   useEffect(() => {
+    setIsLoading(true);
     console.log('accountNo:::::', accountNo);
     // Supplier Bank Above Table
     FetchValueAssignKeysAPI(
-      `http://192.168.0.107:8100/rest/approval/getBillsBankDetails?accountNo=${accountNo}`,
+      `${API_URL}/api/approval/payment/getBillsBankDetails?accountNo=${accountNo}`,
       [
         'Bank A/c No',
         'Account Holder Name',
@@ -95,12 +184,15 @@ export const BillsPayment = ({route}) => {
       [],
       setsupplierBankAboveTabAboveTab,
     );
+    setIsLoading(false);
   }, [accountNo]);
   useEffect(() => {
+    setIsLoading(true);
     console.log('paymentId::', paymentId);
     //   Bills selected to Pay api
     FetchValueAssignKeysAPI(
-      `http://192.168.0.169:8084/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+      `${API_URL}/api/approval/payment/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
+      // `${API_URL}/api/approval/paymentGroup/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
       // `http://192.168.0.107:8100/rest/approval/getPayDetails?payment_id=${paymentId}&dataFor=Approval`,
 
       [
@@ -130,7 +222,8 @@ export const BillsPayment = ({route}) => {
 
     //   Selected Table to exclude
     FetchValueAssignKeysAPI(
-      `http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=${paymentId}`,
+      `${API_URL}/api/approval/payment/getPaidTaxDetails1?payment_id=${paymentId}`,
+      // `http://192.168.0.107:8100/rest/approval/getPaidTaxDetails1?payment_id=${paymentId}`,
       [
         'Bill No',
         'Tax Name',
@@ -147,28 +240,31 @@ export const BillsPayment = ({route}) => {
     );
 
     //   Slab Taxes
-    FetchValueAssignKeysAPI(
-      '',
-      [
-        'Party Name',
-        'Party Type',
-        'Dept Name',
-        'Tax Name',
-        'Rate',
-        'Tax Amount',
-        'Already Paid',
-        'Slab',
-        'Bill Amount',
-        'ST Paid',
-        'Applied ST',
-      ],
-      [],
-      setSlabTax,
-    );
+    if (slabTax.length < 1) {
+      FetchValueAssignKeysAPI(
+        '',
+        [
+          'Party Name',
+          'Party Type',
+          'Dept Name',
+          'Tax Name',
+          'Rate',
+          'Tax Amount',
+          'Already Paid',
+          'Slab',
+          'Bill Amount',
+          'ST Paid',
+          'Applied ST',
+        ],
+        [],
+        setSlabTax,
+      );
+    }
 
     //Other Changes and Adjustments(without tax)
     FetchValueAssignKeysAPI(
-      `http://192.168.0.107:8100/rest/approval/getPaidAdjustmentDetails?payment_id=${paymentId}`,
+      `${API_URL}/api/approval/payment/getPaidAdjustmentDetails?payment_id=${paymentId}`,
+      // `http://192.168.0.107:8100/rest/approval/getPaidAdjustmentDetails?payment_id=${paymentId}`,
       [
         'Adjustment ID',
         'Adjustment Name',
@@ -204,7 +300,7 @@ export const BillsPayment = ({route}) => {
 
     // Select Supplier Bank
     FetchValueAssignKeysAPI(
-      `http://192.168.0.107:8100/rest/approval/loadVectorwithContentsjson/`,
+      `${API_URL}/api/common/loadVectorwithContentsjson/`,
       [
         'Bank A/C No',
         'Party Name',
@@ -223,10 +319,42 @@ export const BillsPayment = ({route}) => {
       },
       'POST',
     );
+    setIsLoading(false);
   }, [paymentId]);
 
   useEffect(() => {
-    fetchAdvancePaymentDetails();
+    const getTaxCurrency = async () => {
+      try {
+        // SQL query to get the TAX_CURRENCY
+        const taxCurrencyQuery = `select TAX_CURRENCY from financial_cycle where rownum = 1`;
+
+        const response = await fetch(
+          `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
+            taxCurrencyQuery,
+          )}`,
+        );
+        const taxCurrencyResult = await response.json();
+        console.log('Tax Currency Result bills page:', taxCurrencyResult);
+
+        if (taxCurrencyResult.length > 0) {
+          if (
+            Array.isArray(taxCurrencyResult) &&
+            taxCurrencyResult.length > 0
+          ) {
+            setTDSCurrency(taxCurrencyResult[0]); // Sets only the first element
+          } else {
+            setTDSCurrency(''); // Fallback in case the array is empty or not valid
+          }
+        } else {
+          console.error('Tax currency not found.');
+        }
+      } catch (error) {
+        console.error('Error fetching tax currency:', error);
+      }
+    };
+    getTaxCurrency();
+
+    // fetchBillPaymentDetails();
   }, []);
 
   useEffect(() => {
@@ -263,20 +391,20 @@ export const BillsPayment = ({route}) => {
 
   //   ------------------ API Requests --------------------- //Karthic Nov 26
 
-  const fetchAdvancePaymentDetails = async () => {
+  const fetchBillPaymentDetails = async () => {
     try {
       setIsLoading(true);
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials.password;
 
       const response = await axios.get(
-        `${API_URL}/api/approval/paymentGroup/getApprovalDetails`,
+        `${API_URL}/api/approval/payment/getApprovalDetails`,
         {
           params: {
             trans_id: transId,
-            user_id: 'admin',
+            user_id: sharedData.userName,
             status: 'initiated',
-            trans_name: 'AddPayment',
+            trans_name: transName,
           },
           headers: {
             'Content-Type': 'application/json',
@@ -316,14 +444,20 @@ export const BillsPayment = ({route}) => {
           console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
           console.log('Final poDetails:', parsedTransObj);
+          console.log(
+            'Final PARTY_CURRENCY:',
+            parsedTransObj[1].PARTY_CURRENCY,
+          );
+          setCurrency(parsedTransObj[1].PARTY_CURRENCY);
 
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
-            [`Actual Amount (${Main[9]})`]: Main[18],
-            'TDS Amount (TK)': 0,
+            [`Actual Amount (${parsedTransObj[1].PARTY_CURRENCY})`]: Main[18],
+            [`TDS Amount (${tDSCurrency})`]: 0,
             ...(transactionDetails[3].length < 5
               ? {
-                  [`Actual Amount-Slab Tax Amount (${Main[9]})`]: poDetails[2],
+                  [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+                    poDetails[2],
                   'Cheque Ref No': transactionDetails[3],
                   'Favor of': Main[3],
                   'Cheque Date': DateFormatComma(Main[1]),
@@ -331,7 +465,8 @@ export const BillsPayment = ({route}) => {
                   [`Cheque Amt (${Main[9]})`]: Main[6],
                 }
               : {
-                  [`Actual Amount-Slab Tax Amount (${Main[9]})`]: Main[18],
+                  [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+                    Main[18],
                   'TT Ref No': transactionDetails[3],
                   'Favor of': Main[3],
                   'TT Date': DateFormatComma(Main[1]),
@@ -351,45 +486,12 @@ export const BillsPayment = ({route}) => {
   };
 
   // Karthic Nov 27 2k24
-  //   const fetchTableData = async (apiUrl, headers, excludedIndexes, setData) => {
-  //     try {
-  //       const response = await axios.get(apiUrl);
-
-  //       // Validate the API response
-  //       if (
-  //         response.data &&
-  //         Array.isArray(response.data) &&
-  //         response.data.length > 0
-  //       ) {
-  //         const apiResponse = response.data;
-
-  //         // Process the API response
-  //         const result = apiResponse.map(innerArray => {
-  //           const filteredRow = innerArray.filter(
-  //             (_, index) => !excludedIndexes.includes(index),
-  //           );
-
-  //           // Map the filtered row to the headers
-  //           return headers.reduce((acc, header, index) => {
-  //             acc[header] = filteredRow[index] || 0.0;
-  //             return acc;
-  //           }, {});
-  //         });
-
-  //         console.log('Processed Table Data:', result);
-  //         setData(result);
-  //       } else {
-  //         console.error('Invalid response data:', response.data);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching table data:', error);
-  //     }
-  //   };
-
   return (
     <View style={styles.container}>
       <TitleBar
-        text={`${transName} - ${paymentId}`}
+        text={`${
+          transName === 'ModPayment' ? 'Modify Payment' : transName
+        } - ${paymentId}`}
         showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
@@ -397,9 +499,22 @@ export const BillsPayment = ({route}) => {
         showFileIcon={true}
         onFilePress={() => setPDFModalVisible(!PDFModalVisible)}
       />
+      <CurrencyConversion
+        BillCurrency={currency}
+        setFxRate={setFxRate}
+        // setTDSCurrency={setTDSCurrency}
+      />
+
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
-        <InfoPairs data={pairsData} />
+        <>
+        <InfoPairs
+          data={pairsData}
+          imp={['Cheque Ref No', 'LC Ref No', 'Favor of']}
+          valueChanger={{ [`TDS Amount (${tDSCurrency})`]: calculatedTDS }}
+        />
+        {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
+      </>
       ) : (
         <>
           <ScrollView style={styles.scrollContainer}>
@@ -434,7 +549,7 @@ export const BillsPayment = ({route}) => {
             <ApprovalTableComponent
               tableData={slabTax}
               highlightVal={['lastMessageSentBy', 'userName']}
-              heading={'Application Slab Taxes(TK Currency)'}
+              heading={`Application Slab Taxes(${tDSCurrency} Currency)`}
             />
             <ApprovalTableComponent
               tableData={paidAdjustment}
@@ -445,11 +560,13 @@ export const BillsPayment = ({route}) => {
               <Text style={commonStyles.disableButtonText}>Slab History</Text>
             </View>
             <View style={commonStyles.flexColumn}>
-              <Text style={commonStyles.oneLineKey}>TDS Amount(TK)</Text>
+              <Text style={commonStyles.oneLineKey}>
+                TDS Amount({tDSCurrency})
+              </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={calculatedTDS.toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -483,7 +600,7 @@ export const BillsPayment = ({route}) => {
             </View>
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
-                Actual Amount - Slab Tax Amount (INR)
+                Actual Amount - Slab Tax Amount ({transValue[1].PARTY_CURRENCY})
               </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
@@ -543,7 +660,8 @@ export const BillsPayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
-            {(transValue[3][0] == 'Y' || 'N') && (
+            {(transValue[3].AC_Payee == 'Y' ||
+              transValue[3].AC_Payee == 'N') && (
               <View style={commonStyles.checkBoxContainer}>
                 <Checkbox
                   status={
@@ -579,7 +697,8 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.inputNoBox]}
                 placeholder="" // Placeholder text
-                value={mainData[11] ? mainData[11].toString() : ''}
+                // value={mainData[11] ? mainData[11].toString() : ''}
+                value={Math.round(fxRate).toString()}
                 editable={false} // Disables input
               />
               <Text style={commonStyles.heading}>INR</Text>
@@ -681,7 +800,7 @@ export const BillsPayment = ({route}) => {
                 placeholder="" // Placeholder text
                 value={transValue[3].COMMENTS}
                 editable={false} // Disables input
-              />
+                />
             </View>
           </ScrollView>
 
@@ -712,7 +831,7 @@ export const BillsPayment = ({route}) => {
                   setIsLoading(true); // Set loading to true before starting the operation
                   setPDFModalVisible(false); // Close the modal
 
-                  const requestUrl = `${API_URL}/api/approval/paymentGroup/billspay_printPdf`;
+                  const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
 
                   const requestBody = {
                     tranObject: transValue,
@@ -741,7 +860,7 @@ export const BillsPayment = ({route}) => {
                   setIsLoading(true); // Set loading state to true
                   setPDFModalVisible(false); // Close the modal
 
-                  const requestUrl = `${API_URL}/api/approval/paymentGroup/billspay_printDetailedPdf`;
+                  const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
                   const requestBody = {
                     tranObject: transValue,
                     trans_id: transId,
@@ -766,19 +885,28 @@ export const BillsPayment = ({route}) => {
               <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
             </TouchableOpacity>
           </CustomModal>
-          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
         </>
       )}
 
       {/* Button to toggle visibility */}
       <View style={styles.buttonContainer}>
-        <Button title="Click here for more info" onPress={handleButtonClick} />
+        {/* <TouchableOpacity onPress={console.log("presssss3")} style={{width:'full'}}> */}
+        <CustomButton
+          color={'white'}
+          fontColor={'black'}
+          onPress={handleButtonClick} // Trigger handleButtonClick on press
+        >
+          Click here for {showInfoPairs ? 'more' : 'less'} info
+        </CustomButton>
+        {/* </TouchableOpacity> */}
+        {/* <Button title="Click here for more info" onPress={handleButtonClick} /> */}
       </View>
       <View>
-      <ApproveRejectComponent
-          approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
-          rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
-          params={approvalRejParams}
+        <ApproveRejectComponent
+          approveUrl={`${API_URL}/api/common/approveTransaction`}
+          rejectUrl={`${API_URL}/api/common/rejectTransaction`}
+          rejParams={rejParams}
+          params={approvalParams}
         />
       </View>
     </View>

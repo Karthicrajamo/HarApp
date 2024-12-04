@@ -26,6 +26,7 @@ import FetchValueAssignKeysAPIDoubleArray from '../ApprovalComponents/FetchValue
 import {ReqBodyConv} from './ReqBodyConv';
 import FetchValueAssignKeysAPIString from '../ApprovalComponents/FetchValueAssignKeysAPIString';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
+import {sharedData} from '../../Login/UserId';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -59,7 +60,12 @@ export const AdvancePayment = ({route}) => {
   useEffect(() => {
     const logMainData = async () => {
       console.log('transValue::', transValue);
-      const body = ReqBodyConv({ transobj: transValue }, transId, currentLevel,transName);
+      const body = ReqBodyConv(
+        {transobj: transValue},
+        transId,
+        currentLevel,
+        transName,
+      );
       const bodyStringified = JSON.stringify(body._j);
       setApprovalRejParams(bodyStringified);
       console.log('body req::', bodyStringified); // Log immediately before updating the state
@@ -74,6 +80,8 @@ export const AdvancePayment = ({route}) => {
     };
     fetchData();
   }, []);
+
+  useEffect(() => console.log('excludeTaxes::', excludeTaxes), [excludeTaxes]);
 
   useEffect(() => {
     const handleTransValueChange = async () => {
@@ -206,7 +214,6 @@ export const AdvancePayment = ({route}) => {
           },
           'POST',
         );
-
         // Slab Tax
         await FetchValueAssignKeysAPIString(
           ``,
@@ -308,9 +315,9 @@ export const AdvancePayment = ({route}) => {
         {
           params: {
             trans_id: transId,
-            user_id: 'admin',
+            user_id: sharedData.userName,
             status: 'initiated',
-            trans_name: 'AddPayment',
+            trans_name: transName,
           },
           headers: {
             'Content-Type': 'application/json',
@@ -411,7 +418,7 @@ export const AdvancePayment = ({route}) => {
               heading={'Additional Charges (Taxable)'}
             />
             <ApprovalTableComponent
-              tableData={excludeTaxes.filter((_, index) => index > 1)}
+              tableData={tableData}
               highlightVal={['']}
               heading={'Selected Taxes to Exclude'}
             />

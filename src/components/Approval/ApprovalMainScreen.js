@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {Image} from 'react-native-elements';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import TitleBar from '../common-utils/TitleBar';
 import {CustomThemeColors} from '../CustomThemeColors';
 import {API_URL} from '../ApiUrl';
@@ -19,6 +19,11 @@ import pdfPreviewImage from '../../images/pdfimage.jpg';
 import ApprovalDateFilter from './ApprovalDateFilter';
 import SearchComponent from './SearchComp';
 import commonStyles from './ApprovalCommonStyles';
+import CustomModal from '../common-utils/modal';
+import {isTablet} from 'react-native-device-info';
+import {sharedData} from '../Login/UserId';
+import {BlobFetchComponent} from '../common-utils/BlobFetchComponent';
+import axios from 'axios';
 
 const {width, height} = Dimensions.get('window');
 
@@ -28,6 +33,13 @@ const ApprovalScreen = () => {
   const [filteredApprovalData, setFilteredApprovalData] = useState([]);
   const [tempFilteredApprovalData, setTempFilteredApprovalData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [PDFModalVisible, setPDFModalVisible] = useState(false);
+  const [transValue, setTransValue] = useState([]);
+  const [itemValues, setItemValues] = useState([]);
+
+  const toggleModalPDF = () => {
+    setPDFModalVisible(!PDFModalVisible);
+  };
 
   const currentDate = new Date();
 
@@ -99,7 +111,7 @@ const ApprovalScreen = () => {
 
       const data = await response.json();
       setApprovalListData(data);
-      console.log("data:::::",data)
+      console.log('data:::::', data);
 
       const filteredData = data.filter(item =>
         [
@@ -121,9 +133,56 @@ const ApprovalScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchApprovalList();
-  }, []);
+  const fetchPaymentDetails = async (transId, transName) => {
+    try {
+      setIsLoading(true);
+      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+      const token = credentials.password;
+
+      const response = await axios.get(
+        `${API_URL}/api/approval/paymentGroup/getApprovalDetails`,
+        {
+          params: {
+            trans_id: transId,
+            user_id: sharedData.userName,
+            status: 'initiated',
+            trans_name: transName,
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            //   Authorization: `${token}`,
+          },
+        },
+      );
+
+      const approvalDetailsRaw = response.data?.Approval_Details;
+      // console.log("approval Hole data::",response.data)
+      if (approvalDetailsRaw) {
+        const approvalDetails = JSON.parse(approvalDetailsRaw);
+        const {transobj} = approvalDetails;
+
+        if (typeof transobj === 'string') {
+          const parsedTransObj = JSON.parse(transobj);
+          setTransValue(parsedTransObj);
+          console.log('parsedTransObj ApMain::', parsedTransObj);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching approval details:', error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // useEffect(() => {
+  //   fetchApprovalList();
+  // }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Navigated back to ComponentA');
+      fetchApprovalList();
+    }, []),
+  );
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -134,7 +193,13 @@ const ApprovalScreen = () => {
     navigation.navigate('HomeScreen');
   };
 
-  const navigateToScreen = (transName, transId, status, identification,currentLevel) => {
+  const navigateToScreen = (
+    transName,
+    transId,
+    status,
+    identification,
+    currentLevel,
+  ) => {
     return () => {
       if (
         transName === 'AddPaymentGroup' ||
@@ -153,19 +218,18 @@ const ApprovalScreen = () => {
             transName: transName,
             transId: transId,
             status: status,
-            currentLevel:currentLevel
+            currentLevel: currentLevel,
           });
-        } else if(firstWord === 'Bill'){
+        } else if (firstWord === 'Bill') {
           navigation.navigate('BillsPayment', {
             transName: transName,
             transId: transId,
             status: status,
-            currentLevel:currentLevel
+            currentLevel: currentLevel,
           });
         }
       }
     };
-    
   };
 
   const renderItem = ({item}) => {
@@ -204,7 +268,7 @@ const ApprovalScreen = () => {
           item.TRANS_ID,
           item.STATUS,
           item.IDENTIFICATION,
-          item.CURRENT_LEVEL
+          item.CURRENT_LEVEL,
         )}>
         <View style={styles.infoContainer}>
           <View style={styles.row}>
@@ -234,11 +298,18 @@ const ApprovalScreen = () => {
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
           {(item.TRANS_NAME === 'AddPayment' || 'ModPayment') && (
-            <Image
-              source={pdfPreviewImage}
-              style={styles.image}
-              resizeMode="contain"
-            />
+            <TouchableOpacity
+              onPress={() => {
+                setPDFModalVisible(true);
+                fetchPaymentDetails(item.TRANS_ID, item.TRANS_NAME);
+                setItemValues(item);
+              }}>
+              <Image
+                source={pdfPreviewImage}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           )}
         </View>
       </TouchableOpacity>
@@ -284,6 +355,71 @@ const ApprovalScreen = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
+      <CustomModal
+        isVisible={PDFModalVisible}
+        onClose={toggleModalPDF}
+        title="Advance Adjustments">
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsLoading(true); // Set loading to true before starting the operation
+              setPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
+              console.log('transvalue ApMain::', itemValues);
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: itemValues.TRANS_ID,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Payment Id</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsLoading(true); // Set loading state to true
+              setPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: itemValues.TRANS_ID,
+                company_id: 1,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Ensure loading state is set to false after the operation
+              setIsLoading(false);
+            }
+          }}
+          // onPress={() => PrintGroupPdf()}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
+        </TouchableOpacity>
+      </CustomModal>
     </View>
   );
 };
@@ -344,6 +480,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  pdfSubOption: {
+    width: isTablet ? 300 : 200,
+    padding: 10,
+    backgroundColor: 'white',
+    paddingHorizontal: 50,
+    borderColor: CustomThemeColors.primary,
+    borderWidth: 2,
+    borderRadius: 15,
+    marginBottom: 10,
+
+    color: 'black',
+  },
+  subOptionText: {color: 'black', fontWeight: '400', textAlign: 'center'},
 });
 
 export default ApprovalScreen;

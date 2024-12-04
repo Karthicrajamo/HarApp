@@ -1,28 +1,46 @@
-import {useEffect, useState} from 'react';
-import {Dimensions, Text, View, StyleSheet} from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Text, View, StyleSheet } from 'react-native';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isMobile = width < 768;
 
-const InfoPairs = ({data}) => {
+const InfoPairs = ({ data, imp = [], valueChanger = {} }) => {
   const [keys, setKeys] = useState([]);
+  const [processedData, setProcessedData] = useState([]);
 
   useEffect(() => {
     if (data.length > 0) {
+      console.log('dataa::', data);
       // Extract keys dynamically when data updates
       const extractedKeys = Object.keys(data[0]);
       setKeys(extractedKeys);
+
+      // Process data to handle valueChanger overrides
+      const updatedData = data.map(item => {
+        const updatedItem = { ...item };
+        for (const key in valueChanger) {
+          if (updatedItem.hasOwnProperty(key)) {
+            updatedItem[key] = valueChanger[key]; // Update value based on valueChanger
+          }
+        }
+        return updatedItem;
+      });
+
+      setProcessedData(updatedData);
     }
-  }, [data]); // Update keys whenever `data` changes
+  }, [data, valueChanger]); // Update keys and processed data whenever `data` or `valueChanger` changes
 
   return (
     <View style={styles.container}>
       <View style={styles.middleContainer}>
-        {data.map((item, index) => (
+        {processedData.map((item, index) => (
           <View style={styles.keyValueRow} key={index}>
             {keys.map(key => (
               <View style={styles.keyValueItem} key={key}>
-                <Text style={styles.keyText}>{key.toUpperCase()}:</Text>
+                <Text style={styles.keyText}>
+                  {key}
+                  {imp.includes(key) && <Text style={styles.asterisk}> *</Text>}
+                </Text>
                 <Text style={styles.valueText}>{item[key]}</Text>
               </View>
             ))}
@@ -47,7 +65,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
@@ -60,17 +78,22 @@ const styles = StyleSheet.create({
   keyValueItem: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginBottom: 5,
+    marginBottom: isMobile ? 5 : 14,
   },
   keyText: {
-    fontSize: isMobile ? 12 : 14,
+    fontSize: isMobile ? 12 : 16,
     fontWeight: '500',
     color: 'black',
     flex: 1,
     textAlign: 'left',
   },
+  asterisk: {
+    fontSize: isMobile ? 12 : 16,
+    color: 'red',
+    fontWeight: 'bold',
+  },
   valueText: {
-    fontSize: isMobile ? 12 : 14,
+    fontSize: isMobile ? 12 : 16,
     color: '#3788E5',
     flex: 1,
     textAlign: 'left',
