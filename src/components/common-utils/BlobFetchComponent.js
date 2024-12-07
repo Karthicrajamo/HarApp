@@ -84,7 +84,7 @@ const downloadAndViewPdf = async fileName => {
 
       const filePath = `${downloadDir}/HarnessERP/${fileNamePrefix}${fileName}.pdf`;
       const response = await RNFetchBlob.config({
-        fileCache: false, // Disable caching to force re-download every time
+        fileCache: true, // Disable caching to force re-download every time
         appendExt: 'pdf', // Use pdf extension
         path: filePath, // Save with proper file name
       })

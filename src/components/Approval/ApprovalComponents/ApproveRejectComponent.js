@@ -5,6 +5,7 @@ import {
   ToastAndroid,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import {CustomThemeColors} from '../../CustomThemeColors';
 import CustomModal from '../../common-utils/modal';
@@ -17,12 +18,21 @@ import {useNavigation} from '@react-navigation/native';
 
 const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
   const navigation = useNavigation();
-  const [isRejectPop, SetRejectPop] = useState(false);
+  const [isRejectPop, setRejectPop] = useState(false);
   const [value, setValue] = useState('');
   const [rejectParams, setRejectParams] = useState([]);
 
+  useEffect(() => {
+    console.log('reject update', Array.isArray(rejectParams));
+    if(Array.isArray(rejectParams) == false){
+      handleAction('reject');
+
+    }
+  }, [rejectParams]);
+  // console.log('rejUrl::', action == 'approve' ? params : rejectParams);
+  
   const toggleModal = () => {
-    SetRejectPop(!isRejectPop);
+    setRejectPop(!isRejectPop);
   };
 
   const updateMessage = newMessage => {
@@ -38,6 +48,25 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
     console.log('textvalue::', value), [value];
   });
 
+  const confirmApproval = action => {
+    Alert.alert(
+      'Confirmation',
+      'Are you sure you want to approve this?',
+      [
+        {
+          text: 'cancel',
+          onPress: () => console.log('approval cancelled'),
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => handleAction(action),
+        },
+      ],
+      {cancelable: false},
+    );
+  };
+
   const handleAction = async action => {
     console.log('params ApRejComp::', params);
     const url = action === 'approve' ? approveUrl : rejectUrl;
@@ -47,7 +76,7 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log(
       'rejUrl::',
-      action == 'approve' ? params : JSON.stringify(rejectParams),
+      JSON.stringify(rejectParams),
     );
     try {
       const response = await fetch(url, {
@@ -76,14 +105,14 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        onPress={() => handleAction('approve')}
-        style={{width: isTablet ? 200 : 100}}>
-        <CustomButton>Approve</CustomButton>
+        style={[styles.button, styles.approveButton]}
+        onPress={() => confirmApproval('approve')}>
+        <Text style={[styles.buttonText, {color: 'white'}]}>Approve</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        onPress={() => SetRejectPop(true)}
-        style={{width: isTablet ? 200 : 100}}>
-        <CustomButton>Reject</CustomButton>
+        style={[styles.button, styles.rejectButton]}
+        onPress={() => {setRejectPop(true);console.log('pressed;;;')}}>
+        <Text style={[styles.buttonText, {color: 'white'}]}>Reject</Text>
       </TouchableOpacity>
       {/* <Button
         title="Approve"
@@ -92,7 +121,7 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
       /> */}
       {/* <Button
         title="Reject"
-        onPress={() => SetRejectPop(true)}
+        onPress={() => setRejectPop(true)}
         // onPress={() => handleAction('reject')}
         color={CustomThemeColors.primary}
       /> */}
@@ -104,10 +133,10 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
         // subBtnAction={() => console.log('Response:')}>
         subBtnAction={() => {
           updateMessage(value);
-          handleAction('reject');
+          // handleAction('reject');
           toggleModal();
         }}>
-        {/* Children Content */}
+        {/* {/ Children Content /} */}
         <Text style={styles.modalBody}>Please Enter the reason to Reject</Text>
         <TextInput
           placeholder="Reason" // Placeholder text
@@ -150,6 +179,30 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  button: {
+    marginHorizontal: 5,
+    paddingVertical: 5,
+    borderRadius: 15,
+    alignItems: 'center',
+    width: 100,
+  },
+  approveButton: {
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: CustomThemeColors.primary,
+    backgroundColor: CustomThemeColors.primary,
+  },
+  rejectButton: {
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: CustomThemeColors.primary,
+    backgroundColor: CustomThemeColors.primary,
+  },
+  buttonText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

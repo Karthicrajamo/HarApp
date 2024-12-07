@@ -28,15 +28,11 @@ import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
 import {isTablet} from 'react-native-device-info';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
-import {ReqBodyConv} from './ReqBodyConv';
+import {ReqBodyConv} from './BillsComp/ReqBodyConv';
 import {sharedData} from '../../Login/UserId';
 import CustomButton from '../../common-utils/CustomButton';
 import CurrencyConversion from '../ApprovalComponents/FXRate';
-import LoadContentsAPI from '../ApprovalComponents/LoadContentsAPI';
-import FinLoadContentsAPI from '../ApprovalComponents/FinLoadContentAPI';
-import {ReqBodyRejConv} from '../ApprovalComponents/ReqBodyRejConv';
-
-
+import {ReqBodyRejConv} from './BillsComp/ReqBodyRejConv';
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
@@ -69,6 +65,7 @@ export const BillsPayment = ({route}) => {
   const [fxRate, setFxRate] = useState('');
   const [tDSCurrency, setTDSCurrency] = useState('');
   const [calculatedTDS, setCalculatedTDS] = useState('');
+  const [numToWords, setNumToWords] = useState('');
 
   useEffect(() => {
     if (tDSCurrency.length > 0) {
@@ -474,6 +471,8 @@ export const BillsPayment = ({route}) => {
                   [`TT Amt (${Main[9]})`]: Main[6],
                 }),
           };
+          const numResult = await NumToWordsCon(Main[6], Main[9]);
+          setNumToWords(numResult);
 
           setPairsData([formattedData]);
         }
@@ -508,15 +507,16 @@ export const BillsPayment = ({route}) => {
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
         <>
-        <InfoPairs
-          data={pairsData}
-          imp={['Cheque Ref No', 'LC Ref No', 'Favor of']}
-          valueChanger={{ [`TDS Amount (${tDSCurrency})`]: calculatedTDS }}
-        />
-        {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
-      </>
+          <InfoPairs
+            data={pairsData}
+            imp={['Cheque Ref No', 'LC Ref No', 'Favor of']}
+            valueChanger={{[`TDS Amount (${tDSCurrency})`]: calculatedTDS}}
+          />
+          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
+        </>
       ) : (
         <>
+          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
           <ScrollView style={styles.scrollContainer}>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Payment Date</Text>
@@ -789,8 +789,7 @@ export const BillsPayment = ({route}) => {
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Amount in words</Text>
               <Text style={commonStyles.oneLineValue}>
-                {NumToWordsCon(mainData[6], mainData[9])}
-                {/* {mainData[9] == 'INR' ? 'Paisa Only' : 'Cents Only'} */}
+                {numToWords || 'Loading...'}{' '}
               </Text>
             </View>
             <View style={commonStyles.flexColumn}>
@@ -800,93 +799,92 @@ export const BillsPayment = ({route}) => {
                 placeholder="" // Placeholder text
                 value={transValue[3].COMMENTS}
                 editable={false} // Disables input
-                />
-            </View>
-          </ScrollView>
-
-          <CustomModal
-            isVisible={isModalVisible}
-            onClose={toggleModal}
-            title="Advance Adjustments">
-            {/* Children Content */}
-            <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
-            <Text style={styles.modalBody}>
-              Payment Amount: {mainData[18]} ({mainData[9]})
-            </Text>
-            <View style={{height: 200}}>
-              <ApprovalTableComponent
-                tableData={advanceAdjustmentModal}
-                heading={'Advance Details'}
               />
             </View>
-          </CustomModal>
-          <CustomModal
-            isVisible={PDFModalVisible}
-            onClose={toggleModalPDF}
-            title="Advance Adjustments">
-            {/* Children Content */}
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  setIsLoading(true); // Set loading to true before starting the operation
-                  setPDFModalVisible(false); // Close the modal
-
-                  const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
-
-                  const requestBody = {
-                    tranObject: transValue,
-                    trans_id: transId,
-                  };
-
-                  // Convert requestBody to a JSON string
-                  const requestBodyString = JSON.stringify(requestBody);
-                  console.log('requestBody::', requestBodyString);
-
-                  // Await the execution of BlobFetchComponent
-                  await BlobFetchComponent(requestUrl, requestBodyString);
-                } catch (error) {
-                  console.error('Error executing BlobFetchComponent:', error);
-                } finally {
-                  // Set loading to false after the operation completes, regardless of success or failure
-                  setIsLoading(false);
-                }
-              }}
-              style={styles.pdfSubOption}>
-              <Text style={styles.subOptionText}>Payment Id</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  setIsLoading(true); // Set loading state to true
-                  setPDFModalVisible(false); // Close the modal
-
-                  const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
-                  const requestBody = {
-                    tranObject: transValue,
-                    trans_id: transId,
-                    company_id: 1,
-                  };
-
-                  // Convert requestBody to a JSON string
-                  const requestBodyString = JSON.stringify(requestBody);
-                  console.log('requestBody::', requestBodyString);
-
-                  // Await the execution of BlobFetchComponent
-                  await BlobFetchComponent(requestUrl, requestBodyString);
-                } catch (error) {
-                  console.error('Error executing BlobFetchComponent:', error);
-                } finally {
-                  // Ensure loading state is set to false after the operation
-                  setIsLoading(false);
-                }
-              }}
-              // onPress={() => PrintGroupPdf()}
-              style={styles.pdfSubOption}>
-              <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
-            </TouchableOpacity>
-          </CustomModal>
+          </ScrollView>
         </>
       )}
+      <CustomModal
+        isVisible={isModalVisible}
+        onClose={toggleModal}
+        title="Advance Adjustments">
+        {/* Children Content */}
+        <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
+        <Text style={styles.modalBody}>
+          Payment Amount: {mainData[18]} ({mainData[9]})
+        </Text>
+        <View style={{height: 200}}>
+          <ApprovalTableComponent
+            tableData={advanceAdjustmentModal}
+            heading={'Advance Details'}
+          />
+        </View>
+      </CustomModal>
+      <CustomModal
+        isVisible={PDFModalVisible}
+        onClose={toggleModalPDF}
+        title="Advance Adjustments">
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsLoading(true); // Set loading to true before starting the operation
+              setPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
+
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: transId,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Payment Id</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsLoading(true); // Set loading state to true
+              setPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: transId,
+                company_id: 1,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Ensure loading state is set to false after the operation
+              setIsLoading(false);
+            }
+          }}
+          // onPress={() => PrintGroupPdf()}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
+        </TouchableOpacity>
+      </CustomModal>
 
       {/* Button to toggle visibility */}
       <View style={styles.buttonContainer}>

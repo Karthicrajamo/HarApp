@@ -11,22 +11,25 @@ export const ReqBodyRejConv = (
   // }
 
   // Log the input array and relevant details
-  console.log('inputArray:', JSON.stringify(inputArray));
-  const BnkAcNo = inputArray[1]?.ACCOUNT_NO || 'N/A'; // Use optional chaining to prevent errors
+  const inpArray = [...inputArray];
+  inpArray.push(null)
+
+  console.log('inputArray:', JSON.stringify(inpArray));
+  const BnkAcNo = inpArray[1]?.ACCOUNT_NO || 'N/A'; // Use optional chaining to prevent errors
   let paymentId = 0; // Initialize paymentId with a default value
 
-  if (inputArray[2] && inputArray[2][0]) {
-    console.log('Payment ID:', inputArray[2][0].PAYMENT_ID);
-    paymentId = inputArray[2][0].PAYMENT_ID; // Assign the value if it exists
+  if (inpArray[2] && inpArray[2][0]) {
+    console.log('Payment ID:', inpArray[2][0].PAYMENT_ID);
+    paymentId = inpArray[2][0].PAYMENT_ID; // Assign the value if it exists
   } else {
     console.log('Payment ID not found');
   }
 
-  const tranObjectData = inputArray;
-  const paymentDetails = inputArray[2] || {};
-  const additionalInfo = inputArray[3] || {};
-  const miscDetails = inputArray[7] || {};
-  const taxInfo = inputArray[9] || [];
+  const tranObjectData = inpArray;
+  const paymentDetails = inpArray[2] || {};
+  const additionalInfo = inpArray[3] || {};
+  const miscDetails = inpArray[7] || {};
+  const taxInfo = inpArray[9] || [];
 
   console.log('Bank Account Number:', BnkAcNo);
 
@@ -35,7 +38,7 @@ export const ReqBodyRejConv = (
     app_id: 3,
     trans_id: transId,
     bankAccNo: BnkAcNo,
-    tranObject: inputArray,
+    tranObject: inpArray,
     chqStatus: '',
     payment_id: paymentId,
     user_id: 'admin',

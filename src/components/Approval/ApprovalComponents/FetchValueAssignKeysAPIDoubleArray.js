@@ -6,13 +6,13 @@ import axios from 'axios';
  * @param {Array<string>} headers - Array of headers to map the data to.
  * @param {Array<number>} excludedIndexes - Array of indexes to exclude from the data.
  * @param {Function} setData - Callback function to set the processed data.
- * @param {Object} [params] - Optional parameters for the API request.
+ * @param {Object} [params={}] - Optional parameters for the API request.
  * @param {string} [method='GET'] - HTTP method for the request ('GET' or 'POST').
  */
 const FetchValueAssignKeysAPIDoubleArray = async (
   apiUrl,
   headers,
-  excludedIndexes,
+  excludedIndexes = [],
   setData,
   params = {},
   method = 'GET',
@@ -21,88 +21,86 @@ const FetchValueAssignKeysAPIDoubleArray = async (
   if (!apiUrl || apiUrl.trim() === '') {
     const emptyResult = [{}];
     headers.forEach(header => {
-      emptyResult[0][header] = ''; // Set value as empty for each header
+      emptyResult[0][header] = ''; // Set empty values for headers
     });
-
-    console.log('Empty API response, returning empty data:', emptyResult);
+    console.warn('Empty API URL, returning empty data:', emptyResult);
     setData(emptyResult);
     return;
   }
 
   try {
-    // Choose GET or POST request based on the method
+    // Perform GET or POST request based on the method
+    console.log('API params:', params);
     const response =
       method.toUpperCase() === 'POST'
-        ? await axios.post(apiUrl, params) // POST request with body
-        : await axios.get(apiUrl, {params}); // GET request with query params
+        ? await axios.post(apiUrl, params) // POST request
+        : await axios.get(apiUrl, {params}); // GET request
 
-    // Validate and process the API response
-    
-    if (
-      response.data &&
-      response.data.result &&
-      typeof response.data.result === 'string'
-    ) {
-      // Deserialize the stringified JSON in the result field
-      const parsedResult = JSON.parse(response.data.result);
-      console.log('parsedResultdata:', parsedResult);
+    console.log('API Response:', response.data);
 
-      if (Array.isArray(parsedResult) && parsedResult.length > 0) {
-        // Flatten the parsed result if it's a nested array
-        const flattenedResult = parsedResult.flat();
+    const data = response.data;
 
-        // Map the flattened data to headers while excluding specific indices
-        const result = flattenedResult.map(innerArray => {
+    // Check if response contains valid data
+    if (data && data.result) {
+      console.log('start Result:');
+
+      // Assuming `data.result` is already a valid array
+      // const parsedResult = data.result; // No need for JSON.parse
+      // console.log('Parsed Result:', parsedResult);
+      // console.log('Parsed Result[0]:', parsedResult[0]);
+      const parsedResult = JSON.parse(data.result);
+      console.log('Parsed Result:', parsedResult);
+
+      // Access the second array
+      const targetData = parsedResult[1]; // Extract the second sub-array
+      console.log('Target Data:', targetData);
+
+      // Flatten the result if it's a nested array
+      // const flattenedResult = parsedResult.flat(Infinity);
+      // console.log('Flattened Result:', flattenedResult);
+
+      // Ensure `parsedResult` is an array
+      if (Array.isArray(targetData) && targetData.length > 0) {
+        const result = targetData.map(innerArray => {
           const filteredRow = innerArray.filter(
             (_, index) => !excludedIndexes.includes(index),
           );
 
-          // Map the filtered row to the headers
+          // Map the filtered row to headers
           return headers.reduce((acc, header, index) => {
             acc[header] =
-              filteredRow[index] !== undefined ? filteredRow[index] : 0.0;
+              filteredRow[index] !== undefined ? filteredRow[index] : '';
             return acc;
           }, {});
         });
 
-        console.log('Processed Table Data:', result);
+        console.log('Processed Data:', result);
         setData(result);
       } else {
-        console.error(`Invalid parsed result:`, apiUrl, parsedResult);
-
-        const emptyResult = [{}];
-        headers.forEach(header => {
-          emptyResult[0][header] = '';
-        });
-
-        console.log(
-          'Returning empty data due to invalid parsed result:',
-          emptyResult,
-        );
-        setData(emptyResult);
+        // console.error('Invalid parsed result format:', parsedResult);
+        setData(generateEmptyResult(headers));
       }
     } else {
-      console.error(`Invalid response data:`, apiUrl, response.data);
-
-      const emptyResult = [{}];
-      headers.forEach(header => {
-        emptyResult[0][header] = '';
-      });
-
-      console.log('Returning empty data due to invalid response:', emptyResult);
-      setData(emptyResult);
+      // console.error('Unexpected API response format:', response.data);
+      setData(generateEmptyResult(headers));
     }
   } catch (error) {
-    console.error('Error fetching table data:', error);
-
-    const emptyResult = [{}];
-    headers.forEach(header => {
-      emptyResult[0][header] = '';
-    });
-
-    console.log('Returning empty data due to error:', emptyResult);
-    setData(emptyResult);
+    console.error('Error fetching API data:', error.message);
+    setData(generateEmptyResult(headers));
   }
+};
+
+/**
+ * Generate an empty result structure based on headers.
+ * @param {Array<string>} headers - Headers for the result structure.
+ * @returns {Array<Object>} Empty result array.
+ */
+const generateEmptyResult = headers => {
+  const emptyResult = [{}];
+  headers.forEach(header => {
+    emptyResult[0][header] = ''; // Default to empty strings for each header
+  });
+  return emptyResult;
 };
 
 export default FetchValueAssignKeysAPIDoubleArray;

@@ -78,14 +78,15 @@ const ApprovalTableComponent = ({
                       width: columnWidths[colIndex], // Set the width
                     }}>
                     {/* Render a disabled checkbox if the value is true */}
-                    {row[header] === true || false ? (
+                    {row[header] === true || row[header] === false ? (
                       <Checkbox
-                        status={
-                          row[header] === 'true' ? 'checked' : 'unchecked'
-                        }
-                        disabled={true}
-                        style={{ alignItems: 'center' }} // Adjust margin as needed
-                      />
+                      status={
+                        row[header] === true || row[header] === 'true' ? 'checked' : 'unchecked'
+                      }
+                      disabled={true}
+                      style={{ alignItems: 'center' }} // Adjust margin as needed
+                    />
+                    
                     ) : (
                       <Text
                         style={[

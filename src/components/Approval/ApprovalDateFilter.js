@@ -18,7 +18,7 @@ const MinimalDateFilter = ({ setFormattedStartDate, setFormattedEndDate }) => {
 
   // Calculate current date minus 30 days
   const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - 31);
+  startDate.setDate(currentDate.getDate() - 510);
 
   // Format the dates as 'DD-MMM-YY'
   const formatDate = (date) => {

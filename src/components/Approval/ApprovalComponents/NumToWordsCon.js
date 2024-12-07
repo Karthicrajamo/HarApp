@@ -1,33 +1,20 @@
-import num2words from 'num2words';
+import axios from 'axios';
 
-export const NumToWordsCon = (amount, currency) => {
-  const [integerPart, fractionalPart] = amount.toFixed(2).split('.');
+export const NumToWordsCon = async (amt, cur) => {
+  try {
+    const response = await axios.get(
+      `http://192.168.0.107:8100/rest/approval/getAmountInWords?amount=${amt}&currency=${cur}`,
+    );
 
-  // Convert the integer part to words
-  const integerWords = num2words(integerPart, { lang: 'en' });
+    if (response.status !== 200) {
+      console.error('Error: Failed with status numToWord', response.status);
+      return 'Error fetching data';
+    }
 
-  // Convert the fractional part to words only if it's not zero
-  const fractionalWords = 
-    fractionalPart === '00' ? '' : `and ${num2words(fractionalPart, { lang: 'en' })}`;
-
-  // Define currency labels
-  const currencyLabels = {
-    USD: 'US Dollars',
-    INR: 'Rupees',
-  };
-
-  const currencyCents = {
-    USD: 'Cents',
-    INR: 'Paise',
-  };
-
-  return `${currencyLabels[currency]} ${integerWords} ${fractionalWords} ${
-    fractionalPart === '00' ? '' : currencyCents[currency]
-  } only`.trim();
+    console.log('Num to word:', response.data.strWords);
+    return response.data.strWords; // Return the word string from the response
+  } catch (error) {
+    console.error('Error fetching numToWord:', error);
+    return 'Error fetching data';
+  }
 };
-
-// Example Usage
-// console.log(NumToWordsCon(190000, 'USD')); // Output: Dollars Nineteen only
-// console.log(NumToWordsCon(19.5, 'USD')); // Output: Dollars Nineteen and Fifty Cents only
-// console.log(NumToWordsCon(19000, 'INR')); // Output: Rupees Nineteen only
-// console.log(NumToWordsCon(19.5, 'INR')); // Output: Rupees Nineteen and Fifty Paise only

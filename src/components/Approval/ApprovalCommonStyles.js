@@ -4,6 +4,7 @@ import {CustomThemeColors} from '../CustomThemeColors';
 const commonStyles = StyleSheet.create({
   heading: {padding: 8, fontWeight: '800', color: 'black', fontSize: 16},
   textCenter: {alignItems: 'center', justifyContent: 'center'},
+  padTop:{paddingTop:10},
   flexRow: {
     flexDirection: 'row',
     padding: 15,

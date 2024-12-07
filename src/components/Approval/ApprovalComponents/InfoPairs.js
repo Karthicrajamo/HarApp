@@ -4,13 +4,14 @@ import { Dimensions, Text, View, StyleSheet } from 'react-native';
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;
 
-const InfoPairs = ({ data, imp = [], valueChanger = {} }) => {
+const InfoPairs = ({ data, imp = [''], valueChanger = {} }) => {
   const [keys, setKeys] = useState([]);
   const [processedData, setProcessedData] = useState([]);
 
   useEffect(() => {
     if (data.length > 0) {
-      console.log('dataa::', data);
+      console.log('data::', data);
+
       // Extract keys dynamically when data updates
       const extractedKeys = Object.keys(data[0]);
       setKeys(extractedKeys);
@@ -18,17 +19,17 @@ const InfoPairs = ({ data, imp = [], valueChanger = {} }) => {
       // Process data to handle valueChanger overrides
       const updatedData = data.map(item => {
         const updatedItem = { ...item };
-        for (const key in valueChanger) {
-          if (updatedItem.hasOwnProperty(key)) {
+        Object.keys(valueChanger).forEach(key => {
+          if (key in updatedItem) {
             updatedItem[key] = valueChanger[key]; // Update value based on valueChanger
           }
-        }
+        });
         return updatedItem;
       });
 
       setProcessedData(updatedData);
     }
-  }, [data, valueChanger]); // Update keys and processed data whenever `data` or `valueChanger` changes
+  }, [data, JSON.stringify(valueChanger)]); // Avoid reference equality issues
 
   return (
     <View style={styles.container}>

@@ -63,17 +63,17 @@ const FetchValueAssignKeysAPIString = async (
         console.log('Processed Table Data:', result);
         setData(result);
       } else {
-        console.error(`Invalid parsed result:`, apiUrl, parsedResult);
+        // console.error(`Invalid parsed result:`, apiUrl, parsedResult);
 
         const emptyResult = [{}];
         headers.forEach(header => {
           emptyResult[0][header] = '';
         });
 
-        console.log(
-          'Returning empty data due to invalid parsed result:',
-          emptyResult,
-        );
+        // console.log(
+        //   'Returning empty data due to invalid parsed result:',
+        //   emptyResult,
+        // );
         setData(emptyResult);
       }
     } else {

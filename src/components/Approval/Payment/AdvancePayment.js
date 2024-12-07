@@ -23,10 +23,17 @@ import {API_URL} from '../../ApiUrl';
 import {DateFormatComma} from '../../common-utils/DateFormatComma';
 import FetchValueAssignKeysAPI from '../ApprovalComponents/FetchValueAssignKeysAPI';
 import FetchValueAssignKeysAPIDoubleArray from '../ApprovalComponents/FetchValueAssignKeysAPIDoubleArray';
-import {ReqBodyConv} from './ReqBodyConv';
 import FetchValueAssignKeysAPIString from '../ApprovalComponents/FetchValueAssignKeysAPIString';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
 import {sharedData} from '../../Login/UserId';
+import {ReqBodyRejConv} from './BillsComp/ReqBodyRejConv';
+import {ReqBodyConv} from './BillsComp/ReqBodyConv';
+import CurrencyConversion from '../ApprovalComponents/FXRate';
+import {NumToWordsCon} from '../ApprovalComponents/NumToWordsCon';
+import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
+import {isTablet} from 'react-native-device-info';
+import {CustomThemeColors} from '../../CustomThemeColors';
+import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -51,228 +58,356 @@ export const AdvancePayment = ({route}) => {
   const [excludeTaxes, setExcludeTaxes] = useState('');
   const [slabTaxes, setSlabTaxes] = useState('');
   const [adjWithoutTax, setAdjWithoutTax] = useState('');
+  const [noHeadRemarksblw, setNoHeadRemarksblw] = useState('');
   const [approvalRejParams, setApprovalRejParams] = useState([]);
+  const [approvalParams, setApprovalParams] = useState([]);
+  const [rejParams, setRejParams] = useState([]);
+  const [fxRate, setFxRate] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [numToWords, setNumToWords] = useState('');
+  const [PDFModalVisible, setPDFModalVisible] = useState(false);
+  const [calculatedTDS, setCalculatedTDS] = useState('');
+  const [tDSCurrency, setTDSCurrency] = useState('');
 
   useEffect(() => {
-    console.log('approvalRejParams::', approvalRejParams);
-  }, [approvalRejParams]);
+    console.log('isLoading:::', isLoading);
+  }, [isLoading]);
+
+  useEffect(() => {
+    console.log('mainData::', mainData);
+  }, [mainData]);
+
+  useEffect(() => {
+    console.log('approvalParams::', approvalParams);
+  }, [approvalParams]);
+
   // Using async functions inside useEffect
   useEffect(() => {
-    const logMainData = async () => {
-      console.log('transValue::', transValue);
-      const body = ReqBodyConv(
-        {transobj: transValue},
-        transId,
-        currentLevel,
-        transName,
-      );
-      const bodyStringified = JSON.stringify(body._j);
-      setApprovalRejParams(bodyStringified);
-      console.log('body req::', bodyStringified); // Log immediately before updating the state
-    };
+    setIsLoading(true);
 
-    logMainData();
+    console.log('transValue::', transValue);
+    const body = ReqBodyConv(
+      {transobj: transValue},
+      transId,
+      currentLevel,
+      transName,
+    );
+    const rejBody = ReqBodyRejConv(
+      transValue,
+      transId,
+      currentLevel,
+      transName,
+    );
+    const bodyStringified = JSON.stringify(body._j);
+    const bodyRejStringified = JSON.stringify(rejBody);
+    console.log('rejBodyJson::', JSON.stringify(rejBody));
+    console.log('rejBody::', rejBody);
+    setRejParams(bodyRejStringified);
+    setApprovalParams(bodyStringified);
+    console.log('body req::', bodyStringified); // Log immediately before updating the state
+    setIsLoading(false);
   }, [transValue]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchAdvancePaymentDetails();
-    };
-    fetchData();
-  }, []);
+    setIsLoading(true);
 
-  useEffect(() => console.log('excludeTaxes::', excludeTaxes), [excludeTaxes]);
+    if (tDSCurrency.length > 0) {
+      console.log('currency tds::', tDSCurrency); // Logs the first element of the array
+      fetchAdvancePaymentDetails();
+    } else {
+      console.log('currency tds:: No currency available');
+    }
+    setIsLoading(false);
+  }, [tDSCurrency]);
 
   useEffect(() => {
-    const handleTransValueChange = async () => {
-      console.log('transValue::', transValue);
-      if (transValue.length !== 0) {
-        // Fetch Order Details
-        await FetchValueAssignKeysAPIString(
-          `http://192.168.0.107:8100/rest/approval/getAdvPayOrderMain`,
-          [
-            'PO No',
-            'Supplier Name',
-            'PO Qty',
-            'Discount %',
-            'Discount(PO)',
-            'Discount(INR)',
-            'Total Amount(PO)',
-            'Total Amount(INR)',
-            'Payable Amt',
-            'Advance Amount',
-            'Advance Paid',
-            'TDS Amount',
-            'Remaining Balance',
-            'PO Currency',
-          ],
-          [6, 10, 11, 15],
-          setOrderDetails,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
-        );
+    setIsLoading(true);
+    const getTaxCurrency = async () => {
+      try {
+        // SQL query to get the TAX_CURRENCY
+        const taxCurrencyQuery = `select TAX_CURRENCY from financial_cycle where rownum = 1`;
 
-        // Materials for Advance Payment
-        await FetchValueAssignKeysAPIString(
-          `http://192.168.0.107:8100/rest/approval/getAdvPayOrderDetails`,
-          [
-            'PO No',
-            'Supplier Name',
-            'Mat No',
-            'Color',
-            'Size',
-            'Ref No',
-            'Type',
-            'Material Specification',
-            'Qty',
-            'UOM',
-            'Price/UOM',
-            'Discount %',
-            'Discount(PO)',
-            'Discount(INR)',
-            'Total Amount (PO)',
-            'Total Amount (INR)',
-            'Payable Amt',
-            'Advance Amt',
-            'Advance Paid',
-            'TDS Amount',
-            'Remaining Balance',
-            'Currency',
-          ],
-          [16, 17, 20, 24, 25],
-          setMaterialAdPayment,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
+        const response = await fetch(
+          `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
+            taxCurrencyQuery,
+          )}`,
         );
+        const taxCurrencyResult = await response.json();
+        console.log('Tax Currency Result bills page:', taxCurrencyResult);
 
-        // Additional Charges (Taxable)
-        await FetchValueAssignKeysAPIString(
-          `http://192.168.0.107:8100/rest/approval/getAdvPayChargesDetails`,
-          [
-            'PO No',
-            'Mat No',
-            'SID',
-            'Service/Material Category',
-            'Service/Material Type',
-            'Uom',
-            'Expense Type',
-            'Description',
-            'Qty',
-            'Rate',
-            'Amount',
-            'Total Amount(INR)',
-            'Payable Amount',
-            'Advance Amount',
-            'Advance Paid',
-            'TDS Amount',
-            'Remaining Balance',
-            'Currency',
-            'Select',
-          ],
-          [12, 13, 16, 19, 20],
-          setAdditionalCharges,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
-        );
-
-        // Selected Taxes to Exclude
-        await FetchValueAssignKeysAPIDoubleArray(
-          `http://192.168.0.107:8100/rest/approval/getOrderTaxProfileAdvPay`,
-          [
-            'PO No',
-            'Tax Name',
-            'Rate',
-            'Tax Amount',
-            'TDS Amount',
-            'Previous Deduction Amt',
-            'Remaining Tax Amt',
-            'Inclusive Tax',
-            'Apply TDS',
-          ],
-          [2, 8, 9, 11],
-          setExcludeTaxes,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
-        );
-        // Slab Tax
-        await FetchValueAssignKeysAPIString(
-          ``,
-          [
-            'Party Name',
-            'Party Type',
-            'Dept Name',
-            'Tax Name',
-            'Rate',
-            'Tax Amount',
-            'Already Paid',
-            'Slab',
-            'Bill Amount',
-            'ST Paid',
-            'Applied ST',
-          ],
-          [],
-          setSlabTaxes,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
-        );
-
-        // Other changes & Adjustments (Without Tax)
-        await FetchValueAssignKeysAPIString(
-          `http://192.168.0.107:8100/rest/approval/getAdvPayAdjustmentsDetails`,
-          [
-            'PO No',
-            'Adjustment ID',
-            'Adjustment Name',
-            'Adjustment Type',
-            'Description',
-            'Amount',
-            'Remarks',
-          ],
-          [2, 3],
-          setAdjWithoutTax,
-          {
-            payment_id: paymentId,
-            type: transValue[4][0].ORDER_TYPE,
-            orders: [transValue[4][0].PO_SO_JO_NO],
-            datafor: 'Approval',
-          },
-          'POST',
-        );
+        if (taxCurrencyResult.length > 0) {
+          if (
+            Array.isArray(taxCurrencyResult) &&
+            taxCurrencyResult.length > 0
+          ) {
+            setTDSCurrency(taxCurrencyResult[0]); // Sets only the first element
+          } else {
+            setTDSCurrency(''); // Fallback in case the array is empty or not valid
+          }
+        } else {
+          console.error('Tax currency not found.');
+        }
+      } catch (error) {
+        console.error('Error fetching tax currency:', error);
       }
     };
-    handleTransValueChange();
+    getTaxCurrency();
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    setIsLoading(true);
+    console.log('excludeTaxes::', excludeTaxes);
+    const totalTdsAmount = (excludeTaxes || []).reduce(
+      (sum, item) => sum + Number(item['TDS Amount'] || 0),
+      0,
+    );
+
+    console.log('totalTdsAmount:', totalTdsAmount * fxRate);
+    const tds = totalTdsAmount * fxRate;
+    setCalculatedTDS(tds);
+    // const totalTdsAmount = 5
+
+    console.log('calculatedTDS:', calculatedTDS);
+    setIsLoading(false);
+  }, [excludeTaxes]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    console.log('transValue::', transValue);
+    if (transValue.length !== 0) {
+      // Fetch Order Details
+      FetchValueAssignKeysAPIString(
+        `${API_URL}/api/approval/payment/getAdvPayOrderMain`,
+        [
+          'PO No',
+          'Supplier Name',
+          'PO Qty',
+          'Discount %',
+          'Discount(PO)',
+          'Discount(INR)',
+          'Total Amount(PO)',
+          'Total Amount(INR)',
+          'Payable Amt',
+          'Advance Amount',
+          'Advance Paid',
+          'TDS Amount',
+          'Remaining Balance',
+          'PO Currency',
+        ],
+        [6, 10, 11, 15],
+        setOrderDetails,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+
+      // Materials for Advance Payment
+      const headArr =
+        transValue[4][0]?.ORDER_TYPE === 'PO'
+          ? [
+              'PO No',
+              'Supplier Name',
+              'Mat No',
+              'Color',
+              'Size',
+              'Ref No',
+              'Type',
+              'Material Specification',
+              'Qty',
+              'UOM',
+              'Price/UOM',
+              'Discount %',
+              'Discount(PO)',
+              'Discount(INR)',
+              'Total Amount (PO)',
+              'Total Amount (INR)',
+              'Payable Amt',
+              'Advance Amt',
+              'Advance Paid',
+              'TDS Amount',
+              'Remaining Balance',
+              'Currency',
+            ]
+          : [
+              'JO No',
+              'Unit Name',
+              'Job Id',
+              'Work Center',
+              'Process',
+              'Item No',
+              'Mat No',
+              'Material Specification',
+              'Qty',
+              'UOM',
+              'Rate',
+              'Discount %',
+              'Discount(JO)',
+              'Discount(INR)',
+              'Total Amount (JO)',
+              'Total Amount (INR)',
+              'Payable Amt',
+              'Advance Amt',
+              'Advance Paid',
+              'TDS Amount',
+              'Remaining Balance',
+              'Currency',
+            ];
+
+      FetchValueAssignKeysAPIString(
+        `${API_URL}/api/approval/payment/getAdvPayOrderDetails`,
+        headArr,
+        [16, 17, 20, 24, 25],
+        setMaterialAdPayment,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+
+      // Additional Charges (Taxable)
+      FetchValueAssignKeysAPIString(
+        `${API_URL}/api/approval/payment/getAdvPayChargesDetails`,
+        [
+          'PO No',
+          'Mat No',
+          'SID',
+          'Service/Material Category',
+          'Service/Material Type',
+          'Uom',
+          'Expense Type',
+          'Description',
+          'Qty',
+          'Rate',
+          'Amount',
+          'Total Amount(INR)',
+          'Payable Amount',
+          'Advance Amount',
+          'Advance Paid',
+          'TDS Amount',
+          'Remaining Balance',
+          'Currency',
+          'Select',
+        ],
+        [12, 13, 16, 19, 20],
+        setAdditionalCharges,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+
+      // Selected Taxes to Exclude
+      // await
+      FetchValueAssignKeysAPIDoubleArray(
+        `${API_URL}/api/approval/payment/getOrderTaxProfileAdvPay`,
+        [
+          'PO No',
+          'Tax Name',
+          'Rate',
+          'Tax Amount',
+          'TDS Amount',
+          'Previous Deduction Amt',
+          'Remaining Tax Amt',
+          'Inclusive Tax',
+          'Apply TDS',
+        ],
+        [2, 8, 9, 10],
+        setExcludeTaxes,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+
+      // Slab Tax
+      FetchValueAssignKeysAPIString(
+        ``,
+        [
+          'Party Name',
+          'Party Type',
+          'Dept Name',
+          'Tax Name',
+          'Rate',
+          'Tax Amount',
+          'Already Paid',
+          'Slab',
+          'Bill Amount',
+          'ST Paid',
+          'Applied ST',
+        ],
+        [],
+        setSlabTaxes,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+
+      // Other changes & Adjustments (Without Tax)
+      FetchValueAssignKeysAPIString(
+        `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
+        [
+          'PO No',
+          'Adjustment ID',
+          'Adjustment Name',
+          'Adjustment Type',
+          'Description',
+          'Amount',
+          'Remarks',
+        ],
+        [2, 3],
+        setAdjWithoutTax,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: [transValue[4][0].PO_SO_JO_NO],
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+      FetchValueAssignKeysAPI(
+        `${API_URL}/api/approval/payment/getBillsBankDetailsadv`,
+        [
+          'Bank A/c No',
+          'Account Holder Name',
+          'Account Type',
+          'Bank Name',
+          'State',
+          'Country',
+          'Available Balance',
+          'Effective Balance',
+          'Minimum Balance',
+          'Currency',
+        ],
+        [],
+        setNoHeadRemarksblw,
+        {
+          accountNo: mainData[8],
+        },
+      );
+    }
+    setIsLoading(false);
   }, [paymentId]);
 
   useEffect(() => {
-    const logPairsData = async () => {
-      console.log('pairsData::', pairsData);
-    };
-    logPairsData();
+    console.log('pairsData::', pairsData);
   }, [pairsData]);
 
   // Function to toggle modal visibility
@@ -311,7 +446,7 @@ export const AdvancePayment = ({route}) => {
       const token = credentials.password;
 
       const response = await axios.get(
-        `${API_URL}/api/approval/paymentGroup/getApprovalDetails`,
+        `${API_URL}/api/approval/payment/getApprovalDetails`,
         {
           params: {
             trans_id: transId,
@@ -350,6 +485,9 @@ export const AdvancePayment = ({route}) => {
           console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
           console.log('Final poDetails:', parsedTransObj);
+
+          setCurrency(parsedTransObj[1].PARTY_CURRENCY);
+
           setMainData(Main);
           setTransDetails(transactionDetails);
           setTransValue(parsedTransObj);
@@ -360,7 +498,7 @@ export const AdvancePayment = ({route}) => {
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
             'Payment Amount (INR)': poDetails[3],
-            'TDS Amount (TK)': 0,
+            [`TDS Amount (${tDSCurrency})`]: 0,
             'Actual Amount-Slab Tax Amount (INR)': poDetails[2],
             'Actual Paid After Adjustment': Main[6],
             'TT Ref No': transactionDetails[3],
@@ -368,6 +506,8 @@ export const AdvancePayment = ({route}) => {
             'TT Date': DateFormatComma(Main[1]),
             'TT Amt (INR)': Main[6],
           };
+          const numResult = await NumToWordsCon(Main[6], Main[9]);
+          setNumToWords(numResult);
 
           setPairsData([formattedData]);
         }
@@ -379,6 +519,10 @@ export const AdvancePayment = ({route}) => {
     }
   };
 
+  const toggleModalPDF = () => {
+    setPDFModalVisible(!PDFModalVisible);
+  };
+
   return (
     <View style={styles.container}>
       <TitleBar
@@ -387,15 +531,28 @@ export const AdvancePayment = ({route}) => {
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
         onClose={() => navigation.navigate('ApprovalMainScreen')}
+        showFileIcon={true}
+        onFilePress={() => setPDFModalVisible(!PDFModalVisible)}
+      />
+      <CurrencyConversion
+        BillCurrency={currency}
+        setFxRate={setFxRate}
+        // setTDSCurrency={setTDSCurrency}
       />
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
         <>
-          {console.log('dsfsfsf::', pairsData)}
-          <InfoPairs data={pairsData} />
+          <InfoPairs
+            data={pairsData}
+            imp={['Cheque Ref No', 'LC Ref No', 'Favor of']}
+            valueChanger={{[`TDS Amount (${tDSCurrency})`]: calculatedTDS}}
+          />
+          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
         </>
       ) : (
         <>
+          {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
+
           <ScrollView style={styles.scrollContainer}>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Payment Date</Text>
@@ -418,7 +575,7 @@ export const AdvancePayment = ({route}) => {
               heading={'Additional Charges (Taxable)'}
             />
             <ApprovalTableComponent
-              tableData={tableData}
+              tableData={excludeTaxes}
               highlightVal={['']}
               heading={'Selected Taxes to Exclude'}
             />
@@ -441,36 +598,11 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={calculatedTDS.toString()}
                 editable={false} // Disables input
               />
             </View>
-            <View style={commonStyles.flexColumn}>
-              <TouchableOpacity
-                style={commonStyles.enableButtonTextContainer}
-                onPress={toggleModal}>
-                <Text style={commonStyles.disableButtonText}>
-                  Advance Adjustments
-                </Text>
-              </TouchableOpacity>
-              <TextInput
-                style={[commonStyles.oneLineValue, commonStyles.input]}
-                placeholder="" // Placeholder text
-                value="0"
-                editable={false} // Disables input
-              />
-            </View>
-            <View style={commonStyles.flexColumn}>
-              <Text style={commonStyles.oneLineKey}>
-                Balance to Pay(Actual amt-Advance Adjusted)
-              </Text>
-              <TextInput
-                style={[commonStyles.oneLineValue, commonStyles.input]}
-                placeholder="" // Placeholder text
-                value="0.0001"
-                editable={false} // Disables input
-              />
-            </View>
+
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
                 Actual Amount - Slab Tax Amount (INR)
@@ -478,7 +610,9 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={pairsData[0][
+                  'Actual Amount-Slab Tax Amount (INR)'
+                ].toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -490,7 +624,9 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0.0001"
+                value={pairsData[0][
+                  'Actual Amount-Slab Tax Amount (INR)'
+                ].toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -499,7 +635,7 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="Cheque"
+                value={mainData[7]}
                 editable={false} // Disables input
               />
             </View>
@@ -508,7 +644,7 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="2465-2564-8794"
+                value={mainData[2]}
                 editable={false} // Disables input
               />
             </View>
@@ -521,20 +657,20 @@ export const AdvancePayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
-            <View style={commonStyles.checkBoxContainer}>
+            {/* <View style={commonStyles.checkBoxContainer}>
               <Checkbox
                 status="unchecked" // Set the checkbox to checked
                 onPress={() => {}}
                 disabled={true} // Disables the checkbox
               />
               <Text style={commonStyles.label}>A/C Payee</Text>
-            </View>
+            </View> */}
             <View style={commonStyles.disableButtonTextContainer}>
-              <Text style={commonStyles.disableButtonText}>Select Account</Text>
+              <Text style={commonStyles.disableButtonText}>Account</Text>
             </View>
             <ApprovalTableComponent
-              tableData={tableData}
-              highlightVal={['lastMessageSentBy', 'userName']}
+              tableData={noHeadRemarksblw}
+              highlightVal={['']}
               heading={''}
             />
             <View style={commonStyles.disableButtonTextContainer}>
@@ -546,7 +682,7 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.inputNoBox]}
                 placeholder="" // Placeholder text
-                value="19.5"
+                value={Math.round(fxRate).toString()}
                 editable={false} // Disables input
               />
               <Text style={commonStyles.heading}>INR</Text>
@@ -557,42 +693,62 @@ export const AdvancePayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="19.5"
+                value={mainData[6].toString()}
                 editable={false} // Disables input
               />
             </View>
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Calculate</Text>
             </View>
-
+            {transValue[4][0]?.ORDER_TYPE === 'JO' && (
+              <View style={commonStyles.padTop}>
+                <Text style={commonStyles.oneLineKey}>
+                  Demand Draft Details{' '}
+                </Text>
+              </View>
+            )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                Cheque No <Text style={commonStyles.redAsterisk}>*</Text>
+                {transValue[4][0]?.ORDER_TYPE === 'PO' ? 'Ref ' : 'DD '}
+                No <Text style={commonStyles.redAsterisk}>*</Text>
               </Text>
-              <Text style={commonStyles.oneLineValue}>5604</Text>
+              <Text style={commonStyles.oneLineValue}>
+                {pairsData[0]['TT Ref No']}
+              </Text>
+            </View>
+            {transValue[4][0]?.ORDER_TYPE === 'JO' && (
+              <View style={commonStyles.flexRow}>
+                <Text style={commonStyles.oneLineKey}>
+                  Favor of <Text style={commonStyles.redAsterisk}>*</Text>
+                </Text>
+                <Text style={commonStyles.oneLineValue}>{mainData[3]}</Text>
+              </View>
+            )}
+            <View style={commonStyles.flexRow}>
+              <Text style={commonStyles.oneLineKey}>
+                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD ' : ''}Case Date
+              </Text>
+              <Text style={commonStyles.oneLineValue}>
+                {DateFormatComma(mainData[1])}
+              </Text>
             </View>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                Favor of <Text style={commonStyles.redAsterisk}>*</Text>
+                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD Amt ' : 'Amount'} (
+                {mainData[9]})
               </Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
-            </View>
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>Cheque Date</Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
-            </View>
-            <View style={commonStyles.flexRow}>
-              <Text style={commonStyles.oneLineKey}>Cheque Amt (USD)</Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="19.5"
+                value={mainData[6].toString()}
                 editable={false} // Disables input
               />
             </View>
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Amount in words</Text>
-              <Text style={commonStyles.oneLineValue}>sdfsfdf</Text>
+              <Text style={commonStyles.oneLineValue}>
+                {numToWords || 'Loading...'}
+              </Text>
             </View>
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Narration</Text>
@@ -615,16 +771,55 @@ export const AdvancePayment = ({route}) => {
           </CustomModal>
         </>
       )}
+      <CustomModal
+        isVisible={PDFModalVisible}
+        onClose={toggleModalPDF}
+        title="Advance Adjustments">
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsLoading(true); // Set loading to true before starting the operation
+              setPDFModalVisible(false); // Close the modal
 
+              const requestUrl = `${API_URL}/api/approval/payment/advancePaymentPdf`;
+              // const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
+
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: transId,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Print PDF</Text>
+        </TouchableOpacity>
+      </CustomModal>
       {/* Button to toggle visibility */}
       <View style={styles.buttonContainer}>
         <Button title="Click here for more info" onPress={handleButtonClick} />
       </View>
       <View>
         <ApproveRejectComponent
-          approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
-          rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
-          params={approvalRejParams}
+          // approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
+          // rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
+          params={approvalParams}
+          approveUrl={`${API_URL}/api/common/approveTransaction`}
+          rejectUrl={`${API_URL}/api/common/rejectTransaction`}
+          rejParams={rejParams}
+          // params={approvalParams}
         />
       </View>
     </View>
@@ -703,4 +898,16 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
+  pdfSubOption: {
+    width: isTablet ? 300 : 200,
+    padding: 10,
+    backgroundColor: 'white',
+    paddingHorizontal: 50,
+    borderColor: CustomThemeColors.primary,
+    borderWidth: 2,
+    borderRadius: 15,
+    marginBottom: 10,
+    color: 'black',
+  },
+  subOptionText: {color: 'black', fontWeight: '400', textAlign: 'center'},
 });

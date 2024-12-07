@@ -15,7 +15,7 @@ const FetchValueAssignKeysAPI = async (
   excludedIndexes,
   setData,
   params = {},
-  method = 'GET'
+  method = 'GET',
 ) => {
   // Check if the API URL is empty or undefined
   if (!apiUrl || apiUrl.trim() === '') {
@@ -34,7 +34,7 @@ const FetchValueAssignKeysAPI = async (
     const response =
       method.toUpperCase() === 'POST'
         ? await axios.post(apiUrl, params) // POST request with body
-        : await axios.get(apiUrl, { params }); // GET request with query params
+        : await axios.get(apiUrl, {params}); // GET request with query params
 
     // Validate the API response
     if (
@@ -44,6 +44,7 @@ const FetchValueAssignKeysAPI = async (
     ) {
       const apiResponse = response.data;
 
+      console.log('apiResponse valueApi:', apiResponse);
       // Process the API response
       const result = apiResponse.map(innerArray => {
         const filteredRow = innerArray.filter(

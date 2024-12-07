@@ -24,6 +24,7 @@ import {isTablet} from 'react-native-device-info';
 import {sharedData} from '../Login/UserId';
 import {BlobFetchComponent} from '../common-utils/BlobFetchComponent';
 import axios from 'axios';
+import LoadingIndicator from '../commonUtils/LoadingIndicator';
 
 const {width, height} = Dimensions.get('window');
 
@@ -33,12 +34,19 @@ const ApprovalScreen = () => {
   const [filteredApprovalData, setFilteredApprovalData] = useState([]);
   const [tempFilteredApprovalData, setTempFilteredApprovalData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [PDFModalVisible, setPDFModalVisible] = useState(false);
+  const [isHorseLoading, setIsHorseLoading] = useState(false);
+  const [BillsPDFModalVisible, setBillsPDFModalVisible] = useState(false);
+  const [AdvPDFModalVisible, setAdvPDFModalVisible] = useState(false);
   const [transValue, setTransValue] = useState([]);
   const [itemValues, setItemValues] = useState([]);
 
+  useEffect(() => {
+    console.log('transValue apMain::');
+  }, [transValue]);
+
   const toggleModalPDF = () => {
-    setPDFModalVisible(!PDFModalVisible);
+    setBillsPDFModalVisible(false);
+    setAdvPDFModalVisible(false);
   };
 
   const currentDate = new Date();
@@ -135,12 +143,13 @@ const ApprovalScreen = () => {
 
   const fetchPaymentDetails = async (transId, transName) => {
     try {
-      setIsLoading(true);
+      // setIsHorseLoading(true);
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials.password;
 
+      console.log('parsedTransObj ApMain::');
       const response = await axios.get(
-        `${API_URL}/api/approval/paymentGroup/getApprovalDetails`,
+        `${API_URL}/api/approval/payment/getApprovalDetails`,
         {
           params: {
             trans_id: transId,
@@ -150,7 +159,7 @@ const ApprovalScreen = () => {
           },
           headers: {
             'Content-Type': 'application/json',
-            //   Authorization: `${token}`,
+            Authorization: `${token}`,
           },
         },
       );
@@ -169,9 +178,10 @@ const ApprovalScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching approval details:', error.message);
-    } finally {
-      setIsLoading(false);
     }
+    // finally {
+    //   setIsHorseLoading(false);
+    // }
   };
 
   // useEffect(() => {
@@ -297,10 +307,16 @@ const ApprovalScreen = () => {
             alignItems: 'center',
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
-          {(item.TRANS_NAME === 'AddPayment' || 'ModPayment') && (
+          {(item.TRANS_NAME === 'AddPayment' ||
+            item.TRANS_NAME === 'ModPayment') && (
             <TouchableOpacity
               onPress={() => {
-                setPDFModalVisible(true);
+                const firstWord = item.IDENTIFICATION.trim().split(' ')[0];
+                if (firstWord == 'Bill') {
+                  setBillsPDFModalVisible(true);
+                } else if (firstWord === 'Adv') {
+                  setAdvPDFModalVisible(true);
+                }
                 fetchPaymentDetails(item.TRANS_ID, item.TRANS_NAME);
                 setItemValues(item);
               }}>
@@ -318,6 +334,7 @@ const ApprovalScreen = () => {
 
   return (
     <View style={{flex: 1}}>
+      {isHorseLoading && <LoadingIndicator message="Please wait..." />}
       <TitleBar
         text="Approval"
         showMenuBar={true}
@@ -356,15 +373,15 @@ const ApprovalScreen = () => {
         />
       )}
       <CustomModal
-        isVisible={PDFModalVisible}
+        isVisible={BillsPDFModalVisible}
         onClose={toggleModalPDF}
         title="Advance Adjustments">
         {/* Children Content */}
         <TouchableOpacity
           onPress={async () => {
             try {
-              setIsLoading(true); // Set loading to true before starting the operation
-              setPDFModalVisible(false); // Close the modal
+              setIsHorseLoading(true); // Set loading to true before starting the operation
+              setBillsPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
               console.log('transvalue ApMain::', itemValues);
@@ -383,7 +400,7 @@ const ApprovalScreen = () => {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
               // Set loading to false after the operation completes, regardless of success or failure
-              setIsLoading(false);
+              setIsHorseLoading(false);
             }
           }}
           style={styles.pdfSubOption}>
@@ -392,8 +409,8 @@ const ApprovalScreen = () => {
         <TouchableOpacity
           onPress={async () => {
             try {
-              setIsLoading(true); // Set loading state to true
-              setPDFModalVisible(false); // Close the modal
+              setIsHorseLoading(true);
+              setBillsPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
               const requestBody = {
@@ -412,12 +429,46 @@ const ApprovalScreen = () => {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
               // Ensure loading state is set to false after the operation
-              setIsLoading(false);
+              setIsHorseLoading(false);
             }
           }}
           // onPress={() => PrintGroupPdf()}
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
+        </TouchableOpacity>
+      </CustomModal>
+      <CustomModal
+        isVisible={AdvPDFModalVisible}
+        onClose={toggleModalPDF}
+        title="Advance Adjustments">
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsHorseLoading(true); // Set loading to true before starting the operation
+              setAdvPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: itemValues.TRANS_ID,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsHorseLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Print PDF</Text>
         </TouchableOpacity>
       </CustomModal>
     </View>
