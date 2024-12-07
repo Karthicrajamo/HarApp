@@ -6,6 +6,7 @@ import {
   Dimensions,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import {StyleSheet} from 'react-native';
 import InfoPairs from '../ApprovalComponents/InfoPairs';
@@ -272,30 +273,56 @@ export const AdvancePayment = ({route}) => {
         'POST',
       );
 
+      const chargeArr =
+        transValue[4][0]?.ORDER_TYPE === 'JO'
+          ? [
+              'JO No',
+              'Job Id',
+              'Item No',
+              'Mat No',
+              'SID',
+              'Service/Material Category',
+              'Service/Material Type',
+              'UOM',
+              'Expense Type',
+              'Description',
+              'Qty',
+              'Rate',
+              'Amount',
+              'Total Amount (INR)',
+              'Payable Amount',
+              'Advance Amount',
+              'Advance Paid',
+              'TDS Amount',
+              'Remaining Balance',
+              'Currency',
+              'Select',
+            ]
+          : [
+              'PO No',
+              'Mat No',
+              'SID',
+              'Service/Material Category',
+              'Service/Material Type',
+              'Uom',
+              'Expense Type',
+              'Description',
+              'Qty',
+              'Rate',
+              'Amount',
+              'Total Amount(INR)',
+              'Payable Amount',
+              'Advance Amount',
+              'Advance Paid',
+              'TDS Amount',
+              'Remaining Balance',
+              'Currency',
+              'Select',
+            ];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayChargesDetails`,
-        [
-          'PO No',
-          'Mat No',
-          'SID',
-          'Service/Material Category',
-          'Service/Material Type',
-          'Uom',
-          'Expense Type',
-          'Description',
-          'Qty',
-          'Rate',
-          'Amount',
-          'Total Amount(INR)',
-          'Payable Amount',
-          'Advance Amount',
-          'Advance Paid',
-          'TDS Amount',
-          'Remaining Balance',
-          'Currency',
-          'Select',
-        ],
+        chargeArr,
         [12, 13, 16, 19, 20],
         setAdditionalCharges,
         {
@@ -361,9 +388,16 @@ export const AdvancePayment = ({route}) => {
       );
 
       // Other changes & Adjustments (Without Tax)
-      FetchValueAssignKeysAPIString(
-        `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
-        [
+      const otherTaxArr =
+        transValue[4][0]?.ORDER_TYPE === 'JO'?[
+          "JO No",
+          "Adjustment ID",
+          "Adjustment Name",
+          "Adjustment Type",
+          "Description",
+          "Amount",
+          "Remarks"
+        ]:[
           'PO No',
           'Adjustment ID',
           'Adjustment Name',
@@ -371,7 +405,10 @@ export const AdvancePayment = ({route}) => {
           'Description',
           'Amount',
           'Remarks',
-        ],
+        ]
+      FetchValueAssignKeysAPIString(
+        `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
+        otherTaxArr,
         [2, 3],
         setAdjWithoutTax,
         {
@@ -432,6 +469,7 @@ export const AdvancePayment = ({route}) => {
     },
   ];
   const [showInfoPairs, setShowInfoPairs] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(true);
 
   const handleButtonClick = () => {
     setShowInfoPairs(!showInfoPairs); // Toggle visibility
@@ -441,6 +479,7 @@ export const AdvancePayment = ({route}) => {
 
   const fetchAdvancePaymentDetails = async () => {
     try {
+      setIsRefreshing(true);
       setIsLoading(true);
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials.password;
@@ -497,14 +536,22 @@ export const AdvancePayment = ({route}) => {
 
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
-            'Payment Amount (INR)': poDetails[3],
+            [`Payment Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+              poDetails[3],
             [`TDS Amount (${tDSCurrency})`]: 0,
-            'Actual Amount-Slab Tax Amount (INR)': poDetails[2],
+            [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+              poDetails[2],
             'Actual Paid After Adjustment': Main[6],
-            'TT Ref No': transactionDetails[3],
-            'Party Name': Main[3],
-            'TT Date': DateFormatComma(Main[1]),
-            'TT Amt (INR)': Main[6],
+            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT Ref'} No`]:
+              transactionDetails[3],
+            [`${
+              transValue[4][0]?.ORDER_TYPE === 'JO' ? 'Favor of' : 'Party Name'
+            }`]: Main[3],
+            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT'} Date`]:
+              DateFormatComma(Main[1]),
+            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT'} Amt (${
+              parsedTransObj[1].PARTY_CURRENCY
+            })`]: Main[6],
           };
           const numResult = await NumToWordsCon(Main[6], Main[9]);
           setNumToWords(numResult);
@@ -516,6 +563,7 @@ export const AdvancePayment = ({route}) => {
       console.error('Error fetching approval details:', error.message);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -524,7 +572,15 @@ export const AdvancePayment = ({route}) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={fetchAdvancePaymentDetails} // Trigger fetchData on pull-down
+          colors={[CustomThemeColors.primary]} // Customize spinner color
+        />
+      }>
       <TitleBar
         text={`Add Advance Payment - ${paymentId}`}
         showMenuBar={true}
@@ -542,18 +598,35 @@ export const AdvancePayment = ({route}) => {
       {/* Show InfoPairs or TableComponent based on the state */}
       {showInfoPairs ? (
         <>
-          <InfoPairs
-            data={pairsData}
-            imp={['Cheque Ref No', 'LC Ref No', 'Favor of']}
-            valueChanger={{[`TDS Amount (${tDSCurrency})`]: calculatedTDS}}
-          />
+          <ScrollView
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={fetchAdvancePaymentDetails} // Trigger fetchData on pull-down
+                colors={[CustomThemeColors.primary]} // Customize spinner color
+              />
+            }>
+            <InfoPairs
+              data={pairsData}
+              imp={['Cheque Ref No', 'LC Ref No', 'Favor of', 'DD No']}
+              valueChanger={{[`TDS Amount (${tDSCurrency})`]: calculatedTDS}}
+            />
+          </ScrollView>
           {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
         </>
       ) : (
         <>
           {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
 
-          <ScrollView style={styles.scrollContainer}>
+          <ScrollView
+            style={styles.scrollContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={fetchAdvancePaymentDetails} // Trigger fetchData on pull-down
+                colors={[CustomThemeColors.primary]} // Customize spinner color
+              />
+            }>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Payment Date</Text>
               <Text style={commonStyles.oneLineValue}>20 Nov 2024</Text>
@@ -567,7 +640,11 @@ export const AdvancePayment = ({route}) => {
             <ApprovalTableComponent
               tableData={materialAdPayment}
               highlightVal={['Payable Amt']}
-              heading={'Materials for Advance Payment'}
+              heading={
+                transValue[4][0]?.ORDER_TYPE === 'JO'
+                  ? 'Jobs for Advance Payment'
+                  : 'Materials for Advance Payment'
+              }
             />
             <ApprovalTableComponent
               tableData={additionalCharges}
@@ -712,9 +789,13 @@ export const AdvancePayment = ({route}) => {
                 {transValue[4][0]?.ORDER_TYPE === 'PO' ? 'Ref ' : 'DD '}
                 No <Text style={commonStyles.redAsterisk}>*</Text>
               </Text>
-              <Text style={commonStyles.oneLineValue}>
-                {pairsData[0]['TT Ref No']}
-              </Text>
+              <TextInput
+                style={[commonStyles.oneLineValue, commonStyles.input]}
+                placeholder="" // Placeholder text
+                value={transDetails[3].toString()}
+                editable={false} // Disables input
+              />
+              
             </View>
             {transValue[4][0]?.ORDER_TYPE === 'JO' && (
               <View style={commonStyles.flexRow}>
@@ -726,7 +807,7 @@ export const AdvancePayment = ({route}) => {
             )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD ' : ''}Case Date
+                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD ' : 'Case '} Date
               </Text>
               <Text style={commonStyles.oneLineValue}>
                 {DateFormatComma(mainData[1])}

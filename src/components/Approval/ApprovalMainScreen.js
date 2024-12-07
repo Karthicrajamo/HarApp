@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
+  RefreshControl,
   ActivityIndicator,
 } from 'react-native';
 import {Image} from 'react-native-elements';
@@ -34,6 +35,7 @@ const ApprovalScreen = () => {
   const [filteredApprovalData, setFilteredApprovalData] = useState([]);
   const [tempFilteredApprovalData, setTempFilteredApprovalData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isHorseLoading, setIsHorseLoading] = useState(false);
   const [BillsPDFModalVisible, setBillsPDFModalVisible] = useState(false);
   const [AdvPDFModalVisible, setAdvPDFModalVisible] = useState(false);
@@ -93,6 +95,7 @@ const ApprovalScreen = () => {
   // Fetch Approval List Data
   const fetchApprovalList = async () => {
     try {
+      setIsRefreshing(true)
       setIsLoading(true);
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials?.password;
@@ -138,6 +141,8 @@ const ApprovalScreen = () => {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false)
+
     }
   };
 
@@ -370,6 +375,13 @@ const ApprovalScreen = () => {
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={{paddingVertical: 3}}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={fetchApprovalList} // Trigger fetchData on pull-down
+              colors={[CustomThemeColors.primary]} // Customize spinner color
+            />
+          }
         />
       )}
       <CustomModal
