@@ -117,41 +117,42 @@ export const AdvancePayment = ({route}) => {
       fetchAdvancePaymentDetails();
     } else {
       console.log('currency tds:: No currency available');
+      getTaxCurrency()
     }
     setIsLoading(false);
   }, [tDSCurrency]);
 
+  const getTaxCurrency = async () => {
+    try {
+      // SQL query to get the TAX_CURRENCY
+      const taxCurrencyQuery = `select TAX_CURRENCY from financial_cycle where rownum = 1`;
+
+      const response = await fetch(
+        `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
+          taxCurrencyQuery,
+        )}`,
+      );
+      const taxCurrencyResult = await response.json();
+      console.log('Tax Currency Result adv page:', taxCurrencyResult);
+
+      if (taxCurrencyResult.length > 0) {
+        if (
+          Array.isArray(taxCurrencyResult) &&
+          taxCurrencyResult.length > 0
+        ) {
+          setTDSCurrency(taxCurrencyResult[0]); // Sets only the first element
+        } else {
+          setTDSCurrency(''); // Fallback in case the array is empty or not valid
+        }
+      } else {
+        console.error('Tax currency not found.');
+      }
+    } catch (error) {
+      console.error('Error fetching tax currency:', error);
+    }
+  };
   useEffect(() => {
     setIsLoading(true);
-    const getTaxCurrency = async () => {
-      try {
-        // SQL query to get the TAX_CURRENCY
-        const taxCurrencyQuery = `select TAX_CURRENCY from financial_cycle where rownum = 1`;
-
-        const response = await fetch(
-          `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
-            taxCurrencyQuery,
-          )}`,
-        );
-        const taxCurrencyResult = await response.json();
-        console.log('Tax Currency Result bills page:', taxCurrencyResult);
-
-        if (taxCurrencyResult.length > 0) {
-          if (
-            Array.isArray(taxCurrencyResult) &&
-            taxCurrencyResult.length > 0
-          ) {
-            setTDSCurrency(taxCurrencyResult[0]); // Sets only the first element
-          } else {
-            setTDSCurrency(''); // Fallback in case the array is empty or not valid
-          }
-        } else {
-          console.error('Tax currency not found.');
-        }
-      } catch (error) {
-        console.error('Error fetching tax currency:', error);
-      }
-    };
     getTaxCurrency();
     setIsLoading(false);
   }, []);
@@ -534,6 +535,8 @@ export const AdvancePayment = ({route}) => {
           setPaymentId(Main[0]);
           setAccountNo(Main[8]);
 
+          const Type = parsedTransObj[4][0]?.ORDER_TYPE
+
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
             [`Payment Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
@@ -542,14 +545,14 @@ export const AdvancePayment = ({route}) => {
             [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
               poDetails[2],
             'Actual Paid After Adjustment': Main[6],
-            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT Ref'} No`]:
+            [`${Type === 'JO' ? 'DD' : 'TT Ref'} No`]:
               transactionDetails[3],
             [`${
-              transValue[4][0]?.ORDER_TYPE === 'JO' ? 'Favor of' : 'Party Name'
+              Type === 'JO' ? 'Favor of' : 'Party Name'
             }`]: Main[3],
-            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT'} Date`]:
+            [`${Type === 'JO' ? 'DD' : 'TT'} Date`]:
               DateFormatComma(Main[1]),
-            [`${transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD' : 'TT'} Amt (${
+            [`${Type === 'JO' ? 'DD' : 'TT'} Amt (${
               parsedTransObj[1].PARTY_CURRENCY
             })`]: Main[6],
           };
@@ -582,8 +585,9 @@ export const AdvancePayment = ({route}) => {
         />
       }>
       <TitleBar
-        text={`Add Advance Payment - ${paymentId}`}
-        showMenuBar={true}
+text={`${
+  transName === 'ModPayment' ? 'Modify Advance Payment' : transName
+} - ${paymentId}`}        showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
         onClose={() => navigation.navigate('ApprovalMainScreen')}

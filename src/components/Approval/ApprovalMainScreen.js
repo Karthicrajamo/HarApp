@@ -55,7 +55,7 @@ const ApprovalScreen = () => {
 
   // Calculate current date minus 30 days
   const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - 31);
+  startDate.setDate(currentDate.getDate() - 511);
 
   // Format the dates as 'DD-MMM-YY'
   const formatDate = date => {
@@ -95,7 +95,7 @@ const ApprovalScreen = () => {
   // Fetch Approval List Data
   const fetchApprovalList = async () => {
     try {
-      setIsRefreshing(true)
+      setIsRefreshing(true);
       setIsLoading(true);
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials?.password;
@@ -131,6 +131,7 @@ const ApprovalScreen = () => {
           // 'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
+          'CanPaysheetPayment'
           // 'AddDocumentApproval',
         ].includes(item.TRANS_NAME),
       );
@@ -141,8 +142,7 @@ const ApprovalScreen = () => {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false)
-
+      setIsRefreshing(false);
     }
   };
 
@@ -226,7 +226,11 @@ const ApprovalScreen = () => {
           transId: transId,
           status: status,
         });
-      } else if (transName === 'AddPayment' || 'ModPayment') {
+      } else if (
+        transName === 'AddPayment' ||
+        transName === 'ModPayment' ||
+        transName === 'CanPaysheetPayment'
+      ) {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
           navigation.navigate('AdvancePayment', {
@@ -313,7 +317,8 @@ const ApprovalScreen = () => {
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
           {(item.TRANS_NAME === 'AddPayment' ||
-            item.TRANS_NAME === 'ModPayment') && (
+            item.TRANS_NAME === 'ModPayment' ||
+            item.TRANS_NAME === 'CanPaysheetPayment') && (
             <TouchableOpacity
               onPress={() => {
                 const firstWord = item.IDENTIFICATION.trim().split(' ')[0];
@@ -352,11 +357,13 @@ const ApprovalScreen = () => {
         onClose={handleHomeScreen}
       />
       {searchModalVisible && (
-        <SearchComponent
-          onClose={setSearchModalVisible}
-          data={filteredApprovalData}
-          setFilteredDataApproval={setTempFilteredApprovalData}
-        />
+        <View>
+          <SearchComponent
+            onClose={setSearchModalVisible}
+            data={filteredApprovalData}
+            setFilteredDataApproval={setTempFilteredApprovalData}
+          />
+        </View>
       )}
       <View style={{alignItems: 'center'}}>
         <ApprovalDateFilter

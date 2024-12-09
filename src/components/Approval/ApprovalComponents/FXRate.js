@@ -1,82 +1,68 @@
-import React, {useState, useEffect} from 'react';
-import {View} from 'react-native';
-import {Text} from 'react-native';
-import {API_URL} from '../../ApiUrl';
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import { API_URL } from '../../ApiUrl';
 
-const CurrencyConversion = ({BillCurrency, setFxRate}) => {
+const CurrencyConversion = ({ BillCurrency, setFxRate }) => {
   const [taxCurrency, setTaxCurrency] = useState(null);
-  const billCurrency = BillCurrency; // This is a constant for the bill currency
+  const billCurrency = BillCurrency;
 
+  // Fetch tax currency on component mount
   useEffect(() => {
-    const getTaxCurrency = async () => {
+    const fetchTaxCurrency = async () => {
       try {
-        console.log('BillCurrency::', BillCurrency);
-        // SQL query to get the TAX_CURRENCY
-        const taxCurrencyQuery = `select TAX_CURRENCY from financial_cycle where rownum = 1`;
-
+        const taxCurrencyQuery = `SELECT TAX_CURRENCY FROM financial_cycle WHERE ROWNUM = 1`;
         const response = await fetch(
           `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
-            taxCurrencyQuery,
-          )}`,
+            taxCurrencyQuery
+          )}`
         );
         const taxCurrencyResult = await response.json();
-        console.log('Tax Currency Result:', taxCurrencyResult);
 
-        if (taxCurrencyResult.length > 0) {
+        if (Array.isArray(taxCurrencyResult) && taxCurrencyResult.length > 0) {
           setTaxCurrency(taxCurrencyResult[0].TAX_CURRENCY);
-          // setTDSCurrency(taxCurrencyResult);
         } else {
-          console.error('Tax currency not found.');
+          console.error('Tax currency not found in the database.');
         }
       } catch (error) {
         console.error('Error fetching tax currency:', error);
       }
     };
 
-    getTaxCurrency();
-  }, []);
+    fetchTaxCurrency();
+  }, [BillCurrency]);
 
+  // Fetch exchange rate whenever billCurrency or taxCurrency changes
   useEffect(() => {
-    const getExchangeRate = async () => {
+    const fetchExchangeRate = async () => {
+      if (!taxCurrency) return; // Wait until taxCurrency is loaded
+
       if (billCurrency === taxCurrency) {
         setFxRate(1);
       } else {
         try {
-          let fx = [];
-          let fxsql = `select xrate from exchange_master where currency1='${billCurrency}' and currency2=(select TAX_CURRENCY from financial_cycle where rownum = 1)`;
-
-          // Fetch exchange rate
+          const fxSql = `SELECT XRATE FROM exchange_master WHERE currency1='${billCurrency}' AND currency2='${taxCurrency}'`;
           const response1 = await fetch(
-            `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
-              fxsql,
-            )}`,
+            `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(fxSql)}`
           );
           const fxResult1 = await response1.json();
-          console.log('fxresult::', fxResult1);
-          fx = fxResult1;
 
-          if (fxResult1.length > 0) {
-            setFxRate(parseFloat(fx[0].toString()));
+          if (Array.isArray(fxResult1) && fxResult1.length > 0) {
+            setFxRate(parseFloat(fxResult1[0].XRATE));
           } else {
-            fx = [];
-            fxsql = `select 1/xrate from exchange_master where currency1=(select TAX_CURRENCY from financial_cycle where rownum = 1) and currency2='${billCurrency}'`;
-
+            const reverseFxSql = `SELECT 1 / XRATE AS XRATE FROM exchange_master WHERE currency1='${taxCurrency}' AND currency2='${billCurrency}'`;
             const response2 = await fetch(
               `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(
-                fxsql,
-              )}`,
+                reverseFxSql
+              )}`
             );
             const fxResult2 = await response2.json();
-            console.log('fxresult2::', fxResult2);
-            fx = fxResult2;
 
-            if (fx.length > 0) {
-              setFxRate(parseFloat(fx[0].toString()));
+            if (Array.isArray(fxResult2) && fxResult2.length > 0) {
+              setFxRate(parseFloat(fxResult2[0].XRATE));
             } else {
-              console.log(
-                'Tax Currency not added in exchange master. Please add and then proceed the payment',
+              console.error(
+                'Exchange rate not found in the database. Please add the exchange rate and retry.'
               );
-              // Add any additional handling logic as needed
             }
           }
         } catch (error) {
@@ -85,8 +71,14 @@ const CurrencyConversion = ({BillCurrency, setFxRate}) => {
       }
     };
 
-    getExchangeRate();
-  }, [billCurrency, taxCurrency]);
+    fetchExchangeRate();
+  }, [billCurrency, taxCurrency, setFxRate]);
+
+  // return (
+  //   <View>
+  //     <Text>Fetching exchange rate...</Text>
+  //   </View>
+  // );
 };
 
 export default CurrencyConversion;
