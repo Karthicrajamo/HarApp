@@ -17,6 +17,7 @@ import AssetListImage from './src/components/AssetListImage/assetListImage';
 import ApprovalMainScreen from './src/components/Approval/ApprovalMainScreen';
 import {AdvancePayment} from './src/components/Approval/Payment/AdvancePayment';
 import {BillsPayment} from './src/components/Approval/Payment/BillsPayment';
+import {BankAccountTransactionMain} from './src/components/Approval/BankAccountTransaction/BankAccountTransactionMain';
 import AssetSkel from './src/components/AssetListDetails/AssetListDetailsSkeleton';
 import NetInfo from '@react-native-community/netinfo';
 import {sharedData} from './src/components/Login/UserId';
@@ -1212,7 +1213,6 @@ const App = () => {
                       component={HomeScreen}
                       options={{headerShown: false}}
                     />
-
                     <Stack.Screen
                       name="LoginScreen"
                       component={LoginScreen}
@@ -1258,7 +1258,6 @@ const App = () => {
                     component={HomeScreen}
                     options={{headerShown: false}}
                   /> */}
-
                     <Stack.Screen
                       name="TestScreen"
                       component={TestScreen}
@@ -1289,7 +1288,6 @@ const App = () => {
                       component={NoticeBoardMainScreen}
                       options={{headerShown: false}}
                     />
-
                     <Stack.Screen
                       name="NoticeBoardListScreen"
                       component={NoticeBoardListScreen}
@@ -1300,7 +1298,6 @@ const App = () => {
                       component={NoticeBoardScreen}
                       options={{headerShown: false}}
                     />
-
                     {/* <Stack.Screen
                 name="GroupListScreen"
                 component={GroupListScreen}
@@ -1309,7 +1306,6 @@ const App = () => {
                 name="NoticeBoardListScreen"
                 component={NoticeBoardListScreen}
               /> */}
-
                     <Stack.Screen
                       name="ResetPassword"
                       component={ResetPassword}
@@ -1319,7 +1315,6 @@ const App = () => {
                 name="AssectSkel"
                 component={AssetSkel}
               /> */}
-
                     {/* <Stack.Screen 
                 name="ResetPassword" 
                 component={ResetPassword} 
@@ -1375,12 +1370,18 @@ const App = () => {
                       name="AdvancePayment"
                       component={AdvancePayment}
                       options={{headerShown: false}}
-                    /><Stack.Screen
+                    />
+                    <Stack.Screen
                       name="BillsPayment"
                       component={BillsPayment}
                       options={{headerShown: false}}
                     />
-
+                    {/* Karthic 9 Dec 24 */}
+                    <Stack.Screen
+                      name="BankAccountTransactionMain"
+                      component={BankAccountTransactionMain}
+                      options={{headerShown: false}}
+                    />
                     {/* Add other screens here */}
                   </Stack.Navigator>
                 </>

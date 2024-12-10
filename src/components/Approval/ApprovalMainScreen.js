@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
-  RefreshControl,
   ActivityIndicator,
+  RefreshControl,
+  Modal,
 } from 'react-native';
 import {Image} from 'react-native-elements';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
@@ -26,7 +27,8 @@ import {sharedData} from '../Login/UserId';
 import {BlobFetchComponent} from '../common-utils/BlobFetchComponent';
 import axios from 'axios';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
-
+import LottieView from 'lottie-react-native';
+import generatingPdfAnimationJSON from '../assets/animations/generating-pdf-animation.json';
 const {width, height} = Dimensions.get('window');
 
 const ApprovalScreen = () => {
@@ -38,6 +40,8 @@ const ApprovalScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isHorseLoading, setIsHorseLoading] = useState(false);
   const [BillsPDFModalVisible, setBillsPDFModalVisible] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [PDFModalVisible, setPDFModalVisible] = useState(false);
   const [AdvPDFModalVisible, setAdvPDFModalVisible] = useState(false);
   const [transValue, setTransValue] = useState([]);
   const [itemValues, setItemValues] = useState([]);
@@ -49,13 +53,25 @@ const ApprovalScreen = () => {
   const toggleModalPDF = () => {
     setBillsPDFModalVisible(false);
     setAdvPDFModalVisible(false);
+    setPDFModalVisible(!PDFModalVisible);
   };
 
   const currentDate = new Date();
 
   // Calculate current date minus 30 days
   const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - 511);
+  startDate.setDate(currentDate.getDate() - 183);
+
+  // useEffect(() => {
+  //   console.log('482984239492 : ');
+  //   fetchApprovalList();
+  // }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Navigated back to ComponentA');
+      fetchApprovalList();
+    }, []),
+  );
 
   // Format the dates as 'DD-MMM-YY'
   const formatDate = date => {
@@ -126,13 +142,18 @@ const ApprovalScreen = () => {
 
       const filteredData = data.filter(item =>
         [
-          // 'AddPaymentGroup',
-          // 'ModPaymentGroup',
-          // 'DelPaymentGroup',
+          'AddPaymentGroup',
+          'ModPaymentGroup',
+          'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
-          'CanPaysheetPayment'
-          // 'AddDocumentApproval',
+          'CanPayment',
+          'AddDocumentApproval',
+          'ModDocumentApproval',
+          'AddPaysheetPayment',
+          'ModPaysheetPayment',
+          'CanPaysheetPayment',
+          'AddBankTrans',
         ].includes(item.TRANS_NAME),
       );
       console.log('Ap filteredData:::', filteredData);
@@ -189,16 +210,6 @@ const ApprovalScreen = () => {
     // }
   };
 
-  // useEffect(() => {
-  //   fetchApprovalList();
-  // }, []);
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('Navigated back to ComponentA');
-      fetchApprovalList();
-    }, []),
-  );
-
   const handleRefresh = () => {
     setIsLoading(true);
     fetchApprovalList();
@@ -226,11 +237,7 @@ const ApprovalScreen = () => {
           transId: transId,
           status: status,
         });
-      } else if (
-        transName === 'AddPayment' ||
-        transName === 'ModPayment' ||
-        transName === 'CanPaysheetPayment'
-      ) {
+      } else if (transName === 'AddPayment' || 'ModPayment') {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
           navigation.navigate('AdvancePayment', {
@@ -247,6 +254,24 @@ const ApprovalScreen = () => {
             currentLevel: currentLevel,
           });
         }
+        if (
+          transName === 'AddDocumentApproval' ||
+          transName === 'ModDocumentApproval'
+        ) {
+          navigation.navigate('DocumentApprovalTrans', {
+            transName: transName,
+            transId: transId,
+            status: status,
+            currentLevel: currentLevel,
+          });
+        }
+      } if (transName === 'AddBankTrans') {
+        navigation.navigate('BankAccountTransactionMain', {
+          transName: transName,
+          transId: transId,
+          status: status,
+          currentLevel: currentLevel,
+        });
       }
     };
   };
@@ -317,8 +342,7 @@ const ApprovalScreen = () => {
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
           {(item.TRANS_NAME === 'AddPayment' ||
-            item.TRANS_NAME === 'ModPayment' ||
-            item.TRANS_NAME === 'CanPaysheetPayment') && (
+            item.TRANS_NAME === 'ModPayment') && (
             <TouchableOpacity
               onPress={() => {
                 const firstWord = item.IDENTIFICATION.trim().split(' ')[0];
@@ -357,13 +381,11 @@ const ApprovalScreen = () => {
         onClose={handleHomeScreen}
       />
       {searchModalVisible && (
-        <View>
-          <SearchComponent
-            onClose={setSearchModalVisible}
-            data={filteredApprovalData}
-            setFilteredDataApproval={setTempFilteredApprovalData}
-          />
-        </View>
+        <SearchComponent
+          onClose={setSearchModalVisible}
+          data={filteredApprovalData}
+          setFilteredDataApproval={setTempFilteredApprovalData}
+        />
       )}
       <View style={{alignItems: 'center'}}>
         <ApprovalDateFilter
@@ -399,7 +421,7 @@ const ApprovalScreen = () => {
         <TouchableOpacity
           onPress={async () => {
             try {
-              setIsHorseLoading(true); // Set loading to true before starting the operation
+              setIsPdfLoading(true); // Set loading to true before starting the operation
               setBillsPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
@@ -419,7 +441,7 @@ const ApprovalScreen = () => {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
               // Set loading to false after the operation completes, regardless of success or failure
-              setIsHorseLoading(false);
+              setIsPdfLoading(false);
             }
           }}
           style={styles.pdfSubOption}>
@@ -428,7 +450,7 @@ const ApprovalScreen = () => {
         <TouchableOpacity
           onPress={async () => {
             try {
-              setIsHorseLoading(true);
+              setIsPdfLoading(true);
               setBillsPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printDetailedPdf`;
@@ -448,7 +470,7 @@ const ApprovalScreen = () => {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
               // Ensure loading state is set to false after the operation
-              setIsHorseLoading(false);
+              setIsPdfLoading(false);
             }
           }}
           // onPress={() => PrintGroupPdf()}
@@ -464,7 +486,7 @@ const ApprovalScreen = () => {
         <TouchableOpacity
           onPress={async () => {
             try {
-              setIsHorseLoading(true); // Set loading to true before starting the operation
+              setIsPdfLoading(true); // Set loading to true before starting the operation
               setAdvPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
@@ -483,13 +505,34 @@ const ApprovalScreen = () => {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
               // Set loading to false after the operation completes, regardless of success or failure
-              setIsHorseLoading(false);
+              setIsPdfLoading(false);
             }
           }}
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Print PDF</Text>
         </TouchableOpacity>
       </CustomModal>
+      {/* Lottie View */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isPdfLoading} //isPdfLoading
+        onRequestClose={() => setIsPdfLoading(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <LottieView
+              source={generatingPdfAnimationJSON} // Replace with your Lottie file path
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+            <Text
+              style={[styles.modalTitle, {color: 'black', fontWeight: '500'}]}>
+              Generating PDF, please wait...
+            </Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -563,6 +606,33 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   subOptionText: {color: 'black', fontWeight: '400', textAlign: 'center'},
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  lottie: {
+    width: 100,
+    height: 100,
+  },
 });
 
 export default ApprovalScreen;

@@ -18,7 +18,7 @@ const MinimalDateFilter = ({ setFormattedStartDate, setFormattedEndDate }) => {
 
   // Calculate current date minus 30 days
   const startDate = new Date(currentDate);
-  startDate.setDate(currentDate.getDate() - 510);
+  startDate.setDate(currentDate.getDate() - 183);
 
   // Format the dates as 'DD-MMM-YY'
   const formatDate = (date) => {
@@ -94,6 +94,7 @@ const MinimalDateFilter = ({ setFormattedStartDate, setFormattedEndDate }) => {
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleStartDateChange}
+          maximumDate={new Date()}
         />
       )}
       {isEndPickerVisible && (
@@ -102,6 +103,7 @@ const MinimalDateFilter = ({ setFormattedStartDate, setFormattedEndDate }) => {
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleEndDateChange}
+          maximumDate={new Date()}
         />
       )}
     </View>

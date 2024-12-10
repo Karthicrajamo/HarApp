@@ -70,7 +70,8 @@ switch (ENVIRONMENT) {
 
   case 'Test':
     // API_URL = 'http://192.168.0.169:8084'; // Harish
-    API_URL = 'http://192.168.0.107:8087'; // Corrected the IP address
+    // API_URL = 'http://192.168.0.107:8085'; // Corrected the IP address
+    API_URL = 'http://192.168.0.207:8087'; // Corrected the IP address
     CompanyName = 'Jay Jay Mills (Bangladesh) Private Limited';
     logo = 'jjmills';
     pass = 'hdplqa';
