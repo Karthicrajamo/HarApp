@@ -420,6 +420,9 @@ const LoginScreen = () => {
             />
           </View>
 
+          {/* <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>LOGIN</Text>
+          </TouchableOpacity> */}
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>LOGIN</Text>
           </TouchableOpacity>

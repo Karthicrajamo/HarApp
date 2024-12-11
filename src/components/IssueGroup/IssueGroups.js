@@ -27,6 +27,8 @@ import DeviceInfo from 'react-native-device-info';
 import {Alert} from 'react-native';
 import {ToastAndroid} from 'react-native';
 
+
+
 const IssueGroups = () => {
   useEffect(() => {
     fetchTableData();
@@ -2151,8 +2153,275 @@ ORDER BY
       />
       <View style={{justifyContent: 'center', alignItems: 'center'}}>
         <TouchableOpacity onPress={() => handleIssue()}>
-          <CustomButton>Issue</CustomButton>
+          <CustomButton>Issue </CustomButton>
         </TouchableOpacity>
+      </View>
+
+      {/* </View> */}
+      <View style={{flex: 1}}>
+        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+        <View style={{ flexGrow: 1, paddingBottom: 20 }}>
+
+            {/* First TableComponent */}
+            <View style={{ flexShrink: 1, marginTop: 0 }}>
+            {filteredMainData.length > 0 ? (
+                <TableComponent
+                  key={filteredMainData.length}
+                  initialData={filteredMainData}
+                  onRowIndexSelectDataLoad={value => {
+                    setSelectedRow(value);
+                    console.log('selectedRow_____', tableData[value]);
+                    console.log('selectedRow_____array', value);
+                    // GroupTransformObject(tableData[value])
+                    setMainType(tableData[value].type);
+                    SetActiveGroupId(tableData[value].groupId);
+                    setModelButton(false);
+
+                    setActiveDataPdf([]);
+                  }}
+                  onRowIndexSelect={value => {
+                    if (value.length < 1) {
+                      console.log('empty data::::');
+                      setMainTableSelectedIndex([]);
+                      setSelectedCheckBoxData([]);
+                      setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                      setActiveDataPdf([]);
+                    } else {
+                      setActiveDataPdf([]);
+                      setSelectedRow(value);
+                      setMainType(tableData[value]?.type);
+                      const groupId = tableData[value]?.groupId;
+                      GroupTransformObject(tableData[value]);
+                      SetActiveGroupId(tableData[value].groupId);
+                      console.log('rowdataaa::', value);
+                      setMainTableSelectedIndex(prev => {
+                        if (prev.includes(groupId)) {
+                          const groupKey = `groupId:${groupId}`;
+                          console.log(
+                            'selectedCheckBoxData before filtering:',
+                            selectedCheckBoxData,
+                          );
+                          console.log('groupKey:', groupKey);
+                          console.log('groupId:', groupId);
+
+                          const filteredData = Object.keys(
+                            selectedCheckBoxData,
+                          ).reduce((acc, key) => {
+                            // Check if the groupId in the key matches the groupId we want to remove
+                            if (!key.includes(`groupId:${groupId}`)) {
+                              // Add the entry to the accumulator if the condition is met
+                              acc[key] = selectedCheckBoxData[key];
+                            }
+                            return acc;
+                          }, {});
+                          console.log('filteredData::', filteredData);
+                          setSelectedCheckBoxData(filterMainData);
+                          // Log the entire object after filtering
+                          console.log(
+                            'selectedCheckBoxData after filtering:',
+                            filteredData,
+                          );
+                          setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                          return prev.filter(id => id !== groupId);
+                        } else {
+                          setTimeout(() => setOnPressCheckBoxHandle(true), 0);
+                          return [...prev, groupId];
+                        }
+                      });
+                      // const dataObject = {...tableData[value], Select: true};
+                      // setSelectedGroupData(dataObject);
+                    }
+                    setModelButton(false);
+                  }}
+                  onPressCheckBoxHandle={setOnPressCheckBoxHandle}
+                  mainTableSelectedIndex={mainTableSelectedIndex}
+                  setMainTableSelectedIndex={setMainTableSelectedIndex}
+                  noModel={false}
+                  showCheckBox={true}
+                  onlyFetchData={true}
+                  setMainTableSelectAll={setMainTableSelectAll}
+                  style={{marginTop: 20}}
+                />
+              ) : (
+                <View style={styles.container}>
+                  {/* Table Header */}
+                  <View style={styles.headerRow}>
+                    {headers.map((header, index) => (
+                      <Text key={index} style={styles.headerText}>
+                        {header}
+                      </Text>
+                    ))}
+                  </View>
+
+                  {/* Table Data */}
+                  <View style={styles.dataRow}>
+                    <Text style={styles.dataText}>No Data to Display</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Second SubTableComponent */}
+            <View style={{ flexShrink: 1, marginTop: 20 }}>
+
+              {selectedSubData.length > 0 && (
+                <SubTableComponent
+                  initialData={selectedSubData}
+                  showCheckBox={true}
+                  noModel={false}
+                  selectAllIsChecked={onPressCheckBoxHandle}
+                  onRowIndexSelect={data => {
+                    if (data.length == 0) {
+                      const ids = selectedSubData
+                        .map(item => item.paymentId || item.transferId)
+                        .filter(Boolean);
+                      console.log('IDs:', ids);
+                      setSelectedPayments([]);
+
+                      // Remove the activeGroupId from the mainTableSelectedIndex
+                      setMainTableSelectedIndex(prev => {
+                        console.log(
+                          'Active group ID being removed:',
+                          activeGroupId,
+                        );
+                        const filtered = prev.filter(
+                          item => item !== activeGroupId,
+                        );
+                        console.log('New filtered indexes:', filtered);
+                        return filtered;
+                      });
+
+                      // Prepare the updated selectedArray
+                      setSelectedArray(prevArray => {
+                        // Start with the current selectedArray state
+                        let updatedArray = [...prevArray];
+
+                        ids.forEach(id => {
+                          const exists = updatedArray.includes(id);
+
+                          // If id exists, remove it; if it doesn’t, add it
+                          if (exists) {
+                            updatedArray = updatedArray.filter(
+                              item => item !== id,
+                            );
+                          }
+                        });
+
+                        return updatedArray;
+                      });
+
+                      // }
+                    } else {
+                      const {transferId, paymentId} = data;
+                      // const type = tableData[selectedRow].type;
+                      const groupId = data.groupId;
+                      const type =
+                        tableData.find(item => item.groupId === groupId)
+                          ?.type || 'No data to display';
+
+                      console.log('matchingType--', type);
+                      const selectedId = transferId || paymentId; // Use either transferId or paymentId
+                      // const issuedStus =
+                      //   data.paymentStatus === 'Issued' ? data : null;
+
+                      console.log('dataaaaaa:', data);
+
+                      console.log('Updated selectedArray:', selectedArray);
+
+                      setpartyNames(data.partyName);
+                      setSelectedGroupId(prev => ({...prev, groupId: groupId}));
+
+                      setSelectedPayments(prevPayments => {
+                        console.log('selectedPayments---::::', selectedId);
+                        const key = `${type}:${groupId}`;
+                        const currentIds = prevPayments[key] || [];
+                        const updatedIds = currentIds.includes(selectedId)
+                          ? currentIds.filter(id => id !== selectedId) // Corrected condition to remove selectedId
+                          : [...currentIds, selectedId];
+
+                        const updatedState = {...prevPayments};
+                        console.log('updatedState::', updatedState);
+                        console.log('key::', key);
+                        if (updatedIds.length > 0) {
+                          updatedState[key] = updatedIds;
+                        } else {
+                          delete updatedState[key];
+                        }
+
+                        return updatedState;
+                      });
+                      // if (MainType !== 'Fund Transfer') {
+                      //   setModelButton(true);
+                      // }
+                    }
+                  }}
+                  setSelectedCheckBoxData={setSelectedCheckBoxData}
+                  selectedCheckBoxData={selectedCheckBoxData}
+                  mainTableSelectedIndex={mainTableSelectedIndex}
+                  setMainTableSelectedIndex={setMainTableSelectedIndex}
+                  activeIndex={index => {
+                    const data = selectedSubData[index];
+                    const {transferId, paymentId} = data;
+
+                    setSubTabPaymentId(paymentId?.toString());
+                    setpartyNames(data.partyName);
+                    setCurrency(data.currency);
+                    setActiveDataPdf(data);
+                  }}
+                  selectedPaymentType={MainType}
+                  excludeColumns={['groupId']}
+                  toggleData={index => {
+                    const dataa = selectedSubData[index];
+                    setSelectedSubRow(index);
+                    console.log('toggledata::', index);
+                    setActiveDataPdf(dataa);
+                    // if (MainType !== 'Fund Transfer') {
+                    //   setModelButton(true);
+                    // }
+                  }}
+                  RowDataForIssue={data => {
+                    const {transferId, paymentId} = data;
+                    // const type = data.type;
+                    // const groupId = data.groupId;
+                    const selectedId = transferId || paymentId;
+                    console.log('issued status', data);
+                    if (data.paymentStatus === 'Issued') {
+                      setSelectedArray(prevArray => {
+                        const exists = prevArray.includes(selectedId);
+
+                        console.log('Selection Toggle:', {
+                          currentArray: prevArray,
+                          selectedId: selectedId,
+                          exists: exists,
+                          result: exists
+                            ? prevArray.filter(item => item !== selectedId)
+                            : [...prevArray, selectedId],
+                        });
+
+                        // Or for more detailed debugging:
+                        console.log('Previous Array:', prevArray);
+                        console.log('Selected ID:', selectedId);
+                        console.log('ID exists in array?:', exists);
+                        console.log(
+                          'New Array:',
+                          exists
+                            ? prevArray.filter(item => item !== selectedId)
+                            : [...prevArray, selectedId],
+                        );
+
+                        return exists
+                          ? prevArray.filter(item => item !== selectedId)
+                          : [...prevArray, selectedId];
+                      });
+                    }
+                  }}
+                  mainTableSelectAll={mainTableSelectAll}
+                  setIsLoading={setIsLoading}
+                />
+              )}
+            </View>
+          </View>
+        </ScrollView>
       </View>
 
       <Modal
@@ -2299,23 +2568,7 @@ ORDER BY
           </View>
         </View>
       </Modal>
-      <View></View>
 
-      {/* <View> */}
-      {/* {isPaymentGroupModal && (
-        <PdfComponent
-          placeholder="Print Payment Group PDF"
-          setIsModal={setIsPaymentGroupModal}
-          isModal={isPaymentGroupModal}
-          setSelectedPaymentType={setSelectedPaymentType}>
-          <TouchableOpacity style={styles.option}>
-            <Text style={styles.optionText}>Payment Id</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.option}>
-            <Text style={styles.optionText}>Payment Mode</Text>
-          </TouchableOpacity>
-        </PdfComponent>
-      )} */}
       <Modal
         visible={PDFModalVisible}
         onRequestClose={() => setPDFModalVisible(false)}
@@ -2446,277 +2699,6 @@ ORDER BY
           </View>
         </View>
       </Modal>
-
-      {/* </View> */}
-
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'flex-start',
-          marginBottom: 0,
-          maxHeight: '90%',
-        }}>
-        {/* First TableComponent */}
-        <View style={{maxHeight: 120, marginTop: 0}}>
-          {filteredMainData.length > 0 ? (
-            <TableComponent
-              key={filteredMainData.length}
-              initialData={filteredMainData}
-              onRowIndexSelectDataLoad={value => {
-                setSelectedRow(value);
-                console.log('selectedRow_____', tableData[value]);
-                console.log('selectedRow_____array', value);
-                // GroupTransformObject(tableData[value])
-                setMainType(tableData[value].type);
-                SetActiveGroupId(tableData[value].groupId);
-                setModelButton(false);
-
-                setActiveDataPdf([]);
-              }}
-              onRowIndexSelect={value => {
-                if (value.length < 1) {
-                  console.log('empty data::::');
-                  setMainTableSelectedIndex([]);
-                  setSelectedCheckBoxData([]);
-                  setTimeout(() => setOnPressCheckBoxHandle(false), 0);
-                  setActiveDataPdf([]);
-                } else {
-                  
-                  setActiveDataPdf([]);
-                  setSelectedRow(value);
-                  setMainType(tableData[value]?.type);
-                  const groupId = tableData[value]?.groupId;
-                  GroupTransformObject(tableData[value]);
-                  SetActiveGroupId(tableData[value].groupId);
-                  console.log('rowdataaa::', value);
-                  setMainTableSelectedIndex(prev => {
-                    if (prev.includes(groupId)) {
-                      const groupKey = `groupId:${groupId}`;
-                      console.log(
-                        'selectedCheckBoxData before filtering:',
-                        selectedCheckBoxData,
-                      );
-                      console.log('groupKey:', groupKey);
-                      console.log('groupId:', groupId);
-
-                      const filteredData = Object.keys(
-                        selectedCheckBoxData,
-                      ).reduce((acc, key) => {
-                        // Check if the groupId in the key matches the groupId we want to remove
-                        if (!key.includes(`groupId:${groupId}`)) {
-                          // Add the entry to the accumulator if the condition is met
-                          acc[key] = selectedCheckBoxData[key];
-                        }
-                        return acc;
-                      }, {});
-                      console.log('filteredData::', filteredData);
-                      setSelectedCheckBoxData(filterMainData);
-                      // Log the entire object after filtering
-                      console.log(
-                        'selectedCheckBoxData after filtering:',
-                        filteredData,
-                      );
-                      setTimeout(() => setOnPressCheckBoxHandle(false), 0);
-                      return prev.filter(id => id !== groupId);
-                    } else {
-                      setTimeout(() => setOnPressCheckBoxHandle(true), 0);
-                      return [...prev, groupId];
-                    }
-                  });
-                  // const dataObject = {...tableData[value], Select: true};
-                  // setSelectedGroupData(dataObject);
-                }
-                setModelButton(false);
-              }}
-              onPressCheckBoxHandle={setOnPressCheckBoxHandle}
-              mainTableSelectedIndex={mainTableSelectedIndex}
-              setMainTableSelectedIndex={setMainTableSelectedIndex}
-              noModel={false}
-              showCheckBox={true}
-              onlyFetchData={true}
-              setMainTableSelectAll={setMainTableSelectAll}
-              style={{marginTop: 20}}
-            />
-          ) : (
-            <View style={styles.container}>
-              {/* Table Header */}
-              <View style={styles.headerRow}>
-                {headers.map((header, index) => (
-                  <Text key={index} style={styles.headerText}>
-                    {header}
-                  </Text>
-                ))}
-              </View>
-
-              {/* Table Data */}
-              <View style={styles.dataRow}>
-                <Text style={styles.dataText}>No Data to Display</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Second SubTableComponent */}
-        <View
-          style={{
-            maxHeight: DeviceInfo.isTablet() ? 100 : 80,
-            marginTop: DeviceInfo.isTablet() ? 150 : 180,
-          }}>
-          {selectedSubData.length > 0 && (
-            <SubTableComponent
-              initialData={selectedSubData}
-              showCheckBox={true}
-              noModel={false}
-              selectAllIsChecked={onPressCheckBoxHandle}
-              onRowIndexSelect={data => {
-                if (data.length == 0) {
-                  const ids = selectedSubData
-                    .map(item => item.paymentId || item.transferId)
-                    .filter(Boolean);
-                  console.log('IDs:', ids);
-                  setSelectedPayments([]);
-
-                  // Remove the activeGroupId from the mainTableSelectedIndex
-                  setMainTableSelectedIndex(prev => {
-                    console.log(
-                      'Active group ID being removed:',
-                      activeGroupId,
-                    );
-                    const filtered = prev.filter(
-                      item => item !== activeGroupId,
-                    );
-                    console.log('New filtered indexes:', filtered);
-                    return filtered;
-                  });
-
-                  // Prepare the updated selectedArray
-                  setSelectedArray(prevArray => {
-                    // Start with the current selectedArray state
-                    let updatedArray = [...prevArray];
-
-                    ids.forEach(id => {
-                      const exists = updatedArray.includes(id);
-
-                      // If id exists, remove it; if it doesn’t, add it
-                      if (exists) {
-                        updatedArray = updatedArray.filter(item => item !== id);
-                      }
-                    });
-
-                    return updatedArray;
-                  });
-
-                  // }
-                } else {
-                  const {transferId, paymentId} = data;
-                  // const type = tableData[selectedRow].type;
-                  const groupId = data.groupId;
-                  const type =
-                    tableData.find(item => item.groupId === groupId)?.type ||
-                    'No data to display';
-
-                  console.log('matchingType--', type);
-                  const selectedId = transferId || paymentId; // Use either transferId or paymentId
-                  // const issuedStus =
-                  //   data.paymentStatus === 'Issued' ? data : null;
-
-                  console.log('dataaaaaa:', data);
-
-                  console.log('Updated selectedArray:', selectedArray);
-
-                  setpartyNames(data.partyName);
-                  setSelectedGroupId(prev => ({...prev, groupId: groupId}));
-
-                  setSelectedPayments(prevPayments => {
-                    console.log('selectedPayments---::::', selectedId);
-                    const key = `${type}:${groupId}`;
-                    const currentIds = prevPayments[key] || [];
-                    const updatedIds = currentIds.includes(selectedId)
-                      ? currentIds.filter(id => id !== selectedId) // Corrected condition to remove selectedId
-                      : [...currentIds, selectedId];
-
-                    const updatedState = {...prevPayments};
-                    console.log('updatedState::', updatedState);
-                    console.log('key::', key);
-                    if (updatedIds.length > 0) {
-                      updatedState[key] = updatedIds;
-                    } else {
-                      delete updatedState[key];
-                    }
-
-                    return updatedState;
-                  });
-                  // if (MainType !== 'Fund Transfer') {
-                  //   setModelButton(true);
-                  // }
-                }
-              }}
-              setSelectedCheckBoxData={setSelectedCheckBoxData}
-              selectedCheckBoxData={selectedCheckBoxData}
-              mainTableSelectedIndex={mainTableSelectedIndex}
-              setMainTableSelectedIndex={setMainTableSelectedIndex}
-              activeIndex={index => {
-                const data = selectedSubData[index];
-                const {transferId, paymentId} = data;
-
-                setSubTabPaymentId(paymentId?.toString());
-                setpartyNames(data.partyName);
-                setCurrency(data.currency);
-                setActiveDataPdf(data);
-              }}
-              selectedPaymentType={MainType}
-              excludeColumns={['groupId']}
-              toggleData={index => {
-                const dataa = selectedSubData[index];
-                setSelectedSubRow(index);
-                console.log('toggledata::', index);
-                setActiveDataPdf(dataa);
-                // if (MainType !== 'Fund Transfer') {
-                //   setModelButton(true);
-                // }
-              }}
-              RowDataForIssue={data => {
-                const {transferId, paymentId} = data;
-                // const type = data.type;
-                // const groupId = data.groupId;
-                const selectedId = transferId || paymentId;
-                console.log('issued status', data);
-                if (data.paymentStatus === 'Issued') {
-                  setSelectedArray(prevArray => {
-                    const exists = prevArray.includes(selectedId);
-
-                    console.log('Selection Toggle:', {
-                      currentArray: prevArray,
-                      selectedId: selectedId,
-                      exists: exists,
-                      result: exists
-                        ? prevArray.filter(item => item !== selectedId)
-                        : [...prevArray, selectedId],
-                    });
-
-                    // Or for more detailed debugging:
-                    console.log('Previous Array:', prevArray);
-                    console.log('Selected ID:', selectedId);
-                    console.log('ID exists in array?:', exists);
-                    console.log(
-                      'New Array:',
-                      exists
-                        ? prevArray.filter(item => item !== selectedId)
-                        : [...prevArray, selectedId],
-                    );
-
-                    return exists
-                      ? prevArray.filter(item => item !== selectedId)
-                      : [...prevArray, selectedId];
-                  });
-                }
-              }}
-              mainTableSelectAll={mainTableSelectAll}
-              setIsLoading={setIsLoading}
-            />
-          )}
-        </View>
-      </View>
 
       {isModelButton && (
         <TouchableOpacity onPress={() => isModel(true)}>

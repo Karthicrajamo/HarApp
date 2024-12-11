@@ -66,6 +66,8 @@ export const AdvancePayment = ({route}) => {
   const [fxRate, setFxRate] = useState('');
   const [currency, setCurrency] = useState('');
   const [numToWords, setNumToWords] = useState('');
+  const [actualMinSlab, setActualMinSlab] = useState('');
+  const [actualPaidAftAdj, setActualPaidAftAdj] = useState('');
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
   const [calculatedTDS, setCalculatedTDS] = useState('');
   const [tDSCurrency, setTDSCurrency] = useState('');
@@ -81,6 +83,24 @@ export const AdvancePayment = ({route}) => {
   useEffect(() => {
     console.log('approvalParams::', approvalParams);
   }, [approvalParams]);
+
+  useEffect(() => {
+    console.log('adjWithoutTax::', adjWithoutTax);
+
+    if (adjWithoutTax.length > 0) {
+      const totalAmount = adjWithoutTax.reduce((total, adjustment) => {
+        const amount = Number(adjustment.Amount || 0); // Ensure Amount is a number
+        return adjustment['Adjustment Type'] === 'Less'
+          ? total - amount
+          : total + amount;
+      }, 0);
+
+      const actualSlab = actualMinSlab; // Assuming actualMinSlab is defined
+      console.log('adjustments::', actualMinSlab);
+
+      setActualPaidAftAdj(actualSlab + totalAmount);
+    } // Start with an initial total of 0
+  }, [adjWithoutTax]);
 
   // Using async functions inside useEffect
   useEffect(() => {
@@ -117,7 +137,7 @@ export const AdvancePayment = ({route}) => {
       fetchAdvancePaymentDetails();
     } else {
       console.log('currency tds:: No currency available');
-      getTaxCurrency()
+      getTaxCurrency();
     }
     setIsLoading(false);
   }, [tDSCurrency]);
@@ -136,10 +156,7 @@ export const AdvancePayment = ({route}) => {
       console.log('Tax Currency Result adv page:', taxCurrencyResult);
 
       if (taxCurrencyResult.length > 0) {
-        if (
-          Array.isArray(taxCurrencyResult) &&
-          taxCurrencyResult.length > 0
-        ) {
+        if (Array.isArray(taxCurrencyResult) && taxCurrencyResult.length > 0) {
           setTDSCurrency(taxCurrencyResult[0]); // Sets only the first element
         } else {
           setTDSCurrency(''); // Fallback in case the array is empty or not valid
@@ -160,10 +177,11 @@ export const AdvancePayment = ({route}) => {
   useEffect(() => {
     setIsLoading(true);
     console.log('excludeTaxes::', excludeTaxes);
-    const totalTdsAmount = (excludeTaxes || []).reduce(
-      (sum, item) => sum + Number(item['TDS Amount'] || 0),
-      0,
-    );
+    const totalTdsAmount = (excludeTaxes || []).reduce((sum, item) => {
+      return item['Apply TDS'] === true
+        ? sum + Number(item['TDS Amount'] || 0)
+        : sum;
+    }, 0);
 
     console.log('totalTdsAmount:', totalTdsAmount * fxRate);
     const tds = totalTdsAmount * fxRate;
@@ -390,23 +408,25 @@ export const AdvancePayment = ({route}) => {
 
       // Other changes & Adjustments (Without Tax)
       const otherTaxArr =
-        transValue[4][0]?.ORDER_TYPE === 'JO'?[
-          "JO No",
-          "Adjustment ID",
-          "Adjustment Name",
-          "Adjustment Type",
-          "Description",
-          "Amount",
-          "Remarks"
-        ]:[
-          'PO No',
-          'Adjustment ID',
-          'Adjustment Name',
-          'Adjustment Type',
-          'Description',
-          'Amount',
-          'Remarks',
-        ]
+        transValue[4][0]?.ORDER_TYPE === 'JO'
+          ? [
+              'JO No',
+              'Adjustment ID',
+              'Adjustment Name',
+              'Adjustment Type',
+              'Description',
+              'Amount',
+              'Remarks',
+            ]
+          : [
+              'PO No',
+              'Adjustment ID',
+              'Adjustment Name',
+              'Adjustment Type',
+              'Description',
+              'Amount',
+              'Remarks',
+            ];
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
         otherTaxArr,
@@ -535,7 +555,7 @@ export const AdvancePayment = ({route}) => {
           setPaymentId(Main[0]);
           setAccountNo(Main[8]);
 
-          const Type = parsedTransObj[4][0]?.ORDER_TYPE
+          const Type = parsedTransObj[4][0]?.ORDER_TYPE;
 
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
@@ -545,20 +565,67 @@ export const AdvancePayment = ({route}) => {
             [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
               poDetails[2],
             'Actual Paid After Adjustment': Main[6],
-            [`${Type === 'JO' ? 'DD' : 'TT Ref'} No`]:
-              transactionDetails[3],
             [`${
-              Type === 'JO' ? 'Favor of' : 'Party Name'
-            }`]: Main[3],
-            [`${Type === 'JO' ? 'DD' : 'TT'} Date`]:
-              DateFormatComma(Main[1]),
-            [`${Type === 'JO' ? 'DD' : 'TT'} Amt (${
-              parsedTransObj[1].PARTY_CURRENCY
-            })`]: Main[6],
+              Main[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : Main[7] === 'Bank Transfer'
+                ? 'TT '
+                : Main[7] === 'Demand'
+                ? 'DD '
+                : Main[7] === 'Mobile Banking'
+                ? 'MB '
+                : Main[7] === 'Debit Card'
+                ? 'DC '
+                : Main[7] === 'Credit Card'
+                ? 'CC '
+                : Main[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            }Ref No`]: transactionDetails[3],
+            [`${Type === 'JO' ? 'Favor of' : 'Party Name'}`]: Main[3],
+            [`${
+              Main[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : Main[7] === 'Bank Transfer'
+                ? 'TT '
+                : Main[7] === 'Demand'
+                ? 'DD '
+                : Main[7] === 'Mobile Banking'
+                ? 'MB '
+                : Main[7] === 'Debit Card'
+                ? 'DC '
+                : Main[7] === 'Credit Card'
+                ? 'CC '
+                : Main[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            } Date`]: DateFormatComma(Main[1]),
+            [`${
+              Main[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : Main[7] === 'Bank Transfer'
+                ? 'TT '
+                : Main[7] === 'Demand'
+                ? 'DD '
+                : Main[7] === 'Mobile Banking'
+                ? 'MB '
+                : Main[7] === 'Debit Card'
+                ? 'DC '
+                : Main[7] === 'Credit Card'
+                ? 'CC '
+                : Main[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            } Amt (${Main[9]})`]: Main[6],
           };
           const numResult = await NumToWordsCon(Main[6], Main[9]);
           setNumToWords(numResult);
-
+          setActualMinSlab(
+            formattedData[
+              `Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`
+            ],
+          );
+          console.log('slabMinActual::', Main);
           setPairsData([formattedData]);
         }
       }
@@ -585,9 +652,10 @@ export const AdvancePayment = ({route}) => {
         />
       }>
       <TitleBar
-text={`${
-  transName === 'ModPayment' ? 'Modify Advance Payment' : transName
-} - ${paymentId}`}        showMenuBar={true}
+        text={`${
+          transName === 'ModPayment' ? 'Modify Advance Payment' : transName
+        } - ${paymentId}`}
+        showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
         showCloseIcon={true}
         onClose={() => navigation.navigate('ApprovalMainScreen')}
@@ -613,7 +681,10 @@ text={`${
             <InfoPairs
               data={pairsData}
               imp={['Cheque Ref No', 'LC Ref No', 'Favor of', 'DD No']}
-              valueChanger={{[`TDS Amount (${tDSCurrency})`]: calculatedTDS}}
+              valueChanger={{
+                [`TDS Amount (${tDSCurrency})`]: calculatedTDS,
+                [`Actual Paid After Adjustment`]: actualPaidAftAdj,
+              }}
             />
           </ScrollView>
           {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
@@ -633,7 +704,9 @@ text={`${
             }>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>Payment Date</Text>
-              <Text style={commonStyles.oneLineValue}>20 Nov 2024</Text>
+              <Text style={commonStyles.oneLineValue}>
+                {DateFormatComma(mainData[1])}
+              </Text>
             </View>
 
             <ApprovalTableComponent
@@ -663,7 +736,7 @@ text={`${
             <ApprovalTableComponent
               tableData={slabTaxes}
               highlightVal={['']}
-              heading={'Applicable Slab Taxes (TK Currency)'}
+              heading={`Applicable Slab Taxes (${tDSCurrency} Currency)`}
             />
 
             <ApprovalTableComponent
@@ -675,7 +748,9 @@ text={`${
               <Text style={commonStyles.disableButtonText}>Slab History</Text>
             </View>
             <View style={commonStyles.flexColumn}>
-              <Text style={commonStyles.oneLineKey}>TDS Amount(TK)</Text>
+              <Text style={commonStyles.oneLineKey}>
+                TDS Amount(${tDSCurrency})
+              </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
@@ -686,14 +761,12 @@ text={`${
 
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
-                Actual Amount - Slab Tax Amount (INR)
+                Actual Amount - Slab Tax Amount ({transValue[1].PARTY_CURRENCY})
               </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={pairsData[0][
-                  'Actual Amount-Slab Tax Amount (INR)'
-                ].toString()}
+                value={actualMinSlab.toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -705,9 +778,7 @@ text={`${
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={pairsData[0][
-                  'Actual Amount-Slab Tax Amount (INR)'
-                ].toString()}
+                value={actualPaidAftAdj.toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -734,7 +805,7 @@ text={`${
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value=""
+                value={transName !== 'ModPayment' ? mainData[17] : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -759,14 +830,14 @@ text={`${
             </View>
             {/* -------------------------- INR Pending_______________ */}
             <View style={[commonStyles.textCenter, commonStyles.flexRow]}>
-              <Text style={commonStyles.heading}>1 INR =</Text>
+              <Text style={commonStyles.heading}>1 {mainData[10]} =</Text>
               <TextInput
                 style={[commonStyles.inputNoBox]}
                 placeholder="" // Placeholder text
-                value={Math.round(fxRate).toString()}
+                value={mainData[11].toString()}
                 editable={false} // Disables input
               />
-              <Text style={commonStyles.heading}>INR</Text>
+              <Text style={commonStyles.heading}>{mainData[9]}</Text>
             </View>
             {/* ---------------------------------------------------- */}
             <View style={commonStyles.flexRow}>
@@ -781,7 +852,7 @@ text={`${
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Calculate</Text>
             </View>
-            {transValue[4][0]?.ORDER_TYPE === 'JO' && (
+            {mainData[7] === 'Demand' && (
               <View style={commonStyles.padTop}>
                 <Text style={commonStyles.oneLineKey}>
                   Demand Draft Details{' '}
@@ -790,8 +861,22 @@ text={`${
             )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {transValue[4][0]?.ORDER_TYPE === 'PO' ? 'Ref ' : 'DD '}
-                No <Text style={commonStyles.redAsterisk}>*</Text>
+                {mainData[7] === 'RTGS/NEFT'
+                  ? 'RTGS/NEFT '
+                  : mainData[7] === 'Bank Transfer'
+                  ? 'TT '
+                  : mainData[7] === 'Demand'
+                  ? 'DD '
+                  : mainData[7] === 'Mobile Banking'
+                  ? 'MB '
+                  : mainData[7] === 'Debit Card'
+                  ? 'DC '
+                  : mainData[7] === 'Credit Card'
+                  ? 'CC '
+                  : mainData[7] === 'Cheque'
+                  ? 'Cheque '
+                  : 'Cash '}
+                Ref No <Text style={commonStyles.redAsterisk}>*</Text>
               </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
@@ -799,9 +884,8 @@ text={`${
                 value={transDetails[3].toString()}
                 editable={false} // Disables input
               />
-              
             </View>
-            {transValue[4][0]?.ORDER_TYPE === 'JO' && (
+            {['Demand', 'Debit Card', 'Cheque'].includes(mainData[7]) && (
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
                   Favor of <Text style={commonStyles.redAsterisk}>*</Text>
@@ -811,7 +895,22 @@ text={`${
             )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD ' : 'Case '} Date
+                {mainData[7] === 'RTGS/NEFT'
+                  ? 'RTGS/NEFT '
+                  : mainData[7] === 'Bank Transfer'
+                  ? 'TT '
+                  : mainData[7] === 'Demand'
+                  ? 'DD '
+                  : mainData[7] === 'Mobile Banking'
+                  ? 'MB '
+                  : mainData[7] === 'Debit Card'
+                  ? 'DC '
+                  : mainData[7] === 'Credit Card'
+                  ? 'CC '
+                  : mainData[7] === 'Cheque'
+                  ? 'Cheque '
+                  : 'Cash '}
+                Date
               </Text>
               <Text style={commonStyles.oneLineValue}>
                 {DateFormatComma(mainData[1])}
@@ -819,8 +918,22 @@ text={`${
             </View>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {transValue[4][0]?.ORDER_TYPE === 'JO' ? 'DD Amt ' : 'Amount'} (
-                {mainData[9]})
+                {mainData[7] === 'RTGS/NEFT'
+                  ? 'RTGS/NEFT '
+                  : mainData[7] === 'Bank Transfer'
+                  ? 'TT '
+                  : mainData[7] === 'Demand'
+                  ? 'DD '
+                  : mainData[7] === 'Mobile Banking'
+                  ? 'MB '
+                  : mainData[7] === 'Debit Card'
+                  ? 'DC '
+                  : mainData[7] === 'Credit Card'
+                  ? 'CC '
+                  : mainData[7] === 'Cheque'
+                  ? 'Cheque '
+                  : 'Cash '}
+                Amt ({mainData[9]})
               </Text>
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
@@ -893,20 +1006,19 @@ text={`${
         </TouchableOpacity>
       </CustomModal>
       {/* Button to toggle visibility */}
-      <View style={styles.buttonContainer}>
-        <Button title="Click here for more info" onPress={handleButtonClick} />
-      </View>
-      <View>
-        <ApproveRejectComponent
-          // approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
-          // rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
-          params={approvalParams}
-          approveUrl={`${API_URL}/api/common/approveTransaction`}
-          rejectUrl={`${API_URL}/api/common/rejectTransaction`}
-          rejParams={rejParams}
-          // params={approvalParams}
-        />
-      </View>
+      {!isRefreshing && (
+      <><View style={styles.buttonContainer}>
+          <Button title="Click here for more info" onPress={handleButtonClick} />
+        </View><View>
+            <ApproveRejectComponent
+              // approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
+              // rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
+              params={approvalParams}
+              approveUrl={`${API_URL}/api/common/approveTransaction`}
+              rejectUrl={`${API_URL}/api/common/rejectTransaction`}
+              rejParams={rejParams} />
+          </View></>
+      )}
     </View>
   );
 };

@@ -72,14 +72,12 @@ const FetchValueAssignKeysAPI = async (
       setData(emptyResult);
     }
   } catch (error) {
-    console.error('Error fetching table data:', error);
 
     const emptyResult = [{}];
     headers.forEach(header => {
       emptyResult[0][header] = '';
     });
 
-    console.log('Returning empty data due to error:', emptyResult);
     setData(emptyResult);
   }
 };

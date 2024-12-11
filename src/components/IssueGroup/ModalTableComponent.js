@@ -259,7 +259,7 @@ const ModalTableComponent = ({
           </Text>
         )}
       </View>
-      <ScrollView>
+      <ScrollView nestedScrollEnabled>
         <View style={[styles.table]}>
           {/* TABLE ROWS */}
           {data

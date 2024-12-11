@@ -13,6 +13,8 @@ import {CustomThemeColors} from '../CustomThemeColors';
 import {CheckBox} from 'react-native-elements';
 import {Button} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import CustomModal from './modal';
+import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -62,7 +64,7 @@ const TableComponent = ({
   onRowIndexSelectDataLoad,
   mainTableSelectedIndex,
   setMainTableSelectedIndex,
-  setMainTableSelectAll
+  setMainTableSelectAll,
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -79,45 +81,22 @@ const TableComponent = ({
   const rowsPerPage = 5000; // Number of rows per page
   const [totalColumnWidths, setTotalColumnWidths] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailViewModalVisible, setDetailViewModalVisible] = useState(false);
+  const [longPressData, setLongPressData] = useState([]);
 
+  const toggleModalDetail = () => {
+    setDetailViewModalVisible(!detailViewModalVisible);
+  };
 
   useEffect(() => {
     // console.log('initialDataz;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
   }, [initialData]);
 
-  useEffect(() => {
-    // if (selectAllIsChecked) {
-    //   const newIsChecked = !isChecked;
-    //   setIsChecked(newIsChecked);
-
-    //   // Update selectedRows based on the newIsChecked state
-    //   const updatedSelection = newIsChecked
-    //     ? new Array(data.length).fill(true) // Select all if checked
-    //     : new Array(data.length).fill(false); // Deselect all if unchecked
-
-    //   setSelectedRows(updatedSelection);
-
-    //   // Pass the selected indices to the parent function if required
-    //   if (newIsChecked) {
-    //     data.forEach((_, index) => onRowIndexSelect(index)); // Pass all indices
-    //   } else {
-    //     onRowIndexSelect([]); // Pass empty array if none are selected
-    //   }
-    // }
-  }, []);
+  useEffect(() => {}, []);
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
-
-    // console.log('slide values:>>>', sliderValue);
-
-    // if (data.length > 0) {
-    //   const columns = Object.keys(data[0]);
-    //   columns.forEach(column => {
-    //     console.log(`column: ${column}, width: ${columnWidths[column]}`);
-    //   });
-    // }
 
     setColumnWidths(calculatedWidths);
     setIsModel(noModel);
@@ -156,7 +135,7 @@ const TableComponent = ({
 
     // Toggle the selection state
     updatedSelection[actualIndex] = !isSelected;
-    setMainTableSelectAll(true)
+    setMainTableSelectAll(true);
     // Update the selected state
     setTableIndex(actualIndex);
     setSelectedRow(data[actualIndex]);
@@ -181,7 +160,7 @@ const TableComponent = ({
     const updatedSelection = [...selectedRows];
     const isSelected = updatedSelection[actualIndex];
 
-    console.log("isSelected::",isSelected)
+    console.log('isSelected::', isSelected);
     // Toggle the selection state
     updatedSelection[actualIndex] = !isSelected;
 
@@ -195,7 +174,7 @@ const TableComponent = ({
       onRowIndexSelect(actualIndex);
     }
     if (isSelected) {
-      console.log("checkkk::")
+      console.log('checkkk::');
       onPressCheckBoxHandle(true);
     }
 
@@ -211,10 +190,8 @@ const TableComponent = ({
     return <Text>Loading...</Text>;
   }
 
- 
-
   const handleSelectAllCheckbox = () => {
-    setMainTableSelectAll(isChecked)
+    setMainTableSelectAll(isChecked);
     const newIsChecked = !isChecked;
     setIsChecked(newIsChecked);
 
@@ -228,8 +205,12 @@ const TableComponent = ({
 
     // Pass the selected indices to the parent function if required
     if (newIsChecked) {
-      setMainTableSelectedIndex([])
-      data.forEach((_, index) => setTimeout(() => {onRowIndexSelect(index)},1000)); // Pass all indices
+      setMainTableSelectedIndex([]);
+      data.forEach((_, index) =>
+        setTimeout(() => {
+          onRowIndexSelect(index);
+        }, 1000),
+      ); // Pass all indices
       // onPressCheckBoxHandle(true)
     } else {
       onRowIndexSelect([]); // Pass empty array if none are selected
@@ -238,22 +219,10 @@ const TableComponent = ({
 
   const columns = Object.keys(data[0]);
 
-  
-
   return (
     <View>
       {isLoading ? <Text>Loading...</Text> : <></>}
       <View style={styles.selectSlide}>
-        {/* <View style={styles.sliderContainer}> */}
-        {/* <Slider
-            style={{width: '50%', height: 40}}
-            minimumValue={0} // Minimum scale factor
-            maximumValue={10} // Maximum scale factor
-            minimumTrackTintColor={CustomThemeColors.primary}
-            maximumTrackTintColor={CustomThemeColors.primary}
-            value={sliderValue}
-            onValueChange={value => setSliderValue(value)}
-          /> */}
         <Text
           style={{
             // backgroundColor: CustomThemeColors.fadedPrimary,
@@ -286,7 +255,16 @@ const TableComponent = ({
       </View>
 
       {/* <ScrollView horizontal> */}
-      <View style={[styles.table, {borderWidth: 1, borderRadius: 8,borderColor:CustomThemeColors.primary,marginRight:4}]}>
+      <View
+        style={[
+          styles.table,
+          {
+            borderWidth: 1,
+            borderRadius: 8,
+            borderColor: CustomThemeColors.primary,
+            marginRight: 4,
+          },
+        ]}>
         <View style={styles.headerRow}>
           {columns.map((column, index) => (
             <Text
@@ -340,7 +318,7 @@ const TableComponent = ({
         </View>
 
         {/* TABLE ROWS */}
-        <ScrollView>
+        <ScrollView nestedScrollEnabled style={{maxHeight: 180, flexGrow: 1}}>
           {data
             .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
             .map((row, rowIndex) => (
@@ -351,6 +329,9 @@ const TableComponent = ({
                 }}
                 onLongPress={() => {
                   // longPressIndex(rowIndex);
+                  setLongPressData([row]);
+                  console.log('cell dastaa::', row);
+                  setDetailViewModalVisible(true);
                 }}>
                 <View
                   style={
@@ -363,35 +344,47 @@ const TableComponent = ({
                       ? styles.oddRow
                       : styles.evenRow
                   }>
-                  {columns.map((column, cellIndex) => (
-                    <Text
-                      key={cellIndex}
-                      style={[
-                        cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
-                        {
-                          width:
-                            sliderValue == 0
-                              ? (columnWidths[column] / totalColumnWidths) *
-                                  screenWidth -
-                                (showCheckBox ? 10 : 0)
-                              : columnWidths[column] - 35,
+                  {columns.map((column, cellIndex) => {
+                    const cellText = String(row[column]);
+                    const isTruncated = cellText.length > 10;
+                    const displayText = isTruncated
+                      ? `${cellText.slice(0, 10)}...`
+                      : cellText;
+                    return (
+                      <Text
+                        key={cellIndex}
+                        style={[
+                          cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
+                          {
+                            width:
+                              sliderValue == 0
+                                ? (columnWidths[column] / totalColumnWidths) *
+                                    screenWidth -
+                                  (showCheckBox ? 10 : 0)
+                                : columnWidths[column] - 35,
 
-                          fontSize: DeviceInfo.isTablet()
-                            ? 14
-                            : sliderValue <= 1.5625
-                            ? 10
-                            : sliderValue <= 2.578125
-                            ? 10
-                            : sliderValue <= 3.578125
-                            ? 12
-                            : 14,
-                        },
-                      ]}>
-                      {String(row[column])}
-                    </Text>
-                  ))}
+                            fontSize: DeviceInfo.isTablet()
+                              ? 14
+                              : sliderValue <= 1.5625
+                              ? 10
+                              : sliderValue <= 2.578125
+                              ? 10
+                              : sliderValue <= 3.578125
+                              ? 12
+                              : 14,
+                          },
+                        ]}
+                        numberOfLines={1} // Ensures single-line display
+                        ellipsizeMode="tail" // Adds ellipsis for overflow
+                      >
+                        {String(row[column]).length > 10
+                          ? `${String(row[column]).slice(0, 10)}...`
+                          : String(row[column])}
+                      </Text>
+                    );
+                  })}
                   {showCheckBox && (
-                    <View style={{borderBottomWidth: .5}}>
+                    <View style={{borderBottomWidth: 0.5}}>
                       <CheckBox
                         checked={
                           // Karthic Nov 19
@@ -404,11 +397,16 @@ const TableComponent = ({
                           // selectedRows[page * rowsPerPage + rowIndex] || false
                         }
                         onPress={() => {
-                          console.log("selectedRows length",selectedRows.length,"--selectedRows:::",selectedRows)
+                          console.log(
+                            'selectedRows length',
+                            selectedRows.length,
+                            '--selectedRows:::',
+                            selectedRows,
+                          );
                           const actualIndex = page * rowsPerPage + rowIndex;
                           const updatedSelection = [...selectedRows];
                           updatedSelection[actualIndex] =
-                          !updatedSelection[actualIndex];
+                            !updatedSelection[actualIndex];
                           // console.log("data[actualIndex]:::",mainTableSelectedIndex.includes(data[actualIndex].groupId))
                           // if(mainTableSelectedIndex.includes(data[actualIndex].groupId)){
                           //   updatedSelection[actualIndex]=false
@@ -421,11 +419,10 @@ const TableComponent = ({
                           );
                           setSelectedRows(updatedSelection);
                           toggleRowSelectionCheckBox(actualIndex);
-                          if(selectedRows.length<1){
-                            setIsChecked(false)
-                            
+                          if (selectedRows.length < 1) {
+                            setIsChecked(false);
                           }
-                          setMainTableSelectAll(true)
+                          setMainTableSelectAll(true);
 
                           // If a row is checked or unchecked, manage the "Select All" checkbox state
                           // const allSelected = updatedSelection.every(Boolean);
@@ -454,22 +451,16 @@ const TableComponent = ({
           {/* PAGINATION BUTTONS */}
         </ScrollView>
       </View>
-      {/* </ScrollView> */}
-      {/* <View style={styles.paginationContainer}>
-          <Button
-            title="Previous"
-            onPress={handlePreviousPage}
-            disabled={page === 0}
-          />
-          <Text style={styles.pageInfo}>
-            Page {page + 1} of {Math.ceil(data.length / rowsPerPage)}
-          </Text>
-          <Button
-            title="Next"
-            onPress={handleNextPage}
-            disabled={(page + 1) * rowsPerPage >= data.length}
-          />
-        </View> */}
+
+      <CustomModal
+        isVisible={detailViewModalVisible}
+        onClose={toggleModalDetail}
+        title="">
+        {/* Children Content */}
+        <View style={{height: 200}}>
+          <ApprovalTableComponent tableData={longPressData} heading={''} />
+        </View>
+      </CustomModal>
     </View>
   );
 };
@@ -544,7 +535,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   oddCell: {
-    paddingVertical: 8,
+    paddingVertical: 0,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,
@@ -552,7 +543,7 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   evenCell: {
-    paddingVertical: 8,
+    paddingVertical: 0,
     backgroundColor: 'lightgrey',
     textAlign: 'center',
     borderRightWidth: 0.5,

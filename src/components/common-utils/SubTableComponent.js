@@ -483,7 +483,7 @@ const SubTableComponent = ({
                 </Text>
               )}
             </View>
-            <ScrollView>
+            <ScrollView nestedScrollEnabled>
               {/* <ScrollView horizontal> */}
 
               {/* TABLE ROWS */}

@@ -66,6 +66,26 @@ export const BillsPayment = ({route}) => {
   const [tDSCurrency, setTDSCurrency] = useState('');
   const [calculatedTDS, setCalculatedTDS] = useState('');
   const [numToWords, setNumToWords] = useState('');
+  const [actualMinSlab, setActualMinSlab] = useState('');
+  const [actualPaidAftAdj, setActualPaidAftAdj] = useState('');
+
+  useEffect(() => {
+    console.log('paidAdjustment::', paidAdjustment);
+
+    if (paidAdjustment.length > 0) {
+      const totalAmount = paidAdjustment.reduce((total, adjustment) => {
+        const amount = Number(adjustment.Amount || 0); // Ensure Amount is a number
+        return adjustment['Adjustment Type'] === 'Less'
+          ? total - amount
+          : total + amount;
+      }, 0);
+
+      const actualSlab = actualMinSlab; // Assuming actualMinSlab is defined
+      console.log('adjustments bills::', actualMinSlab);
+
+      setActualPaidAftAdj(actualSlab + totalAmount);
+    } // Start with an initial total of 0
+  }, [paidAdjustment]);
 
   useEffect(() => {
     if (tDSCurrency.length > 0) {
@@ -78,10 +98,12 @@ export const BillsPayment = ({route}) => {
 
   useEffect(() => {
     console.log('excluseTblTwo::', tDSCurrency);
-    const totalTdsAmount = excluseTblTwo.reduce(
-      (sum, item) => sum + Number(item['TDS Amount']),
-      0,
-    );
+    const totalTdsAmount = (excluseTblTwo || []).reduce((sum, item) => {
+      return item['Apply TDS'] === true
+        ? sum + Number(item['TDS Amount'] || 0)
+        : sum;
+    }, 0);
+
     console.log('totalTdsAmount:', totalTdsAmount * fxRate);
     const tds = totalTdsAmount * fxRate;
     setCalculatedTDS(tds);
@@ -451,29 +473,83 @@ export const BillsPayment = ({route}) => {
             'Payment date': DateFormatComma(Main[1]),
             [`Actual Amount (${parsedTransObj[1].PARTY_CURRENCY})`]: Main[18],
             [`TDS Amount (${tDSCurrency})`]: 0,
-            ...(transactionDetails[3].length < 5
-              ? {
-                  [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
-                    poDetails[2],
-                  'Cheque Ref No': transactionDetails[3],
-                  'Favor of': Main[3],
-                  'Cheque Date': DateFormatComma(Main[1]),
-                  // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
-                  [`Cheque Amt (${Main[9]})`]: Main[6],
-                }
-              : {
-                  [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
-                    Main[18],
-                  'TT Ref No': transactionDetails[3],
-                  'Favor of': Main[3],
-                  'TT Date': DateFormatComma(Main[1]),
-                  // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
-                  [`TT Amt (${Main[9]})`]: Main[6],
-                }),
+            // ...(transactionDetails[3].length < 5
+            //   ? {
+            //       [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+            //         poDetails[2],
+            //       'Cheque Ref No': transactionDetails[3],
+            //       'Favor of': Main[3],
+            //       'Cheque Date': DateFormatComma(Main[1]),
+            //       // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
+            //       [`Cheque Amt (${Main[9]})`]: Main[6],
+            //     }
+            //   : {
+            [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+              Main[18],
+            [`${
+              mainData[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : mainData[7] === 'Bank Transfer'
+                ? 'TT '
+                : mainData[7] === 'Demand'
+                ? 'DD '
+                : mainData[7] === 'Mobile Banking'
+                ? 'MB '
+                : mainData[7] === 'Debit Card'
+                ? 'DC '
+                : mainData[7] === 'Credit Card'
+                ? 'CC '
+                : mainData[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            } Ref No`]: transactionDetails[3],
+            ...(['Demand', 'Debit Card', 'Cheque'].includes(Main[7]) && {
+              'Favor of': Main[3],
+            }),
+            [`${
+              mainData[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : mainData[7] === 'Bank Transfer'
+                ? 'TT '
+                : mainData[7] === 'Demand'
+                ? 'DD '
+                : mainData[7] === 'Mobile Banking'
+                ? 'MB '
+                : mainData[7] === 'Debit Card'
+                ? 'DC '
+                : mainData[7] === 'Credit Card'
+                ? 'CC '
+                : mainData[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            } Date`]: DateFormatComma(Main[1]),
+            // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
+            [`${
+              mainData[7] === 'RTGS/NEFT'
+                ? 'RTGS/NEFT '
+                : mainData[7] === 'Bank Transfer'
+                ? 'TT '
+                : mainData[7] === 'Demand'
+                ? 'DD '
+                : mainData[7] === 'Mobile Banking'
+                ? 'MB '
+                : mainData[7] === 'Debit Card'
+                ? 'DC '
+                : mainData[7] === 'Credit Card'
+                ? 'CC '
+                : mainData[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Cash '
+            } Amt (${Main[9]})`]: Main[6],
+            // }),
           };
           const numResult = await NumToWordsCon(Main[6], Main[9]);
           setNumToWords(numResult);
-
+          setActualMinSlab(
+            formattedData[
+              `Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`
+            ],
+          );
           setPairsData([formattedData]);
         }
       }
@@ -605,9 +681,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={
-                  mainData[18] !== undefined ? mainData[18].toString() : ''
-                }
+                value={actualMinSlab.toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -619,11 +693,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={
-                  refNO == 'Cheque'
-                    ? mainData[18].toString()
-                    : mainData[6].toString()
-                }
+                value={actualPaidAftAdj.toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -693,15 +763,15 @@ export const BillsPayment = ({route}) => {
             </View>
             {/* -------------------------- INR Pending_______________ */}
             <View style={[commonStyles.textCenter, commonStyles.flexRow]}>
-              <Text style={commonStyles.heading}>1 INR =</Text>
+              <Text style={commonStyles.heading}>1 {mainData[10]} =</Text>
               <TextInput
                 style={[commonStyles.inputNoBox]}
                 placeholder="" // Placeholder text
                 // value={mainData[11] ? mainData[11].toString() : ''}
-                value={Math.round(fxRate).toString()}
+                value={mainData[11].toString()}
                 editable={false} // Disables input
               />
-              <Text style={commonStyles.heading}>INR</Text>
+              <Text style={commonStyles.heading}>{mainData[9]}</Text>
             </View>
             {/* ---------------------------------------------------- */}
             <View style={commonStyles.flexRow}>
@@ -718,39 +788,85 @@ export const BillsPayment = ({route}) => {
             </View>
 
             {/* ---------------------------- Varies for data --------------------- */}
-            {refNO !== 'Cheque' ? (
-              <View>
-                <View style={commonStyles.flexRow}>
-                  <Text style={commonStyles.oneLineKey}>
-                    TT Ref No <Text style={commonStyles.redAsterisk}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={[commonStyles.oneLineValue, commonStyles.input]}
-                    placeholder="" // Placeholder text
-                    value={transDetails[3].toString()}
-                    editable={true} // Disables input
-                  />
-                </View>
-
-                <View style={commonStyles.flexRow}>
-                  <Text style={commonStyles.oneLineKey}>TT Date</Text>
-                  <Text style={commonStyles.oneLineValue}>
-                    {DateFormatComma(mainData[1])}
-                  </Text>
-                </View>
-                <View style={commonStyles.flexRow}>
-                  <Text style={commonStyles.oneLineKey}>
-                    TT Amt ({mainData[9]})
-                  </Text>
-                  <TextInput
-                    style={[commonStyles.oneLineValue, commonStyles.input]}
-                    placeholder="" // Placeholder text
-                    value={mainData[6].toString()}
-                    editable={true} // Disables input
-                  />
-                </View>
+            <View>
+              <View style={commonStyles.flexRow}>
+                <Text style={commonStyles.oneLineKey}>
+                  {mainData[7] === 'RTGS/NEFT'
+                    ? 'RTGS/NEFT '
+                    : mainData[7] === 'Bank Transfer'
+                    ? 'TT '
+                    : mainData[7] === 'Demand'
+                    ? 'DD '
+                    : mainData[7] === 'Mobile Banking'
+                    ? 'MB '
+                    : mainData[7] === 'Debit Card'
+                    ? 'DC '
+                    : mainData[7] === 'Credit Card'
+                    ? 'CC '
+                    : mainData[7] === 'Cheque'
+                    ? 'Cheque '
+                    : 'Cash '}
+                  Ref No <Text style={commonStyles.redAsterisk}>*</Text>
+                </Text>
+                <TextInput
+                  style={[commonStyles.oneLineValue, commonStyles.input]}
+                  placeholder="" // Placeholder text
+                  value={transDetails[3].toString()}
+                  editable={true} // Disables input
+                />
               </View>
-            ) : (
+
+              <View style={commonStyles.flexRow}>
+                <Text style={commonStyles.oneLineKey}>
+                  {mainData[7] === 'RTGS/NEFT'
+                    ? 'RTGS/NEFT '
+                    : mainData[7] === 'Bank Transfer'
+                    ? 'TT '
+                    : mainData[7] === 'Demand'
+                    ? 'DD '
+                    : mainData[7] === 'Mobile Banking'
+                    ? 'MB '
+                    : mainData[7] === 'Debit Card'
+                    ? 'DC '
+                    : mainData[7] === 'Credit Card'
+                    ? 'CC '
+                    : mainData[7] === 'Cheque'
+                    ? 'Cheque '
+                    : 'Cash '}{' '}
+                  Date
+                </Text>
+                <Text style={commonStyles.oneLineValue}>
+                  {DateFormatComma(mainData[1])}
+                </Text>
+              </View>
+              <View style={commonStyles.flexRow}>
+                <Text style={commonStyles.oneLineKey}>
+                  {mainData[7] === 'RTGS/NEFT'
+                    ? 'RTGS/NEFT '
+                    : mainData[7] === 'Bank Transfer'
+                    ? 'TT '
+                    : mainData[7] === 'Demand'
+                    ? 'DD '
+                    : mainData[7] === 'Mobile Banking'
+                    ? 'MB '
+                    : mainData[7] === 'Debit Card'
+                    ? 'DC '
+                    : mainData[7] === 'Credit Card'
+                    ? 'CC '
+                    : mainData[7] === 'Cheque'
+                    ? 'Cheque '
+                    : 'Cash '}
+                  Amt ({mainData[9]})
+                </Text>
+                <TextInput
+                  style={[commonStyles.oneLineValue, commonStyles.input]}
+                  placeholder="" // Placeholder text
+                  value={mainData[6].toString()}
+                  editable={true} // Disables input
+                />
+              </View>
+            </View>
+            {/* ) : (
               <View>
                 <View style={commonStyles.flexRow}>
                   <Text style={commonStyles.oneLineKey}>
@@ -784,7 +900,7 @@ export const BillsPayment = ({route}) => {
                   />
                 </View>
               </View>
-            )}
+            )} */}
 
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>Amount in words</Text>
@@ -885,28 +1001,27 @@ export const BillsPayment = ({route}) => {
           <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
         </TouchableOpacity>
       </CustomModal>
-
-      {/* Button to toggle visibility */}
-      <View style={styles.buttonContainer}>
-        {/* <TouchableOpacity onPress={console.log("presssss3")} style={{width:'full'}}> */}
-        <CustomButton
-          color={'white'}
-          fontColor={'black'}
-          onPress={handleButtonClick} // Trigger handleButtonClick on press
-        >
-          Click here for {showInfoPairs ? 'more' : 'less'} info
-        </CustomButton>
-        {/* </TouchableOpacity> */}
-        {/* <Button title="Click here for more info" onPress={handleButtonClick} /> */}
-      </View>
-      <View>
-        <ApproveRejectComponent
-          approveUrl={`${API_URL}/api/common/approveTransaction`}
-          rejectUrl={`${API_URL}/api/common/rejectTransaction`}
-          rejParams={rejParams}
-          params={approvalParams}
-        />
-      </View>
+      {!isRefreshing && (
+        <>
+          <View style={styles.buttonContainer}>
+            <CustomButton
+              color={'white'}
+              fontColor={'black'}
+              onPress={handleButtonClick} // Trigger handleButtonClick on press
+            >
+              Click here for {showInfoPairs ? 'more' : 'less'} info
+            </CustomButton>
+          </View>
+          <View>
+            <ApproveRejectComponent
+              approveUrl={`${API_URL}/api/common/approveTransaction`}
+              rejectUrl={`${API_URL}/api/common/rejectTransaction`}
+              rejParams={rejParams}
+              params={approvalParams}
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 };
