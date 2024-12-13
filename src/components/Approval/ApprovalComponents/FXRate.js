@@ -1,6 +1,4 @@
 import React, {useState, useEffect} from 'react';
-import {View} from 'react-native';
-import {Text} from 'react-native';
 import {API_URL} from '../../ApiUrl';
 
 const CurrencyConversion = ({BillCurrency, setFxRate}) => {
@@ -20,10 +18,10 @@ const CurrencyConversion = ({BillCurrency, setFxRate}) => {
           )}`,
         );
         const taxCurrencyResult = await response.json();
-        console.log('Tax Currency Result:', taxCurrencyResult);
+        console.log('Tax Currency Result:', taxCurrencyResult[0]);
 
         if (taxCurrencyResult.length > 0) {
-          setTaxCurrency(taxCurrencyResult[0].TAX_CURRENCY);
+          setTaxCurrency(taxCurrencyResult[0]);
           // setTDSCurrency(taxCurrencyResult);
         } else {
           console.error('Tax currency not found.');
@@ -38,12 +36,13 @@ const CurrencyConversion = ({BillCurrency, setFxRate}) => {
 
   useEffect(() => {
     const getExchangeRate = async () => {
-      if (billCurrency === taxCurrency) {
+      console.log("BillCurrency:^:",BillCurrency,"____taxCurrency",taxCurrency)
+      if (BillCurrency === taxCurrency) {
         setFxRate(1);
       } else {
         try {
           let fx = [];
-          let fxsql = `select xrate from exchange_master where currency1='${billCurrency}' and currency2=(select TAX_CURRENCY from financial_cycle where rownum = 1)`;
+          let fxsql = `select xrate from exchange_master where currency1='${BillCurrency}' and currency2=(select TAX_CURRENCY from financial_cycle where rownum = 1)`;
 
           // Fetch exchange rate
           const response1 = await fetch(
@@ -59,7 +58,7 @@ const CurrencyConversion = ({BillCurrency, setFxRate}) => {
             setFxRate(parseFloat(fx[0].toString()));
           } else {
             fx = [];
-            fxsql = `select 1/xrate from exchange_master where currency1=(select TAX_CURRENCY from financial_cycle where rownum = 1) and currency2='${billCurrency}'`;
+            fxsql = `select 1/xrate from exchange_master where currency1=(select TAX_CURRENCY from financial_cycle where rownum = 1) and currency2='${BillCurrency}'`;
 
             const response2 = await fetch(
               `${API_URL}/api/common/loadContents?sql=${encodeURIComponent(

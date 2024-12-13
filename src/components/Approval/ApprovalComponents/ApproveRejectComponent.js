@@ -21,16 +21,16 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
   const [isRejectPop, setRejectPop] = useState(false);
   const [value, setValue] = useState('');
   const [rejectParams, setRejectParams] = useState([]);
+  const [warn, setWarn] = useState('');
 
   useEffect(() => {
     console.log('reject update', Array.isArray(rejectParams));
-    if(Array.isArray(rejectParams) == false){
+    if (Array.isArray(rejectParams) == false) {
       handleAction('reject');
-
     }
   }, [rejectParams]);
   // console.log('rejUrl::', action == 'approve' ? params : rejectParams);
-  
+
   const toggleModal = () => {
     setRejectPop(!isRejectPop);
   };
@@ -74,10 +74,7 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
       action === 'approve' ? 'Approve Successfully' : 'Reject Successfully';
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
-    console.log(
-      'rejUrl::',
-      JSON.stringify(rejectParams),
-    );
+    console.log('rejUrl::', JSON.stringify(rejectParams));
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -111,7 +108,10 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.rejectButton]}
-        onPress={() => {setRejectPop(true);console.log('pressed;;;')}}>
+        onPress={() => {
+          setRejectPop(true);
+          console.log('pressed;;;');
+        }}>
         <Text style={[styles.buttonText, {color: 'white'}]}>Reject</Text>
       </TouchableOpacity>
       {/* <Button
@@ -132,12 +132,17 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
         subBtn={'Submit'}
         // subBtnAction={() => console.log('Response:')}>
         subBtnAction={() => {
-          updateMessage(value);
-          // handleAction('reject');
-          toggleModal();
+          if (value.length < 1) {
+            setWarn('Please Enter a Reason');
+          } else {
+            updateMessage(value);
+            // handleAction('reject');
+            toggleModal();
+          }
         }}>
         {/* {/ Children Content /} */}
         <Text style={styles.modalBody}>Please Enter the reason to Reject</Text>
+        {warn.length > 1 && <Text style={styles.redAsterisk}>{warn}</Text>}
         <TextInput
           placeholder="Reason" // Placeholder text
           editable={true} // Enables input
@@ -157,8 +162,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalBody: {
-    marginBottom: 10,
+    marginBottom: 5,
     fontSize: 16,
+  },
+  redAsterisk: {
+    color: 'red', // Set the asterisk color to red
   },
   input: {
     borderWidth: 1,

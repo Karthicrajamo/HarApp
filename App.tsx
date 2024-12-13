@@ -1202,8 +1202,8 @@ const App = () => {
                     initialRouteName={
                       // isLoggedIn ? 'HomeScreen' : 'LoginScreen'
                       // isLoggedIn ? 'IssueGroups' : 'LoginScreen'
-                      isLoggedIn ? 'LoginScreen' : 'LoginScreen'
-                      // isLoggedIn ? 'ApprovalMainScreen' : 'LoginScreen'
+                      // isLoggedIn ? 'LoginScreen' : 'LoginScreen'
+                      isLoggedIn ? 'ApprovalMainScreen' : 'LoginScreen'
                       // isLoggedIn ? 'AdvancePayment' : 'LoginScreen'
                       // 'TestScreen'
                       // 'AdvancePayment'

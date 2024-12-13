@@ -15,6 +15,8 @@ import {Button} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 import CustomModal from './modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -280,7 +282,7 @@ const TableComponent = ({
                       : columnWidths[column] - 35,
 
                   fontSize: DeviceInfo.isTablet()
-                    ? 14
+                    ? 10
                     : sliderValue <= 1.5625
                     ? 10
                     : sliderValue <= 2.578125
@@ -288,6 +290,7 @@ const TableComponent = ({
                     : sliderValue <= 3.578125
                     ? 12
                     : 14,
+                    
                 },
               ]}>
               {makeReadable(column)}
@@ -302,7 +305,7 @@ const TableComponent = ({
                   alignSelf: 'center',
                   paddingHorizontal: 5,
                   fontSize: DeviceInfo.isTablet()
-                    ? 14
+                    ? 10
                     : sliderValue <= 1.5625
                     ? 10
                     : sliderValue <= 2.578125
@@ -364,7 +367,7 @@ const TableComponent = ({
                                 : columnWidths[column] - 35,
 
                             fontSize: DeviceInfo.isTablet()
-                              ? 14
+                              ? 12
                               : sliderValue <= 1.5625
                               ? 10
                               : sliderValue <= 2.578125
@@ -384,67 +387,60 @@ const TableComponent = ({
                     );
                   })}
                   {showCheckBox && (
-                    <View style={{borderBottomWidth: 0.5}}>
-                      <CheckBox
-                        checked={
-                          // Karthic Nov 19
-                          mainTableSelectedIndex.includes(
-                            data[page * rowsPerPage + rowIndex].groupId,
-                          )
-                            ? true
-                            : false
+  <View style={{flexDirection: 'row', alignItems: 'center', borderBottomWidth: 0.5}}>
+    {/* CheckBox */}
+    <CheckBox
+      checked={
+        mainTableSelectedIndex.includes(
+          data[page * rowsPerPage + rowIndex].groupId
+        )
+      }
+      onPress={() => {
+        const actualIndex = page * rowsPerPage + rowIndex;
+        const updatedSelection = [...selectedRows];
+        updatedSelection[actualIndex] = !updatedSelection[actualIndex];
+        setSelectedRows(updatedSelection);
+        toggleRowSelectionCheckBox(actualIndex);
 
-                          // selectedRows[page * rowsPerPage + rowIndex] || false
-                        }
-                        onPress={() => {
-                          console.log(
-                            'selectedRows length',
-                            selectedRows.length,
-                            '--selectedRows:::',
-                            selectedRows,
-                          );
-                          const actualIndex = page * rowsPerPage + rowIndex;
-                          const updatedSelection = [...selectedRows];
-                          updatedSelection[actualIndex] =
-                            !updatedSelection[actualIndex];
-                          // console.log("data[actualIndex]:::",mainTableSelectedIndex.includes(data[actualIndex].groupId))
-                          // if(mainTableSelectedIndex.includes(data[actualIndex].groupId)){
-                          //   updatedSelection[actualIndex]=false
-                          // }
-                          console.log(
-                            'actualIndex->',
-                            actualIndex,
-                            'updatedIndex:',
-                            updatedSelection,
-                          );
-                          setSelectedRows(updatedSelection);
-                          toggleRowSelectionCheckBox(actualIndex);
-                          if (selectedRows.length < 1) {
-                            setIsChecked(false);
-                          }
-                          setMainTableSelectAll(true);
+        if (selectedRows.length < 1) {
+          setIsChecked(false);
+        }
+        setMainTableSelectAll(true);
+      }}
+      containerStyle={{
+        backgroundColor: 'transparent',
+        padding: 0,
+        margin:0
+      }}
+      size={
+        sliderValue <= 1.5625
+          ? 16
+          : sliderValue <= 2.578125
+          ? 16
+          : sliderValue <= 3.578125
+          ? 16
+          : 18
+      }
+    />
 
-                          // If a row is checked or unchecked, manage the "Select All" checkbox state
-                          // const allSelected = updatedSelection.every(Boolean);
-                          // setIsChecked(allSelected);
-                        }}
-                        containerStyle={{
-                          backgroundColor: 'transparent',
-                          // borderBottomWidth: 1,
-                          padding: 4,
-                        }}
-                        size={
-                          sliderValue <= 1.5625
-                            ? 22
-                            : sliderValue <= 2.578125
-                            ? 16
-                            : sliderValue <= 3.578125
-                            ? 16
-                            : 18
-                        }
-                      />
-                    </View>
-                  )}
+    {/* MaterialIcons Eye Icon */}
+    <TouchableOpacity
+      onPress={() => {
+        setLongPressData([row]);
+        console.log('cell dastaa::', row);
+        setDetailViewModalVisible(true);
+      }}
+    >
+      <MaterialIcons
+        name="visibility" // Eye icon
+        size={18} // Adjust size as needed
+        color="gray" // Adjust color as needed
+        style={{marginLeft: 0,padding:0}} // Spacing between checkbox and icon
+      />
+    </TouchableOpacity>
+  </View>
+)}
+
                 </View>
               </TouchableOpacity>
             ))}
@@ -525,7 +521,7 @@ const styles = StyleSheet.create({
   },
 
   headerCell: {
-    paddingVertical: 5,
+    // paddingVertical: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderRightWidth: 0.5,

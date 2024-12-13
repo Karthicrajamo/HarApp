@@ -44,6 +44,10 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import {CustomThemeColors} from '../CustomThemeColors';
+import CustomModal from '../common-utils/modal';
+import {Picker} from '@react-native-picker/picker';
+import DropDownPicker from 'react-native-dropdown-picker';
+
 const LoginScreen = () => {
   // const { API_URL, CompanyName, logo, pass } = useDynamicEnvironment();
 
@@ -103,8 +107,28 @@ const LoginScreen = () => {
   const [isAlertValidVisible, setIsAlertValidVisible] = useState(false);
   const [isactive, setActive] = useState(false); // Keyboard state
   const [showPassword, setShowPassword] = useState(false);
+  const [isPop, setPop] = useState(false);
 
   // useEffect(()=>handleLogin(),[Password])
+  const [isCompanyOpen, setIsCompanyOpen] = useState(false);
+  const [isDivisionOpen, setIsDivisionOpen] = useState(false);
+  
+  const [company, setCompany] = useState(null);
+  const [division, setDivision] = useState(null);
+  
+  const [companyItems, setCompanyItems] = useState([
+    { label: 'Adistham Ventures', value: 'Adistham Ventures' },
+    // { label: 'JJ Mills', value: 'JJ Mills' },
+  ]);
+  
+  const [divisionItems, setDivisionItems] = useState([
+    { label: 'Fabric', value: 'Fabric' },
+    { label: 'Cut-fabric', value: 'Cut-fabric' },
+  ]);
+
+  const toggleModal = () => {
+    setPop(!isPop);
+  };
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -420,12 +444,14 @@ const LoginScreen = () => {
             />
           </View>
 
-          {/* <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>LOGIN</Text>
-          </TouchableOpacity> */}
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.loginButtonText}>LOGIN</Text>
           </TouchableOpacity>
+          {/* <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => setPop(true)}>
+            <Text style={styles.loginButtonText}>LOGIN</Text>
+          </TouchableOpacity> */}
 
           {/* <TouchableOpacity
           style={styles.ForgotpasswordButton}
@@ -479,8 +505,54 @@ const LoginScreen = () => {
           </View>
         </SafeAreaView>
       ) : null}
+
+<CustomModal isVisible={isPop} onClose={toggleModal} >
+    <View style={style.container}>
+      <Text style={style.heading}>Company</Text>
+      <DropDownPicker
+        open={isCompanyOpen}
+        value={company}
+        items={companyItems}
+        setOpen={setIsCompanyOpen}
+        setValue={setCompany}
+        setItems={setCompanyItems}
+        placeholder="Select Company"
+        containerStyle={style.dropdownContainer}
+      />
+
+      <Text style={style.heading}>Division</Text>
+      <DropDownPicker
+        open={isDivisionOpen}
+        value={division}
+        items={divisionItems}
+        setOpen={setIsDivisionOpen}
+        setValue={setDivision}
+        setItems={setDivisionItems}
+        placeholder="Select Division"
+        containerStyle={style.dropdownContainer}
+      />
+    </View>
+  </CustomModal>
     </ScrollView>
   );
 };
 
 export default LoginScreen;
+
+const style = StyleSheet.create({
+  container: {
+    // flex: 1,
+    // padding: 20,
+    backgroundColor: 'transparent', // Fully transparent
+  },
+  heading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    // marginVertical: 10,
+  },
+  dropdownContainer: {
+    height: 50,
+    marginBottom: 20,
+    zIndex: 1000, // Adjust for layering
+  },
+});

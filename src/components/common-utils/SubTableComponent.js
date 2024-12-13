@@ -13,6 +13,9 @@ import {CustomThemeColors} from '../CustomThemeColors';
 import {CheckBox} from 'react-native-elements';
 import {Button} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import CustomModal from './modal';
+import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -66,7 +69,9 @@ const SubTableComponent = ({
   activeIndex,
   selectedPaymentType,
   toggleData,
-  RowDataForIssue,mainTableSelectAll,setIsLoading
+  RowDataForIssue,
+  mainTableSelectAll,
+  setIsLoading,
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -88,23 +93,27 @@ const SubTableComponent = ({
   const rowsPerPage = 100; // Number of rows per page
   const [totalColumnWidths, setTotalColumnWidths] = useState(0);
   // const [isLoading, setIsLoading] = useState(false);
+  const [detailViewModalVisible, setDetailViewModalVisible] = useState(false);
+  const [longPressData, setLongPressData] = useState([]);
 
+  const toggleModalDetail = () => {
+    setDetailViewModalVisible(!detailViewModalVisible);
+  };
 
   useEffect(() => {
     // if (selectedCheckBoxData.length > 0) {
-      console.log('present', selectedCheckBoxData);
-      console.log('selectedPaymentTypedf', selectedPaymentType);
-      
-      // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
-      
-      // }
-    }, []);
-    useEffect(() => {
-    setIsLoading(true)
+    console.log('present', selectedCheckBoxData);
+    console.log('selectedPaymentTypedf', selectedPaymentType);
+
+    // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
+
+    // }
+  }, []);
+  useEffect(() => {
+    setIsLoading(true);
     console.log('initialDataz;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
-    setIsLoading(false)
-
+    setIsLoading(false);
   }, [initialData]);
 
   useEffect(() => {
@@ -270,17 +279,14 @@ const SubTableComponent = ({
     // Send either all data or an empty array based on newIsChecked state
     const dataToSend = newIsChecked ? data : [];
     console.log('sub table SelectAllCheckBox::', dataToSend);
-    
-    if(dataToSend.length == 0){
-      console.log(
-        'empty::'
-      )
+
+    if (dataToSend.length == 0) {
+      console.log('empty::');
       onRowIndexSelect([]);
       dataToSend.map(dataa => {
         RowDataForIssue(dataa);
       });
-    }else{
-
+    } else {
       dataToSend.map(dataa => {
         onRowIndexSelect(dataa);
         RowDataForIssue(dataa);
@@ -387,103 +393,104 @@ const SubTableComponent = ({
   };
 
   return (
-    
-    
     <View>
-    {mainTableSelectAll &&
-      <><View style={styles.selectSlide}>
-          <Text
-            style={{
-              maxWidth: 200,
-              padding: 5,
-              borderRadius: 10,
-              fontSize: DeviceInfo.isTablet() ? 16 : 12,
-              fontWeight: '800',
-              color: 'black',
-            }}>
-            {selectedPaymentType === 'Paysheet Payment'
-              ? 'Payment Details'
-              : selectedPaymentType === 'Fund Transfer'
+      {mainTableSelectAll && (
+        <>
+          <View style={styles.selectSlide}>
+            <Text
+              style={{
+                maxWidth: 200,
+                padding: 5,
+                borderRadius: 10,
+                fontSize: DeviceInfo.isTablet() ? 16 : 12,
+                fontWeight: '800',
+                color: 'black',
+              }}>
+              {selectedPaymentType === 'Paysheet Payment'
+                ? 'Payment Details'
+                : selectedPaymentType === 'Fund Transfer'
                 ? 'Transfer From and To Account Details'
                 : 'Payment List'}
-          </Text>
-          {/* </View> */}
-          <View style={styles.container}>
-            <CheckBox
-              title={!isChecked ? 'Select All' : 'Deselect All'}
-              checked={isChecked}
-              containerStyle={{
-                backgroundColor: 'white',
-                borderWidth: 0,
-                borderRadius: 5,
-                padding: 3,
-              }}
-              onPress={() => {
-                handleSelectAllCheckbox();
-              } } />
+            </Text>
+            {/* </View> */}
+            <View style={styles.container}>
+              <CheckBox
+                title={!isChecked ? 'Select All' : 'Deselect All'}
+                checked={isChecked}
+                containerStyle={{
+                  backgroundColor: 'white',
+                  borderWidth: 0,
+                  borderRadius: 5,
+                  padding: 3,
+                  fontSize: 8,
+                }}
+                onPress={() => {
+                  handleSelectAllCheckbox();
+                }}
+              />
+            </View>
           </View>
-        </View><View
-          style={[
-            styles.table,
-            {
-              borderWidth: 1,
-              borderColor: CustomThemeColors.primary,
-              marginRight: 4,
-            },
-          ]}>
-            <View style={styles.headerRow}>
-              {columns
-                .filter(column => column !== 'groupId')
-                .map((column, index) => (
+          <View
+            style={[
+              styles.table,
+              {
+                borderWidth: 1,
+                borderColor: CustomThemeColors.primary,
+                marginRight: 4,
+              },
+            ]}>
+            <View style={{flex: 1}}>
+              <View style={styles.headerRow}>
+                {columns
+                  .filter(column => column !== 'groupId')
+                  .map((column, index) => (
+                    <Text
+                      key={index}
+                      style={[
+                        styles.headerCell,
+                        {
+                          flex: 1,
+
+                          fontSize: DeviceInfo.isTablet()
+                            ? 9
+                            : sliderValue <= 1.5625
+                            ? 10
+                            : sliderValue <= 2.578125
+                            ? 10
+                            : sliderValue <= 3.578125
+                            ? 12
+                            : 14,
+                        },
+                      ]}>
+                      {makeReadable(column)}
+                    </Text>
+                  ))}
+                {showCheckBox && (
                   <Text
-                    key={index}
                     style={[
                       styles.headerCell,
                       {
-                        width: sliderValue == 0
-                          ? (columnWidths[column] / (totalColumnWidths - 50)) *
-                          screenWidth -
-                          (showCheckBox ? 3 : 0)
-                          : columnWidths[column] - 35,
-
+                        borderRightWidth: 0,
+                        alignSelf: 'center',
+                        // flex: 1,
+                        padding: 12,
                         fontSize: DeviceInfo.isTablet()
-                          ? 14
+                          ? 9
                           : sliderValue <= 1.5625
-                            ? 10
-                            : sliderValue <= 2.578125
-                              ? 10
-                              : sliderValue <= 3.578125
-                                ? 12
-                                : 14,
-                      },
-                    ]}>
-                    {makeReadable(column)}
-                  </Text>
-                ))}
-              {showCheckBox && (
-                <Text
-                  style={[
-                    styles.headerCell,
-                    {
-                      borderRightWidth: 0,
-                      alignSelf: 'center',
-                      paddingLeft: 5,
-                      fontSize: DeviceInfo.isTablet()
-                        ? 14
-                        : sliderValue <= 1.5625
                           ? 10
                           : sliderValue <= 2.578125
-                            ? 10
-                            : sliderValue <= 3.578125
-                              ? 12
-                              : 14,
-                    },
-                  ]}>
-                  Select
-                </Text>
-              )}
+                          ? 10
+                          : sliderValue <= 3.578125
+                          ? 12
+                          : 14,
+                      },
+                    ]}>
+                    Select
+                  </Text>
+                )}
+              </View>
             </View>
-            <ScrollView nestedScrollEnabled>
+            <ScrollView nestedScrollEnabled style={{flex: 1}}>
               {/* <ScrollView horizontal> */}
 
               {/* TABLE ROWS */}
@@ -494,67 +501,100 @@ const SubTableComponent = ({
                     key={rowIndex}
                     onPress={() => {
                       toggleRowSelection(rowIndex);
-                    } }>
+                    }}>
                     <View
-                      style={selectedRows[page * rowsPerPage + rowIndex] === false &&
+                      style={
+                        selectedRows[page * rowsPerPage + rowIndex] === false &&
                         tableIndex === page * rowsPerPage + rowIndex
-                        ? styles.activeSelect
-                        : tableIndex === page * rowsPerPage + rowIndex
+                          ? styles.activeSelect
+                          : tableIndex === page * rowsPerPage + rowIndex
                           ? styles.activeSelect
                           : rowIndex % 2 === 0
-                            ? styles.oddRow
-                            : styles.evenRow}>
+                          ? styles.oddRow
+                          : styles.evenRow
+                      }>
                       {columns
                         .filter(column => column !== 'groupId')
                         .map((column, cellIndex) => (
                           <Text
                             key={cellIndex}
                             style={[
-                              cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
+                              cellIndex % 2 === 0
+                                ? styles.oddCell
+                                : styles.oddCell,
                               {
-                                width: sliderValue == 0
-                                  ? (columnWidths[column] /
-                                    (totalColumnWidths - 50)) *
-                                  screenWidth -
-                                  (showCheckBox ? 3 : 0)
-                                  : columnWidths[column] - 35,
-
+                                flex: 1,
                                 fontSize: DeviceInfo.isTablet()
-                                  ? 14
+                                  ? 10
                                   : sliderValue <= 1.5625
-                                    ? 10
-                                    : sliderValue <= 2.578125
-                                      ? 10
-                                      : sliderValue <= 3.578125
-                                        ? 12
-                                        : 14,
+                                  ? 10
+                                  : sliderValue <= 2.578125
+                                  ? 10
+                                  : sliderValue <= 3.578125
+                                  ? 12
+                                  : 14,
                               },
-                            ]}>
-                            {String(row[column])}
+                            ]}
+                            numberOfLines={1} // Ensures single-line display
+                            ellipsizeMode="tail">
+                            {String(row[column]).length > 10
+                              ? `${String(row[column]).slice(0, 10)}...`
+                              : String(row[column])}
                           </Text>
                         ))}
 
                       {showCheckBox && (
-                        <View style={{ borderBottomWidth: 0.5 }}>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            borderBottomWidth: 0.5,
+                          }}>
                           <CheckBox
-                            checked={!mainTableSelectedIndex.includes(
-                              data[page * rowsPerPage + rowIndex].groupId
-                            )
-                              ? false
-                              : selectedCheckBoxData?.[`groupId:${data[page * rowsPerPage + rowIndex].groupId}`]?.includes(page * rowsPerPage + rowIndex) ||
-                              false}
-                            onPress={() => handleRowCheckbox(page * rowsPerPage + rowIndex)}
+                            checked={
+                              !mainTableSelectedIndex.includes(
+                                data[page * rowsPerPage + rowIndex].groupId,
+                              )
+                                ? false
+                                : selectedCheckBoxData?.[
+                                    `groupId:${
+                                      data[page * rowsPerPage + rowIndex]
+                                        .groupId
+                                    }`
+                                  ]?.includes(page * rowsPerPage + rowIndex) ||
+                                  false
+                            }
+                            onPress={() =>
+                              handleRowCheckbox(page * rowsPerPage + rowIndex)
+                            }
                             containerStyle={{
                               backgroundColor: 'transparent',
                               borderWidth: 0,
-                              padding: 4,
+                              padding: 0,
                               paddingLeft: 0,
+                              margin: 0,
                             }}
-                            size={sliderValue <= 1.5625
-                              ? 22
-                              : sliderValue <= 2.578125
+                            size={
+                              sliderValue <= 1.5625
+                                ? 14
+                                : sliderValue <= 2.578125
                                 ? 16
-                                : sliderValue <= 3.578125 && 18} />
+                                : sliderValue <= 3.578125 && 18
+                            }
+                          />
+                          <TouchableOpacity
+                            onPress={() => {
+                              setLongPressData([row]);
+                              console.log('cell dastaa::', row);
+                              setDetailViewModalVisible(true);
+                            }}>
+                            <MaterialIcons
+                              name="visibility" // Eye icon
+                              size={16} // Adjust size as needed
+                              color="gray" // Adjust color as needed
+                              style={{margin: 0, padding: 0}} // Spacing between checkbox and icon
+                            />
+                          </TouchableOpacity>
                         </View>
                       )}
                     </View>
@@ -580,8 +620,18 @@ const SubTableComponent = ({
     />
   </View> */}
             </ScrollView>
-          </View></>
-           } 
+          </View>
+        </>
+      )}
+      <CustomModal
+        isVisible={detailViewModalVisible}
+        onClose={toggleModalDetail}
+        title="">
+        {/* Children Content */}
+        <View style={{height: 200}}>
+          <ApprovalTableComponent tableData={longPressData} heading={''} />
+        </View>
+      </CustomModal>
     </View>
   );
 };
