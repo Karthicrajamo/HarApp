@@ -95,11 +95,15 @@ export const AdvancePayment = ({route}) => {
     console.log('adjWithoutTax::', adjWithoutTax);
     let totalTaxAmount = 0;
     if (slabTaxes) {
-      const totalAmount = slabTaxes
-        .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
-        .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
-      totalTaxAmount = actualMinSlab-(totalAmount * slabFXRate);
-      console.log('Total Tax Amount:', totalAmount);
+      if (slabTaxes[0]['ST Paid']) {
+        const totalAmount = slabTaxes
+          .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
+          .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
+        totalTaxAmount = actualMinSlab - totalAmount * slabFXRate;
+        console.log('Total Tax Amount:', actualMinSlab);
+      } else {
+        totalTaxAmount = actualMinSlab;
+      }
     }
     // setActualMinSlab(totalTaxAmount*slabFXRate)
     if (adjWithoutTax.length > 0) {
@@ -741,7 +745,7 @@ export const AdvancePayment = ({route}) => {
             }No`]: transactionDetails[3],
             [['Demand', 'Debit Card', 'Cheque'].includes(Main[7])
               ? 'Favour of'
-              : 'Party Name']: Main[3],
+              : 'Party Name']: transactionDetails[5],
             [`${
               Main[7] === 'RTGS/NEFT'
                 ? 'RTGS/NEFT '
@@ -1094,7 +1098,7 @@ export const AdvancePayment = ({route}) => {
                 <Text style={commonStyles.oneLineKey}>
                   Favour of <Text style={commonStyles.redAsterisk}>*</Text>
                 </Text>
-                <Text style={commonStyles.oneLineValue}>{mainData[3]}</Text>
+                <Text style={commonStyles.oneLineValue}>{transDetails[5]}</Text>
               </View>
             )}
             <View style={commonStyles.flexRow}>

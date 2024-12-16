@@ -706,7 +706,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   oddCell: {
-    paddingVertical: 8,
+    paddingVertical: 0,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,

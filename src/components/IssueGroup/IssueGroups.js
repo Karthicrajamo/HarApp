@@ -2160,7 +2160,7 @@ ORDER BY
       {/* </View> */}
       <View style={{flex: 1}}>
         <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-        <View style={{ flexGrow: 1, paddingBottom: 20 }}>
+        <View style={{ flexGrow: 1, paddingBottom: 0 }}>
 
             {/* First TableComponent */}
             <View style={{ flexShrink: 1, marginTop: 0 }}>
@@ -2262,7 +2262,7 @@ ORDER BY
             </View>
 
             {/* Second SubTableComponent */}
-            <View style={{ flexShrink: 1, marginTop: 20 }}>
+            <View style={{ flexShrink: 1, marginTop: -25 }}>
 
               {selectedSubData.length > 0 && (
                 <SubTableComponent

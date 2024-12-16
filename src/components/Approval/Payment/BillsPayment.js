@@ -34,6 +34,8 @@ import CustomButton from '../../common-utils/CustomButton';
 import CurrencyConversion from '../ApprovalComponents/FXRate';
 import {ReqBodyRejConv} from './BillsComp/ReqBodyRejConv';
 import {RefreshControl} from 'react-native';
+import {KeyValueJoiner} from '../ApprovalComponents/KeyValueJoiner';
+import AdjustMinSlabFXRate from '../ApprovalComponents/AdjustMinSlabFXRate';
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
@@ -55,7 +57,7 @@ export const BillsPayment = ({route}) => {
   const [showInfoPairs, setShowInfoPairs] = useState(true);
   const [billsPay, setBillsPay] = useState([]);
   const [excluseTblTwo, setExcluseTblTwo] = useState([]);
-  const [slabTax, setSlabTax] = useState([]);
+  // const [slabTax, setSlabTax] = useState([]);
   const [paidAdjustment, setPaidAdjustment] = useState([]);
   const [advanceAdjustmentModal, setAdvanceAdjustmentModal] = useState([]);
   const [supplierBankMain, setSupplierBankMain] = useState([]);
@@ -72,8 +74,7 @@ export const BillsPayment = ({route}) => {
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [actualSlabMain, setActualSlabMain] = useState('');
   const [slabTaxes, setSlabTaxes] = useState('');
-
-
+  const [slabFXRate, setSlabFXRate] = useState('');
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -96,12 +97,17 @@ export const BillsPayment = ({route}) => {
   useEffect(() => {
     console.log('paidAdjustment::', paidAdjustment);
     let totalTaxAmount = 0;
+    // console.log('slabTaxes:', slabTaxes[0]['ST Paid']);
     if (slabTaxes) {
-      const totalAmount = slabTaxes
-        .map(item => parseFloat(item['Tax Amount'])) // Convert Tax Amount to a number
-        .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
-      totalTaxAmount = actualMinSlab-(totalAmount * slabFXRate);
-      console.log('Total Tax Amount:', slabFXRate);
+      if (slabTaxes[0]['ST Paid']) {
+        const totalAmount = slabTaxes
+          .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
+          .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
+        totalTaxAmount = actualMinSlab - totalAmount * slabFXRate;
+        console.log('Total Tax Amount:', actualMinSlab);
+      } else {
+        totalTaxAmount = actualMinSlab;
+      }
     }
     // setActualMinSlab(totalTaxAmount*slabFXRate)
     if (paidAdjustment.length > 0) {
@@ -118,7 +124,7 @@ export const BillsPayment = ({route}) => {
       console.log('actualSlab::', slabFXRate);
       // if(actualMinSlab === totalTaxAmount){
       // setActualMinSlab(totalTaxAmount);}
-      setActualSlabMain(totalTaxAmount)
+      setActualSlabMain(totalTaxAmount);
 
       setActualPaidAftAdj(totalTaxAmount + totalAmount);
     } // Start with an initial total of 0
@@ -175,7 +181,7 @@ export const BillsPayment = ({route}) => {
       });
 
       console.log('Mapped Slab Tax:', slabTaxObject);
-      setSlabTax([slabTaxObject]); // Pass the mapped object to setSlabTax
+      setSlabTaxes([slabTaxObject]); // Pass the mapped object to setSlabTax
     }
   }, [transValue]); // Re-run when transValue changes
 
@@ -296,26 +302,46 @@ export const BillsPayment = ({route}) => {
     );
 
     //   Slab Taxes
-    if (slabTax.length < 1) {
-      FetchValueAssignKeysAPI(
-        '',
-        [
-          'Party Name',
-          'Party Type',
-          'Dept Name',
-          'Tax Name',
-          'Rate',
-          'Tax Amount',
-          'Already Paid',
-          'Slab',
-          'Bill Amount',
-          'ST Paid',
-          'Applied ST',
-        ],
-        [],
-        setSlabTax,
-      );
-    }
+    // if (slabTaxes.length < 1) {
+    //   FetchValueAssignKeysAPI(
+    //     '',
+    //     [
+    //       'Party Name',
+    //       'Party Type',
+    //       'Dept Name',
+    //       'Tax Name',
+    //       'Rate',
+    //       'Tax Amount',
+    //       'Already Paid',
+    //       'Slab',
+    //       'Bill Amount',
+    //       'ST Paid',
+    //       'Applied ST',
+    //     ],
+    //     [],
+    //     setSlabTaxes,
+    //   );
+    // }
+
+    const keys = [
+      'Party Name',
+      'Party Type',
+      'Dept Name',
+      'Tax Name',
+      'Rate',
+      'Tax Amount',
+      'Already Paid',
+      'Slab',
+      'Bill Amount',
+      'ST Paid',
+      'Applied ST',
+    ];
+
+    // Call the KeyValueJoiner function
+    const filteredPairs = KeyValueJoiner(keys, transValue[9], [0]);
+    console.log('filteredPairs', transValue[9]);
+    console.log('filteredPairs', filteredPairs);
+    setSlabTaxes(filteredPairs);
 
     //Other Changes and Adjustments(without tax)
     FetchValueAssignKeysAPI(
@@ -523,7 +549,7 @@ export const BillsPayment = ({route}) => {
             //     }
             //   : {
             [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
-              Main[18],
+            poDetails[2].toFixed(4)  ,
             [`${
               Main[7] === 'RTGS/NEFT'
                 ? 'RTGS/NEFT Ref '
@@ -542,7 +568,7 @@ export const BillsPayment = ({route}) => {
                 : 'Ref '
             }No`]: transactionDetails[3],
             ...(['Demand', 'Debit Card', 'Cheque'].includes(Main[7]) && {
-              'Favour of': Main[3],
+              'Favour of': transactionDetails[5],
             }),
             [`${
               Main[7] === 'RTGS/NEFT'
@@ -581,6 +607,9 @@ export const BillsPayment = ({route}) => {
             } Amt (${Main[9]})`]: Main[6],
             // }),
           };
+          setActualMinSlab(
+            poDetails[2].toFixed(4) 
+          );
           const numResult = await NumToWordsCon(Main[6], Main[9]);
           setNumToWords(numResult);
           setActualMinSlab(
@@ -617,6 +646,11 @@ export const BillsPayment = ({route}) => {
         BillCurrency={currency}
         setFxRate={setFxRate}
         // setTDSCurrency={setTDSCurrency}
+      />
+      <AdjustMinSlabFXRate
+        FromCurrency={tDSCurrency}
+        ToCurrency={currency}
+        setFxRate={setSlabFXRate}
       />
 
       {/* Show InfoPairs or TableComponent based on the state */}
@@ -692,7 +726,7 @@ export const BillsPayment = ({route}) => {
               heading={'Selected Taxes to Exclude'}
             />
             <ApprovalTableComponent
-              tableData={slabTax}
+              tableData={slabTaxes}
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={`Application Slab Taxes(${tDSCurrency} Currency)`}
             />
@@ -711,7 +745,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={calculatedTDS.toString()}
+                value={parseFloat(calculatedTDS).toFixed(4)}
                 editable={false} // Disables input
               />
             </View>
@@ -738,7 +772,7 @@ export const BillsPayment = ({route}) => {
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
                 value={
-                  mainData[18] !== undefined ? mainData[18].toString() : ''
+                  mainData[18] !== undefined ? mainData[19].toString() : ''
                 }
                 editable={false} // Disables input
               />
@@ -861,21 +895,21 @@ export const BillsPayment = ({route}) => {
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
                   {mainData[7] === 'RTGS/NEFT'
-                    ? 'RTGS/NEFT '
-                    : mainData[7] === 'Bank Transfer'
-                    ? 'TT '
-                    : mainData[7] === 'Demand'
-                    ? 'DD '
-                    : mainData[7] === 'Mobile Banking'
-                    ? 'MB '
-                    : mainData[7] === 'Debit Card'
-                    ? 'DC '
-                    : mainData[7] === 'Credit Card'
-                    ? 'CC '
-                    : mainData[7] === 'Cheque'
-                    ? 'Cheque '
-                    : 'Cash '}
-                  Ref No <Text style={commonStyles.redAsterisk}>*</Text>
+                ? 'RTGS/NEFT Ref '
+                : mainData[7] === 'Bank Transfer'
+                ? 'TT '
+                : mainData[7] === 'Demand'
+                ? 'DD '
+                : mainData[7] === 'Mobile Banking'
+                ? 'MB Ref '
+                : mainData[7] === 'Debit Card'
+                ? 'DC '
+                : mainData[7] === 'Credit Card'
+                ? 'CC '
+                : mainData[7] === 'Cheque'
+                ? 'Cheque '
+                : 'Ref '
+            }No <Text style={commonStyles.redAsterisk}>*</Text>
                 </Text>
                 <TextInput
                   style={[commonStyles.oneLineValue, commonStyles.input]}
