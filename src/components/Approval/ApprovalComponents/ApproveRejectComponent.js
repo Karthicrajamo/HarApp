@@ -16,7 +16,14 @@ import commonStyles from '../ApprovalCommonStyles';
 import {isTablet} from 'react-native-device-info';
 import {useNavigation} from '@react-navigation/native';
 
-const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
+const ApproveRejectComponent = ({
+  approveUrl,
+  rejectUrl,
+  params,
+  rejParams,
+  setReUseCancel,
+  paymentMode,
+}) => {
   const navigation = useNavigation();
   const [isRejectPop, setRejectPop] = useState(false);
   const [value, setValue] = useState('');
@@ -138,6 +145,19 @@ const ApproveRejectComponent = ({approveUrl, rejectUrl, params, rejParams}) => {
             updateMessage(value);
             // handleAction('reject');
             toggleModal();
+            console.log('rejectParams PaymentMode:::' + paymentMode);
+            if (
+              // JSON.stringify(
+              paymentMode === 'Cheque'
+            ) {
+              console.log(
+                'rejectParams PaymentMode:::' +
+                  JSON.stringify(
+                    rejectParams['tranObject']?.[1]['PAYMENT_MODE'],
+                  ),
+              );
+              setReUseCancel(true);
+            }
           }
         }}>
         {/* {/ Children Content /} */}

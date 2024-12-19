@@ -12,6 +12,7 @@ import {
 } from '@expo-google-fonts/montserrat';
 import DeviceInfo from 'react-native-device-info';
 import {CustomThemeColors} from '../CustomThemeColors';
+import {currentFontScale, sysBasedFontSize} from './UserId';
 
 const {width, height} = Dimensions.get('window');
 const isTablet = DeviceInfo.isTablet();
@@ -61,14 +62,19 @@ const styles = StyleSheet.create({
     // paddingBottom: 30,
   },
   headingText: {
-    fontSize: isTablet ? 28 : 24, // Adjust font size for tablet/phone
+    fontSize: isTablet
+      ? currentFontScale == sysBasedFontSize.Large
+        ? 16
+        : 24
+      : 24, // Adjust font size for tablet/phone
     color: '#fff',
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 10,
+    marginTop: sysBasedFontSize.Large ? 65 : 0,
   },
   secondheadingText: {
-    fontSize: isTablet ? 18 : 16, // Adjust font size for tablet/phone
+    fontSize: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 16 : 16) : 16, // Adjust font size for tablet/phone
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,
@@ -84,15 +90,15 @@ const styles = StyleSheet.create({
   },
 
   thirdHeading: {
-    fontSize: 20,
+    fontSize: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 16 : 24) : 16,
     textAlign: 'center',
     marginBottom: height * 0.02,
     color: 'black',
   },
 
   bottomLogo: {
-    width: width * 0.2,
-    height: width * 0.2,
+    // width: width * 0.2,
+    // height: width * 0.2,
     alignSelf: 'center',
     borderRadius: 100,
     marginBottom: height * 0.02,
@@ -130,7 +136,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderWidth: 1,
     borderRadius: 15,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 15,
     fontSize: 14,
     marginBottom: height * 0.02,
@@ -140,8 +146,8 @@ const styles = StyleSheet.create({
 
   passwordInput: {
     borderWidth: 1,
-    borderRadius: 15,
-    padding: 10,
+    borderRadius: 15, paddingVertical: 8,
+    paddingHorizontal: 15,
     fontSize: 16,
     color: 'black',
     borderColor: 'lightgrey',

@@ -1,40 +1,45 @@
-export const KeyValueJoiner = (keys, values, skipValue = [], setSlabTaxes) => {
-  console.log('Empty input data, returning empty resultval:', values);
-  if (!values || !values.length || values.every(valueArray => valueArray.length === 0)) {
+const KeyValueJoiner = async (headers, values, excludedIndexes, setData) => {
+  // Check if values is an empty or invalid array
+  if (!values || values.length < 1) {
     const emptyResult = [{}];
-    keys.forEach(key => {
-        emptyResult[0][key] = ''; // Set value as empty for each key
+    headers.forEach(header => {
+      emptyResult[0][header] = ''; // Set empty values for each header
     });
 
-    console.log('Empty input data, returning empty result:', emptyResult);
-    return emptyResult;
-}
+    console.log('Empty values::', emptyResult);
+    setData(emptyResult);
+    return;
+  }
 
-  // Initialize an empty array to hold the key-value objects for all arrays in values
-  const keyValueArray = [];
+  // If values is a valid array with data
+  if (values && Array.isArray(values) && values.length > 0) {
+    const result = values.map(innerArray => {
+      // Filter out the excluded indexes
+      const filteredRow = innerArray.filter(
+        (_, index) => !excludedIndexes.includes(index),
+      );
 
-  // Iterate through each array in values
-  values.forEach(valueArray => {
-    // Filter out values based on skipValue indices
-    const filteredValues = valueArray.filter(
-      (value, index) => !skipValue.includes(index),
-    );
-    console.log('filteredValues', filteredValues);
-
-    // Create a key-value object for the current array
-    const keyValueObj = {};
-
-    // Iterate through the keys and corresponding values
-    keys.forEach((key, index) => {
-      // Ensure we only add keys corresponding to existing filtered values
-      if (index < filteredValues.length) {
-        keyValueObj[key] = filteredValues[index];
-      }
+      // Map the filtered row to the headers
+      return headers.reduce((acc, header, index) => {
+        // Ensure the filtered row does not exceed the number of headers
+        acc[header] =
+          filteredRow[index] !== undefined ? filteredRow[index] : 0.0;
+        return acc;
+      }, {});
     });
 
-    // Add the created object to the key-value array
-    keyValueArray.push(keyValueObj);
-  });
+    console.log('Processed Table Data:', result);
+    setData(result);
+  } else {
+    // If the data is invalid, return empty values for all headers
+    const emptyResult = [{}];
+    headers.forEach(header => {
+      emptyResult[0][header] = ''; // Set empty for each header
+    });
 
-  return keyValueArray; // Return the array of key-value objects
+    console.log('Returning empty data due to invalid response:', emptyResult);
+    setData(emptyResult);
+  }
 };
+
+export default KeyValueJoiner;

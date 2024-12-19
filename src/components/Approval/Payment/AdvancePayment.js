@@ -35,8 +35,9 @@ import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
 import {isTablet} from 'react-native-device-info';
 import {CustomThemeColors} from '../../CustomThemeColors';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
-import {KeyValueJoiner} from '../ApprovalComponents/KeyValueJoiner';
+import KeyValueJoiner from '../ApprovalComponents/KeyValueJoiner';
 import AdjustMinSlabFXRate from '../ApprovalComponents/AdjustMinSlabFXRate';
+import {updateModRejectPayStatus} from './BillsComp/ReUseCancelComp';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -74,6 +75,7 @@ export const AdvancePayment = ({route}) => {
   const [tDSCurrency, setTDSCurrency] = useState('');
   const [slabFXRate, setSlabFXRate] = useState('');
   const [actualSlabMain, setActualSlabMain] = useState('');
+  const [reUseCancel, setReUseCancel] = useState('');
 
   useEffect(() => {
     console.log('isLoading:::', isLoading);
@@ -120,7 +122,7 @@ export const AdvancePayment = ({route}) => {
       console.log('actualSlab::', slabFXRate);
       // if(actualMinSlab === totalTaxAmount){
       // setActualMinSlab(totalTaxAmount);}
-      setActualSlabMain(totalTaxAmount)
+      setActualSlabMain(totalTaxAmount);
 
       setActualPaidAftAdj(totalTaxAmount + totalAmount);
     } // Start with an initial total of 0
@@ -554,10 +556,12 @@ export const AdvancePayment = ({route}) => {
       ];
 
       // Call the KeyValueJoiner function
-      const filteredPairs = KeyValueJoiner(keys, transValue[9], [0]);
-      console.log('filteredPairs', transValue[9]);
-      console.log('filteredPairs', filteredPairs);
-      setSlabTaxes(filteredPairs);
+      // const filteredPairs = KeyValueJoiner(keys, transValue[9], [0]);
+      KeyValueJoiner(keys, transValue[9], [9], setSlabTaxes);
+
+      // console.log('filteredPairs', transValue[9]);
+      // console.log('filteredPairs', filteredPairs);
+      // setSlabTaxes(filteredPairs);
 
       // Other changes & Adjustments (Without Tax)
       const otherTaxArr =
@@ -727,19 +731,19 @@ export const AdvancePayment = ({route}) => {
               poDetails[2].toFixed(4),
             'Actual Paid After Adjustment': Main[6].toFixed(4),
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT Ref '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB Ref '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
                 : 'Ref '
             }No`]: transactionDetails[3],
@@ -747,36 +751,36 @@ export const AdvancePayment = ({route}) => {
               ? 'Favour of'
               : 'Party Name']: transactionDetails[5],
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
                 : 'Cash '
             } Date`]: DateFormatComma(Main[1]),
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
                 : 'Cash '
             } Amt (${Main[9]})`]: Main[6],
@@ -793,7 +797,7 @@ export const AdvancePayment = ({route}) => {
             'slabMinActual::',
             formattedData[
               `Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`
-            ] ,
+            ],
           );
           setPairsData([formattedData]);
         }
@@ -808,6 +812,9 @@ export const AdvancePayment = ({route}) => {
 
   const toggleModalPDF = () => {
     setPDFModalVisible(!PDFModalVisible);
+  };
+  const toggleModalReUse = () => {
+    setReUseCancel(!reUseCancel);
   };
 
   return (
@@ -1069,19 +1076,19 @@ export const AdvancePayment = ({route}) => {
             )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {mainData[7] === 'RTGS/NEFT'
+                {mainData[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                   ? 'RTGS/NEFT '
-                  : mainData[7] === 'Bank Transfer'
+                  : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7] === 'Demand'
+                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
                   ? 'DD '
-                  : mainData[7] === 'Mobile Banking'
+                  : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
-                  : mainData[7] === 'Debit Card'
+                  : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
                   ? 'DC '
-                  : mainData[7] === 'Credit Card'
+                  : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
                   ? 'CC '
-                  : mainData[7] === 'Cheque'
+                  : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
                   : 'Cash '}
                 Ref No <Text style={commonStyles.redAsterisk}>*</Text>
@@ -1103,19 +1110,19 @@ export const AdvancePayment = ({route}) => {
             )}
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {mainData[7] === 'RTGS/NEFT'
+                {mainData[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                   ? 'RTGS/NEFT '
-                  : mainData[7] === 'Bank Transfer'
+                  : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7] === 'Demand'
+                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
                   ? 'DD '
-                  : mainData[7] === 'Mobile Banking'
+                  : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
-                  : mainData[7] === 'Debit Card'
+                  : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
                   ? 'DC '
-                  : mainData[7] === 'Credit Card'
+                  : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
                   ? 'CC '
-                  : mainData[7] === 'Cheque'
+                  : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
                   : 'Cash '}
                 Date
@@ -1126,19 +1133,19 @@ export const AdvancePayment = ({route}) => {
             </View>
             <View style={commonStyles.flexRow}>
               <Text style={commonStyles.oneLineKey}>
-                {mainData[7] === 'RTGS/NEFT'
+                {mainData[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                   ? 'RTGS/NEFT '
-                  : mainData[7] === 'Bank Transfer'
+                  : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7] === 'Demand'
+                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
                   ? 'DD '
-                  : mainData[7] === 'Mobile Banking'
+                  : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
-                  : mainData[7] === 'Debit Card'
+                  : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
                   ? 'DC '
-                  : mainData[7] === 'Credit Card'
+                  : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
                   ? 'CC '
-                  : mainData[7] === 'Cheque'
+                  : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
                   : 'Cash '}
                 Amt ({mainData[9]})
@@ -1204,6 +1211,51 @@ export const AdvancePayment = ({route}) => {
           <Text style={styles.subOptionText}>Print PDF</Text>
         </TouchableOpacity>
       </CustomModal>
+
+      <CustomModal
+        isVisible={reUseCancel}
+        onClose={toggleModalReUse}
+        title=""
+        isVisibleClose={false}>
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={() => {
+            updateModRejectPayStatus(
+              transName,
+              paymentId,
+              mainData[8],
+              transDetails[3],
+              mainData[7],
+              transValue,
+              transId,
+              'Re-Use',
+              currentLevel,
+            );
+            toggleModalReUse();
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Re-Use</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            updateModRejectPayStatus(
+              transName,
+              paymentId,
+              mainData[8],
+              transDetails[3],
+              mainData[7],
+              transValue,
+              transId,
+              'Cancelled',
+              currentLevel,
+            );
+            toggleModalReUse();
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Cancelled</Text>
+        </TouchableOpacity>
+      </CustomModal>
+
       {/* Button to toggle visibility */}
       {!isRefreshing && (
         <>
@@ -1221,6 +1273,8 @@ export const AdvancePayment = ({route}) => {
               approveUrl={`${API_URL}/api/common/approveTransaction`}
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
+              setReUseCancel={setReUseCancel}
+              paymentMode={mainData[7]}
             />
           </View>
         </>

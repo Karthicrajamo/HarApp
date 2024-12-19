@@ -34,8 +34,13 @@ import CustomButton from '../../common-utils/CustomButton';
 import CurrencyConversion from '../ApprovalComponents/FXRate';
 import {ReqBodyRejConv} from './BillsComp/ReqBodyRejConv';
 import {RefreshControl} from 'react-native';
-import {KeyValueJoiner} from '../ApprovalComponents/KeyValueJoiner';
+import KeyValueJoiner from '../ApprovalComponents/KeyValueJoiner';
 import AdjustMinSlabFXRate from '../ApprovalComponents/AdjustMinSlabFXRate';
+import AdvanceAdjApi from './BillsComp/AdvanceAdjApi';
+import {
+  getUpdateCheckStatus,
+  updateModRejectPayStatus,
+} from './BillsComp/ReUseCancelComp';
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
@@ -50,6 +55,7 @@ export const BillsPayment = ({route}) => {
   const [accountNo, setAccountNo] = useState('');
   const [refNO, setRefNO] = useState('');
   const [currency, setCurrency] = useState('');
+  const [actual, setActual] = useState('');
   const [mainData, setMainData] = useState([]);
   const [transDetails, setTransDetails] = useState([]);
   const [transValue, setTransValue] = useState([]);
@@ -75,6 +81,7 @@ export const BillsPayment = ({route}) => {
   const [actualSlabMain, setActualSlabMain] = useState('');
   const [slabTaxes, setSlabTaxes] = useState('');
   const [slabFXRate, setSlabFXRate] = useState('');
+  const [reUseCancel, setReUseCancel] = useState('');
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -94,6 +101,11 @@ export const BillsPayment = ({route}) => {
   //   } // Start with an initial total of 0
   // }, [paidAdjustment]);
 
+  useEffect(
+    () => console.log('advanceAdjustmentModal::', advanceAdjustmentModal),
+    [advanceAdjustmentModal],
+  );
+
   useEffect(() => {
     console.log('paidAdjustment::', paidAdjustment);
     let totalTaxAmount = 0;
@@ -104,7 +116,7 @@ export const BillsPayment = ({route}) => {
           .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
           .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
         totalTaxAmount = actualMinSlab - totalAmount * slabFXRate;
-        console.log('Total Tax Amount:', actualMinSlab);
+        console.log('Total Tax Amount:', totalAmount);
       } else {
         totalTaxAmount = actualMinSlab;
       }
@@ -156,34 +168,35 @@ export const BillsPayment = ({route}) => {
     // pairsData[0][`TDS Amount (${tDSCurrency[0]})`] = tds;
   }, [excluseTblTwo]);
 
-  useEffect(() => {
-    if (transValue.length > 9 && transValue[9].length > 0) {
-      const slabKeys = [
-        'Party Name',
-        'Party Type',
-        'Dept Name',
-        'Tax Name',
-        'Rate',
-        'Tax Amount',
-        'Already Paid',
-        'Slab',
-        'Bill Amount',
-        'ST Paid',
-        'Applied ST',
-      ];
+  // useEffect(() => {
+  //   if (transValue.length > 9 && transValue[9].length > 0) {
+  //     console.log("transObj 9::"+transValue[9])
+  //     const slabKeys = [
+  //       'Party Name',
+  //       'Party Type',
+  //       'Dept Name',
+  //       'Tax Name',
+  //       'Rate',
+  //       'Tax Amount',
+  //       'Already Paid',
+  //       'Slab',
+  //       'Bill Amount',
+  //       'ST Paid',
+  //       'Applied ST',
+  //     ];
 
-      const slabValues = transValue[9][0]; // Assuming transValue[9][0] is the array of values
-      const slabTaxObject = {};
+  //     const slabValues = transValue[9][0]; // Assuming transValue[9][0] is the array of values
+  //     const slabTaxObject = {};
 
-      // Dynamically map keys to values
-      slabKeys.forEach((key, index) => {
-        slabTaxObject[key] = slabValues[index];
-      });
+  //     // Dynamically map keys to values
+  //     slabKeys.forEach((key, index) => {
+  //       slabTaxObject[key] = slabValues[index];
+  //     });
 
-      console.log('Mapped Slab Tax:', slabTaxObject);
-      setSlabTaxes([slabTaxObject]); // Pass the mapped object to setSlabTax
-    }
-  }, [transValue]); // Re-run when transValue changes
+  //     console.log('Mapped Slab Tax:', slabTaxObject);
+  //     setSlabTaxes([slabTaxObject]); // Pass the mapped object to setSlabTax
+  //   }
+  // }, [transValue]); // Re-run when transValue changes
 
   useEffect(() => {
     console.log('tDSCurrency:::', tDSCurrency);
@@ -223,6 +236,71 @@ export const BillsPayment = ({route}) => {
     setRejParams(bodyRejStringified);
     setApprovalParams(bodyApprovalStringified);
     console.log('body req::', bodyRejStringified); // Log immediately before updating the state
+    if (transValue.length > 0) {
+      if (transValue[13]) {
+        const advPayParams = {
+          type: transValue[13][0]?.['ORDER_TYPE'], // Access ORDER_TYPE
+          adjustmentMethod: 'Payment Adjustment',
+          orderSelectedMat: `(${transValue[13][0]?.['FROM_ORDER']},'${transValue[13][0]?.['FROM_SID']}')`, // Template literal for dynamic value
+          orderMat: `${mainData[3]}`, // Use template literal to insert mainData[3]
+          orderNull: `(${transValue[13][0]?.['FROM_ORDER']},' ')`, // Template literal for dynamic value
+          hmtotalOrderMap: {
+            MAIN: {
+              [transValue[13][0]?.['FROM_ORDER']]:
+                transValue[8]['SUP-1070']?.[0], // Use dynamic key here
+            },
+            CHARGES: {},
+            ADJUSTMENT: {},
+            TAX: {},
+          },
+          defaultLoad: false,
+          billNo: `${transValue[0]}`, // Use template literal for dynamic value
+        };
+
+        console.log('advance Adj:', advPayParams);
+
+        // Advance adjustment Modal
+        AdvanceAdjApi(
+          `http://192.168.0.107:8100/rest/approval/getBillAdjustment/`,
+          [
+            'PO No',
+            'PO Status',
+            'PO Value',
+            'PO Currency',
+            'Advance Paid(INR)',
+            'Tax Paid',
+            'Advance %',
+            'Advance Adjusted(INR)',
+            'Remaining Advance(INR)',
+            'XRate',
+            'Remaining Adv(INR)',
+            'Adjust Advance(INR)',
+          ],
+          [2, 3, 4, 5, 6, 13, 17, 18],
+          setAdvanceAdjustmentModal,
+          advPayParams,
+          'POST',
+          ['22'],
+          [mainData[17]],
+        );
+      }
+    }
+    // getUpdateCheckStatus(
+    //   transName,
+    //   paymentId,
+    //   mainData[8],
+    //   transDetails[3],
+    //   mainData[7],
+    // );
+    // updateModRejectPayStatus(
+    //   transName,
+    //   paymentId,
+    //   mainData[8],
+    //   transDetails[3],
+    //   mainData[7],
+    //   transValue,
+    //   transId,
+    // );
   }, [transValue]);
 
   useEffect(() => {
@@ -338,10 +416,10 @@ export const BillsPayment = ({route}) => {
     ];
 
     // Call the KeyValueJoiner function
-    const filteredPairs = KeyValueJoiner(keys, transValue[9], [0]);
-    console.log('filteredPairs', transValue[9]);
-    console.log('filteredPairs', filteredPairs);
-    setSlabTaxes(filteredPairs);
+    KeyValueJoiner(keys, transValue[9], [9], setSlabTaxes);
+    // console.log('filteredPairs', transValue[9]);
+    // console.log('filteredPairs', filteredPairs);
+    // setSlabTaxes(filteredPairs);
 
     //Other Changes and Adjustments(without tax)
     FetchValueAssignKeysAPI(
@@ -357,27 +435,6 @@ export const BillsPayment = ({route}) => {
       ],
       [],
       setPaidAdjustment,
-    );
-
-    // Advance adjustment Modal
-    FetchValueAssignKeysAPI(
-      ``,
-      [
-        'PO No',
-        'PO Status',
-        'PO Value',
-        'PO Currency',
-        'Advance Paid(INR)',
-        'Tax Paid',
-        'Advance %',
-        'Advance Adjusted(INR)',
-        'Remaining Advance(INR)',
-        'XRate',
-        'Remaining Adv(INR)',
-        'Adjust Advance(INR)',
-      ],
-      [],
-      setAdvanceAdjustmentModal,
     );
 
     // Select Supplier Bank
@@ -402,6 +459,8 @@ export const BillsPayment = ({route}) => {
       'POST',
     );
     setIsLoading(false);
+
+    // console.log('adadvPayParams', advPayParams);
   }, [paymentId]);
 
   useEffect(() => {
@@ -448,6 +507,9 @@ export const BillsPayment = ({route}) => {
   };
   const toggleModalPDF = () => {
     setPDFModalVisible(!PDFModalVisible);
+  };
+  const toggleModalReUse = () => {
+    setReUseCancel(!reUseCancel);
   };
 
   const tableData = [
@@ -532,10 +594,12 @@ export const BillsPayment = ({route}) => {
             parsedTransObj[1].PARTY_CURRENCY,
           );
           setCurrency(parsedTransObj[1].PARTY_CURRENCY);
+          setActual(poDetails[2].toFixed(4));
 
           const formattedData = {
             'Payment date': DateFormatComma(Main[1]),
-            [`Actual Amount (${parsedTransObj[1].PARTY_CURRENCY})`]: Main[18],
+            [`Actual Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
+              poDetails[2].toFixed(4),
             [`TDS Amount (${tDSCurrency})`]: 0,
             // ...(transactionDetails[3].length < 5
             //   ? {
@@ -549,21 +613,21 @@ export const BillsPayment = ({route}) => {
             //     }
             //   : {
             [`Actual Amount-Slab Tax Amount (${parsedTransObj[1].PARTY_CURRENCY})`]:
-            poDetails[2].toFixed(4)  ,
+              poDetails[2].toFixed(4),
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT Ref '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB Ref '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
                 : 'Ref '
             }No`]: transactionDetails[3],
@@ -577,7 +641,7 @@ export const BillsPayment = ({route}) => {
                 ? 'TT '
                 : Main[7] === 'Demand'
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7] === 'MOBILE BANKING'
                 ? 'MB '
                 : Main[7] === 'Debit Card'
                 ? 'DC '
@@ -589,27 +653,25 @@ export const BillsPayment = ({route}) => {
             } Date`]: DateFormatComma(Main[1]),
             // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'Mobile Banking'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
                 : 'Cash '
             } Amt (${Main[9]})`]: Main[6],
             // }),
           };
-          setActualMinSlab(
-            poDetails[2].toFixed(4) 
-          );
+          setActualMinSlab(poDetails[2].toFixed(4));
           const numResult = await NumToWordsCon(Main[6], Main[9]);
           setNumToWords(numResult);
           setActualMinSlab(
@@ -680,6 +742,10 @@ export const BillsPayment = ({route}) => {
               valueChanger={{
                 [`TDS Amount (${tDSCurrency})`]:
                   parseFloat(calculatedTDS).toFixed(4),
+                [`Actual Paid After Adjustment`]:
+                  parseFloat(actualPaidAftAdj).toFixed(4),
+                [`Actual Amount-Slab Tax Amount (${transValue[1]?.PARTY_CURRENCY})`]:
+                  parseFloat(actualSlabMain).toFixed(4),
               }}
             />
           </ScrollView>
@@ -749,6 +815,7 @@ export const BillsPayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
+
             <View style={commonStyles.flexColumn}>
               <TouchableOpacity
                 style={commonStyles.enableButtonTextContainer}
@@ -760,7 +827,11 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value="0"
+                value={(transValue[13][0]?.['FROM_AMOUNT']
+                  ? transValue[13][0]?.['FROM_AMOUNT']
+                  : 0
+                ).toString()}
+                // value={mainData[17].toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -771,9 +842,10 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={
-                  mainData[18] !== undefined ? mainData[19].toString() : ''
-                }
+                value={(advanceAdjustmentModal['XRate']
+                  ? actual - mainData[17]
+                  : actual
+                ).toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -894,22 +966,24 @@ export const BillsPayment = ({route}) => {
             <View>
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
-                  {mainData[7] === 'RTGS/NEFT'
-                ? 'RTGS/NEFT Ref '
-                : mainData[7] === 'Bank Transfer'
-                ? 'TT '
-                : mainData[7] === 'Demand'
-                ? 'DD '
-                : mainData[7] === 'Mobile Banking'
-                ? 'MB Ref '
-                : mainData[7] === 'Debit Card'
-                ? 'DC '
-                : mainData[7] === 'Credit Card'
-                ? 'CC '
-                : mainData[7] === 'Cheque'
-                ? 'Cheque '
-                : 'Ref '
-            }No <Text style={commonStyles.redAsterisk}>*</Text>
+                  {mainData[7].toLowerCase() === 'rtgs/neft'.toLowerCase()
+                    ? 'RTGS/NEFT Ref '
+                    : mainData[7].toLowerCase() ===
+                      'Bank Transfer'.toLowerCase()
+                    ? 'TT '
+                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                    ? 'DD '
+                    : mainData[7].toLowerCase() ===
+                      'MOBILE BANKING'.toLowerCase()
+                    ? 'MB Ref '
+                    : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
+                    ? 'DC '
+                    : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
+                    ? 'CC '
+                    : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
+                    ? 'Cheque '
+                    : 'Ref '}
+                  No <Text style={commonStyles.redAsterisk}>*</Text>
                 </Text>
                 <TextInput
                   style={[commonStyles.oneLineValue, commonStyles.input]}
@@ -930,19 +1004,21 @@ export const BillsPayment = ({route}) => {
               )}
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
-                  {mainData[7] === 'RTGS/NEFT'
+                  {mainData[7] === 'RTGS/NEFT'.toLowerCase()
                     ? 'RTGS/NEFT '
-                    : mainData[7] === 'Bank Transfer'
+                    : mainData[7].toLowerCase() ===
+                      'Bank Transfer'.toLowerCase()
                     ? 'TT '
-                    : mainData[7] === 'Demand'
+                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
                     ? 'DD '
-                    : mainData[7] === 'Mobile Banking'
+                    : mainData[7].toLowerCase() ===
+                      'MOBILE BANKING'.toLowerCase()
                     ? 'MB '
-                    : mainData[7] === 'Debit Card'
+                    : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
                     ? 'DC '
-                    : mainData[7] === 'Credit Card'
+                    : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
                     ? 'CC '
-                    : mainData[7] === 'Cheque'
+                    : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                     ? 'Cheque '
                     : 'Cash '}{' '}
                   Date
@@ -953,19 +1029,21 @@ export const BillsPayment = ({route}) => {
               </View>
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
-                  {mainData[7] === 'RTGS/NEFT'
+                  {mainData[7] === 'RTGS/NEFT'.toLowerCase()
                     ? 'RTGS/NEFT '
-                    : mainData[7] === 'Bank Transfer'
+                    : mainData[7].toLowerCase() ===
+                      'Bank Transfer'.toLowerCase()
                     ? 'TT '
-                    : mainData[7] === 'Demand'
+                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
                     ? 'DD '
-                    : mainData[7] === 'Mobile Banking'
+                    : mainData[7].toLowerCase() ===
+                      'MOBILE BANKING'.toLowerCase()
                     ? 'MB '
-                    : mainData[7] === 'Debit Card'
+                    : mainData[7].toLowerCase() === 'Debit Card'.toLowerCase()
                     ? 'DC '
-                    : mainData[7] === 'Credit Card'
+                    : mainData[7].toLowerCase() === 'Credit Card'.toLowerCase()
                     ? 'CC '
-                    : mainData[7] === 'Cheque'
+                    : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                     ? 'Cheque '
                     : 'Cash '}
                   Amt ({mainData[9]})
@@ -1039,7 +1117,7 @@ export const BillsPayment = ({route}) => {
         {/* Children Content */}
         <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
         <Text style={styles.modalBody}>
-          Payment Amount: {mainData[18]} ({mainData[9]})
+          Payment Amount: {parseFloat(mainData[19]).toFixed(4)} ({currency})
         </Text>
         <View style={{height: 200}}>
           <ApprovalTableComponent
@@ -1113,6 +1191,51 @@ export const BillsPayment = ({route}) => {
           <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
         </TouchableOpacity>
       </CustomModal>
+
+      <CustomModal
+        isVisible={reUseCancel}
+        onClose={toggleModalReUse}
+        title=""
+        isVisibleClose={false}>
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={() => {
+            updateModRejectPayStatus(
+              transName,
+              paymentId,
+              mainData[8],
+              transDetails[3],
+              mainData[7],
+              transValue,
+              transId,
+              'Re-Use',
+              currentLevel
+            );
+            toggleModalReUse();
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Re-Use</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            updateModRejectPayStatus(
+              transName,
+              paymentId,
+              mainData[8],
+              transDetails[3],
+              mainData[7],
+              transValue,
+              transId,
+              'Cancelled',
+              currentLevel
+            );
+            toggleModalReUse();
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Cancelled</Text>
+        </TouchableOpacity>
+      </CustomModal>
+
       {!isRefreshing && (
         <>
           <View style={styles.buttonContainer}>
@@ -1130,6 +1253,8 @@ export const BillsPayment = ({route}) => {
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
               params={approvalParams}
+              setReUseCancel={setReUseCancel}
+              paymentMode={mainData[7]}
             />
           </View>
         </>

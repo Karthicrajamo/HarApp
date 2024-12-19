@@ -2151,16 +2151,16 @@ ORDER BY
         showFilterIcon={true}
         onFilterPress={() => setFilterModalVisible(true)}
       />
-      <View style={{justifyContent: 'center', alignItems: 'center'}}>
+      <View style={{justifyContent: 'center', alignItems: 'center',marginBottom:0}}>
         <TouchableOpacity onPress={() => handleIssue()}>
-          <CustomButton>Issue </CustomButton>
+          <Text style={{backgroundColor:CustomThemeColors.primary,color:'white',paddingHorizontal:20,paddingVertical:5,borderRadius:10}}>Issue</Text>
         </TouchableOpacity>
       </View>
 
       {/* </View> */}
       <View style={{flex: 1}}>
         <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-        <View style={{ flexGrow: 1, paddingBottom: 0 }}>
+        <View style={{ flexGrow: 1, paddingVertical: 0,marginTop:-10}}>
 
             {/* First TableComponent */}
             <View style={{ flexShrink: 1, marginTop: 0 }}>

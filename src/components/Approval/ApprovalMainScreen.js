@@ -142,18 +142,18 @@ const ApprovalScreen = () => {
 
       const filteredData = data.filter(item =>
         [
-          'AddPaymentGroup',
-          'ModPaymentGroup',
-          'DelPaymentGroup',
+          // 'AddPaymentGroup',
+          // 'ModPaymentGroup',
+          // 'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
-          'CanPayment',
-          'AddDocumentApproval',
-          'ModDocumentApproval',
-          'AddPaysheetPayment',
-          'ModPaysheetPayment',
-          'CanPaysheetPayment',
-          'AddBankTrans',
+          // 'CanPayment',
+          // 'AddDocumentApproval',
+          // 'ModDocumentApproval',
+          // 'AddPaysheetPayment',
+          // 'ModPaysheetPayment',
+          // 'CanPaysheetPayment',
+          // 'AddBankTrans',
         ].includes(item.TRANS_NAME),
       );
       console.log('Ap filteredData:::', filteredData);

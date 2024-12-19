@@ -18,7 +18,10 @@ const CustomModal = ({
   title,
   subBtn = '',
   subBtnAction,
+  isVisibleClose = true,
 }) => {
+  // const [isVisible, setIsVisible] = useState(true);
+
   return (
     <Modal
       animationType="slide"
@@ -48,9 +51,11 @@ const CustomModal = ({
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+            isVisibleClose && (
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            )
           )}
         </View>
       </View>

@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Modal,
+  PixelRatio,
 } from 'react-native';
 import Slider from '@react-native-community/slider'; // Import slider component
 import {CustomThemeColors} from '../CustomThemeColors';
@@ -16,6 +17,7 @@ import DeviceInfo from 'react-native-device-info';
 import CustomModal from './modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {RFValue} from 'react-native-responsive-fontsize';
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -31,8 +33,7 @@ const calculateColumnWidths = (data, scaleFactor) => {
     (sum, key) => sum + widths[key],
     0,
   );
-  const effectiveScaleFactor =
-    totalWidth > 0 ? (screenWidth / totalWidth) * scaleFactor : 1;
+  const effectiveScaleFactor = totalWidth > 0 ? screenWidth / totalWidth : 1;
 
   const scaledWidths = {};
   Object.keys(widths).forEach(key => {
@@ -87,7 +88,8 @@ const SubTableComponent = ({
   const [selectedRows, setSelectedRows] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRow, setSelectedRow] = useState([]);
+  // console.log('selectedRows stc', selectedRow);
   const [isModel, setIsModel] = useState(true);
   const [page, setPage] = useState(0); // Current page
   const rowsPerPage = 100; // Number of rows per page
@@ -95,6 +97,8 @@ const SubTableComponent = ({
   // const [isLoading, setIsLoading] = useState(false);
   const [detailViewModalVisible, setDetailViewModalVisible] = useState(false);
   const [longPressData, setLongPressData] = useState([]);
+
+  const fontScale = PixelRatio.getFontScale();
 
   const toggleModalDetail = () => {
     setDetailViewModalVisible(!detailViewModalVisible);
@@ -245,6 +249,7 @@ const SubTableComponent = ({
     updatedSelection[actualIndex] = !updatedSelection[actualIndex];
     // setSelectedRows(updatedSelection);
     setTableIndex(actualIndex);
+    setSelectedRow(data[actualIndex]);
     activeIndex(actualIndex);
 
     // console.log("Selected Row Data::'::", Object.keys(data[rowIndex]));
@@ -399,36 +404,59 @@ const SubTableComponent = ({
           <View style={styles.selectSlide}>
             <Text
               style={{
-                maxWidth: 200,
+                // maxWidth: 200,
+                maxWidth: DeviceInfo.isTablet() ? 220 : 120,
                 padding: 5,
                 borderRadius: 10,
-                fontSize: DeviceInfo.isTablet() ? 16 : 12,
+                fontSize: DeviceInfo.isTablet() ? 14 : 12,
                 fontWeight: '800',
                 color: 'black',
               }}>
               {selectedPaymentType === 'Paysheet Payment'
-                ? 'Payment Details'
+                ? 'Payment Details                      '
                 : selectedPaymentType === 'Fund Transfer'
-                ? 'Transfer From and To Account Details'
-                : 'Payment List'}
+                ? 'Transfer From and To Account Details '
+                : 'Payment List                         '}
             </Text>
             {/* </View> */}
-            <View style={styles.container}>
-              <CheckBox
-                title={!isChecked ? 'Select All' : 'Deselect All'}
-                checked={isChecked}
-                containerStyle={{
-                  backgroundColor: 'white',
-                  borderWidth: 0,
-                  borderRadius: 5,
-                  padding: 3,
-                  fontSize: 8,
-                }}
-                onPress={() => {
-                  handleSelectAllCheckbox();
-                }}
+            {/* <View style={styles.container}> */}
+            <TouchableOpacity
+              disabled={selectedRow.length < 1}
+              onPress={() => {
+                setLongPressData([selectedRow]);
+                console.log('cell dastaa::', selectedRow);
+                setDetailViewModalVisible(true);
+              }}>
+              <MaterialIcons
+                name="visibility" // Eye icon
+                size={24} // Adjust size as needed
+                color="gray" // Adjust color as needed
+                style={{
+                  // marginRight: 700,
+                  marginLeft: DeviceInfo.isTablet() ? 600 : 120,
+                  padding: 0,
+                  // alignSelf: 'flex-end',
+                  // alignItems: 'flex-end',
+                  // alignContent: 'flex-end',
+                }} // Spacing between checkbox and icon
               />
-            </View>
+            </TouchableOpacity>
+
+            <CheckBox
+              title={!isChecked ? 'Select All' : 'Deselect All'}
+              checked={isChecked}
+              containerStyle={{
+                backgroundColor: 'white',
+                borderWidth: 0,
+                borderRadius: 5,
+                padding: 3,
+                fontSize: 8,
+              }}
+              onPress={() => {
+                handleSelectAllCheckbox();
+              }}
+            />
+            {/* </View> */}
           </View>
           <View
             style={[
@@ -449,10 +477,18 @@ const SubTableComponent = ({
                       style={[
                         styles.headerCell,
                         {
-                          flex: 1,
+                          // flex: 1,
+                          width:
+                            (columnWidths[column] / totalColumnWidths) *
+                              screenWidth -
+                            (showCheckBox ? 0 : 0),
 
                           fontSize: DeviceInfo.isTablet()
-                            ? 9
+                            ? fontScale >= 1.2999999523162842
+                              ? 10
+                              : fontScale == 0.8500000238418579
+                              ? 14
+                              : 12
                             : sliderValue <= 1.5625
                             ? 10
                             : sliderValue <= 2.578125
@@ -471,11 +507,16 @@ const SubTableComponent = ({
                       styles.headerCell,
                       {
                         borderRightWidth: 0,
-                        alignSelf: 'center',
+                        // alignSelf: 'center',
+                        // justifyContent: 'center',
                         // flex: 1,
-                        padding: 12,
+                        paddingHorizontal: DeviceInfo.isTablet() ? 4 : 4,
                         fontSize: DeviceInfo.isTablet()
-                          ? 9
+                          ? fontScale >= 1.2999999523162842
+                            ? 10
+                            : fontScale == 0.8500000238418579
+                            ? 14
+                            : 12
                           : sliderValue <= 1.5625
                           ? 10
                           : sliderValue <= 2.578125
@@ -490,9 +531,18 @@ const SubTableComponent = ({
                 )}
               </View>
             </View>
-            <ScrollView nestedScrollEnabled style={{flex: 1}}>
+            <ScrollView
+              nestedScrollEnabled
+              style={{
+                flex: 1,
+                maxHeight:
+                  fontScale >= 1.2999999523162842
+                    ? 140
+                    : fontScale >= 1
+                    ? 150
+                    : 100,
+              }}>
               {/* <ScrollView horizontal> */}
-
               {/* TABLE ROWS */}
               {data
                 .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
@@ -523,9 +573,16 @@ const SubTableComponent = ({
                                 ? styles.oddCell
                                 : styles.oddCell,
                               {
-                                flex: 1,
+                                width:
+                                  (columnWidths[column] / totalColumnWidths) *
+                                    screenWidth -
+                                  (showCheckBox ? 0 : 0),
                                 fontSize: DeviceInfo.isTablet()
-                                  ? 10
+                                  ? fontScale >= 1.2999999523162842
+                                    ? 11
+                                    : fontScale == 0.8500000238418579
+                                    ? 14
+                                    : 12
                                   : sliderValue <= 1.5625
                                   ? 10
                                   : sliderValue <= 2.578125
@@ -537,8 +594,8 @@ const SubTableComponent = ({
                             ]}
                             numberOfLines={1} // Ensures single-line display
                             ellipsizeMode="tail">
-                            {String(row[column]).length > 10
-                              ? `${String(row[column]).slice(0, 10)}...`
+                            {String(row[column]).length > 22
+                              ? String(row[column])
                               : String(row[column])}
                           </Text>
                         ))}
@@ -582,7 +639,7 @@ const SubTableComponent = ({
                                 : sliderValue <= 3.578125 && 18
                             }
                           />
-                          <TouchableOpacity
+                          {/* <TouchableOpacity
                             onPress={() => {
                               setLongPressData([row]);
                               console.log('cell dastaa::', row);
@@ -594,14 +651,14 @@ const SubTableComponent = ({
                               color="gray" // Adjust color as needed
                               style={{margin: 0, padding: 0}} // Spacing between checkbox and icon
                             />
-                          </TouchableOpacity>
+                          </TouchableOpacity> */}
                         </View>
                       )}
                     </View>
                   </TouchableOpacity>
                 ))}
+              
               {/* PAGINATION BUTTONS */}
-
               {/* </ScrollView> */}
               {/* <View style={styles.paginationContainer}>
     <Button
@@ -646,6 +703,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     // alignContent: 'space-between',
     alignItems: 'center',
+    // alignSelf: 'flex-end',
+    // alignContent: 'flex-end',
   },
   sliderContainer: {
     marginHorizontal: 20,
@@ -696,7 +755,7 @@ const styles = StyleSheet.create({
   },
 
   headerCell: {
-    paddingVertical: 5,
+    // paddingVertical: 5,
     alignItems: 'center',
     justifyContent: 'center',
     borderRightWidth: 0.5,

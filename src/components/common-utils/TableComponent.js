@@ -7,6 +7,7 @@ import {
   Dimensions,
   TouchableOpacity,
   Modal,
+  PixelRatio,
 } from 'react-native';
 import Slider from '@react-native-community/slider'; // Import slider component
 import {CustomThemeColors} from '../CustomThemeColors';
@@ -16,7 +17,7 @@ import DeviceInfo from 'react-native-device-info';
 import CustomModal from './modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-
+import {RFValue} from 'react-native-responsive-fontsize';
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -32,8 +33,7 @@ const calculateColumnWidths = (data, scaleFactor) => {
     (sum, key) => sum + widths[key],
     0,
   );
-  const effectiveScaleFactor =
-    totalWidth > 0 ? (screenWidth / totalWidth) * scaleFactor : 1;
+  const effectiveScaleFactor = totalWidth > 0 ? screenWidth / totalWidth : 1;
 
   const scaledWidths = {};
   Object.keys(widths).forEach(key => {
@@ -77,7 +77,8 @@ const TableComponent = ({
   const [selectedRows, setSelectedRows] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
+  const [selectedRow, setSelectedRow] = useState([]);
+  // console.log('selectedRow in tc', selectedRow);
   const [isModel, setIsModel] = useState(true);
   const [page, setPage] = useState(0); // Current page
   const rowsPerPage = 5000; // Number of rows per page
@@ -86,16 +87,20 @@ const TableComponent = ({
   const [detailViewModalVisible, setDetailViewModalVisible] = useState(false);
   const [longPressData, setLongPressData] = useState([]);
 
+  const fontScale = PixelRatio.getFontScale();
+
   const toggleModalDetail = () => {
     setDetailViewModalVisible(!detailViewModalVisible);
   };
 
   useEffect(() => {
-    // console.log('initialDataz;' + JSON.stringify(initialData));
+    console.log('initialDataz tc;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
   }, [initialData]);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    console.log('fontScale::' + fontScale);
+  }, []);
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
@@ -228,32 +233,55 @@ const TableComponent = ({
         <Text
           style={{
             // backgroundColor: CustomThemeColors.fadedPrimary,
-            maxWidth: 200,
+            // maxWidth: 200,
+            maxWidth: DeviceInfo.isTablet() ? 220 : 120,
             padding: 5,
             borderRadius: 10,
-            fontSize: DeviceInfo.isTablet() ? 16 : 12,
+            fontSize: DeviceInfo.isTablet() ? 14 : 12,
             fontWeight: '800',
             color: 'black',
           }}>
           Payment Groups
         </Text>
         {/* </View> */}
-        <View style={styles.container}>
-          <CheckBox
-            title={!isChecked ? 'Select All' : 'Deselect All'}
-            checked={isChecked}
-            containerStyle={{
-              backgroundColor: 'white',
-              borderWidth: 0,
-              borderRadius: 5,
-              padding: 3,
-              fontSize: 8,
-            }}
-            onPress={() => {
-              handleSelectAllCheckbox();
-            }}
+        {/* <View style={styles.container}> */}
+        {/* MaterialIcons Eye Icon */}
+        <TouchableOpacity
+          disabled={selectedRow.length < 1}
+          onPress={() => {
+            setLongPressData([selectedRow]);
+            console.log('selectedRow cell dastaa::', selectedRow);
+            setDetailViewModalVisible(true);
+          }}>
+          <MaterialIcons
+            name="visibility" // Eye icon
+            size={24} // Adjust size as needed
+            color="gray" // Adjust color as needed
+            style={{
+              // marginRight: 700,
+              marginLeft: DeviceInfo.isTablet() ? 670 : 150,
+              padding: 0,
+              alignSelf: 'flex-end',
+              alignItems: 'flex-end',
+              alignContent: 'flex-end',
+            }} // Spacing between checkbox and icon
           />
-        </View>
+        </TouchableOpacity>
+        <CheckBox
+          title={!isChecked ? 'Select All' : 'Deselect All'}
+          checked={isChecked}
+          containerStyle={{
+            backgroundColor: 'white',
+            borderWidth: 0,
+            borderRadius: 5,
+            padding: 3,
+            fontSize: 8,
+          }}
+          onPress={() => {
+            handleSelectAllCheckbox();
+          }}
+        />
+        {/* </View> */}
       </View>
 
       {/* <ScrollView horizontal> */}
@@ -275,14 +303,15 @@ const TableComponent = ({
                 styles.headerCell,
                 {
                   width:
-                    sliderValue == 0
-                      ? (columnWidths[column] / totalColumnWidths) *
-                          screenWidth -
-                        (showCheckBox ? 10 : 0)
-                      : columnWidths[column] - 35,
+                    (columnWidths[column] / totalColumnWidths) * screenWidth -
+                    (showCheckBox ? 8 : 0),
 
                   fontSize: DeviceInfo.isTablet()
-                    ? 10
+                    ? fontScale >= 1.2999999523162842
+                      ? 10
+                      : fontScale == 0.8500000238418579
+                      ? 14
+                      : 12
                     : sliderValue <= 1.5625
                     ? 10
                     : sliderValue <= 2.578125
@@ -290,7 +319,6 @@ const TableComponent = ({
                     : sliderValue <= 3.578125
                     ? 12
                     : 14,
-                    
                 },
               ]}>
               {makeReadable(column)}
@@ -302,10 +330,16 @@ const TableComponent = ({
                 styles.headerCell,
                 {
                   borderRightWidth: 0,
-                  alignSelf: 'center',
+                  // alignSelf: 'center',
                   paddingHorizontal: 5,
                   fontSize: DeviceInfo.isTablet()
-                    ? 10
+                    ? fontScale >= 1.2999999523162842
+                      ? 10
+                      : // : fontScale >= 1.149999976158142
+                      // ? 14
+                      fontScale == 0.8500000238418579
+                      ? 14
+                      : 12
                     : sliderValue <= 1.5625
                     ? 10
                     : sliderValue <= 2.578125
@@ -321,7 +355,19 @@ const TableComponent = ({
         </View>
 
         {/* TABLE ROWS */}
-        <ScrollView nestedScrollEnabled style={{maxHeight: 180, flexGrow: 1}}>
+        <ScrollView
+          nestedScrollEnabled
+          style={{
+            maxHeight:
+              fontScale >= 1.2999999523162842
+                ? 137
+                : fontScale >= 1.149999976158142
+                ? 134
+                : fontScale >= 0.8500000238418579
+                ? 125
+                : 134,
+            flexGrow: 1,
+          }}>
           {data
             .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
             .map((row, rowIndex) => (
@@ -349,9 +395,9 @@ const TableComponent = ({
                   }>
                   {columns.map((column, cellIndex) => {
                     const cellText = String(row[column]);
-                    const isTruncated = cellText.length > 10;
+                    const isTruncated = cellText.length > 15;
                     const displayText = isTruncated
-                      ? `${cellText.slice(0, 10)}...`
+                      ? `${cellText.slice(0, 15)}...`
                       : cellText;
                     return (
                       <Text
@@ -363,11 +409,17 @@ const TableComponent = ({
                               sliderValue == 0
                                 ? (columnWidths[column] / totalColumnWidths) *
                                     screenWidth -
-                                  (showCheckBox ? 10 : 0)
+                                  (showCheckBox ? 8 : 0)
                                 : columnWidths[column] - 35,
 
                             fontSize: DeviceInfo.isTablet()
-                              ? 12
+                              ? fontScale >= 1.2999999523162842
+                                ? 11
+                                : fontScale >= 1.149999976158142
+                                ? 12
+                                : fontScale >= 0.8500000238418579
+                                ? 14
+                                : 12
                               : sliderValue <= 1.5625
                               ? 10
                               : sliderValue <= 2.578125
@@ -380,67 +432,72 @@ const TableComponent = ({
                         numberOfLines={1} // Ensures single-line display
                         ellipsizeMode="tail" // Adds ellipsis for overflow
                       >
-                        {String(row[column]).length > 10
-                          ? `${String(row[column]).slice(0, 10)}...`
+                        {String(row[column]).length > 20
+                          ? String(row[column])
                           : String(row[column])}
+                        {/* {String(row[column]).length > 20
+                          ? `${String(row[column]).slice(0, 20)}...`
+                          : String(row[column])} */}
                       </Text>
                     );
                   })}
                   {showCheckBox && (
-  <View style={{flexDirection: 'row', alignItems: 'center', borderBottomWidth: 0.5}}>
-    {/* CheckBox */}
-    <CheckBox
-      checked={
-        mainTableSelectedIndex.includes(
-          data[page * rowsPerPage + rowIndex].groupId
-        )
-      }
-      onPress={() => {
-        const actualIndex = page * rowsPerPage + rowIndex;
-        const updatedSelection = [...selectedRows];
-        updatedSelection[actualIndex] = !updatedSelection[actualIndex];
-        setSelectedRows(updatedSelection);
-        toggleRowSelectionCheckBox(actualIndex);
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        borderBottomWidth: 0.5,
+                      }}>
+                      {/* CheckBox */}
+                      <CheckBox
+                        checked={mainTableSelectedIndex.includes(
+                          data[page * rowsPerPage + rowIndex].groupId,
+                        )}
+                        onPress={() => {
+                          const actualIndex = page * rowsPerPage + rowIndex;
+                          const updatedSelection = [...selectedRows];
+                          updatedSelection[actualIndex] =
+                            !updatedSelection[actualIndex];
+                          setSelectedRows(updatedSelection);
+                          toggleRowSelectionCheckBox(actualIndex);
 
-        if (selectedRows.length < 1) {
-          setIsChecked(false);
-        }
-        setMainTableSelectAll(true);
-      }}
-      containerStyle={{
-        backgroundColor: 'transparent',
-        padding: 0,
-        margin:0
-      }}
-      size={
-        sliderValue <= 1.5625
-          ? 16
-          : sliderValue <= 2.578125
-          ? 16
-          : sliderValue <= 3.578125
-          ? 16
-          : 18
-      }
-    />
+                          if (selectedRows.length < 1) {
+                            setIsChecked(false);
+                          }
+                          setMainTableSelectAll(true);
+                        }}
+                        containerStyle={{
+                          backgroundColor: 'transparent',
+                          padding: 0,
+                          margin: 0,
+                        }}
+                        size={
+                          sliderValue <= 1.5625
+                            ? 14
+                            : sliderValue <= 2.578125
+                            ? 16
+                            : sliderValue <= 3.578125
+                            ? 16
+                            : 18
+                        }
+                      />
 
-    {/* MaterialIcons Eye Icon */}
-    <TouchableOpacity
-      onPress={() => {
-        setLongPressData([row]);
-        console.log('cell dastaa::', row);
-        setDetailViewModalVisible(true);
-      }}
-    >
-      <MaterialIcons
-        name="visibility" // Eye icon
-        size={18} // Adjust size as needed
-        color="gray" // Adjust color as needed
-        style={{marginLeft: 0,padding:0}} // Spacing between checkbox and icon
-      />
-    </TouchableOpacity>
-  </View>
-)}
-
+                      {/* MaterialIcons Eye Icon */}
+                      {/* <TouchableOpacity
+                        onPress={() => {
+                          setLongPressData([row]);
+                          console.log('cell dastaa::', row);
+                          setDetailViewModalVisible(true);
+                        }}>
+                        <MaterialIcons
+                          name="visibility" // Eye icon
+                          size={18} // Adjust size as needed
+                          color="gray" // Adjust color as needed
+                          style={{marginLeft: 0, padding: 0}} // Spacing between checkbox and icon
+                        />
+                      </TouchableOpacity> */}
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             ))}
@@ -531,7 +588,7 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   oddCell: {
-    paddingVertical: 0,
+    // paddingBottom: 10,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,
