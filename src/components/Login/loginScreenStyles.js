@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   },
   headingText: {
     fontSize: isTablet
-      ? currentFontScale == sysBasedFontSize.Large
+      ? currentFontScale >= sysBasedFontSize.Large
         ? 16
         : 24
       : 24, // Adjust font size for tablet/phone
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     marginTop: sysBasedFontSize.Large ? 65 : 0,
   },
   secondheadingText: {
-    fontSize: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 16 : 16) : 16, // Adjust font size for tablet/phone
+    fontSize: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 16 : 16) : 16, // Adjust font size for tablet/phone
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
 
   thirdHeading: {
-    fontSize: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 16 : 24) : 16,
+    fontSize: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 16 : 24) : 16,
     textAlign: 'center',
     marginBottom: height * 0.02,
     color: 'black',

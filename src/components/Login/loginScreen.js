@@ -393,8 +393,8 @@ const LoginScreen = () => {
               style={[
                 styles.bottomLogo,
                 {
-                  width: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 50 : 40) : 80,
-                  height: isTablet ? (currentFontScale == sysBasedFontSize.Large ? 50 : 40) : 80,
+                  width: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 50 : 40) : 80,
+                  height: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 50 : 40) : 80,
                 },
               ]}
             />
