@@ -82,6 +82,7 @@ const ApproveRejectComponent = ({
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
+    //if (action == 'reject' && paymentMode == "Cheque" )
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -99,7 +100,7 @@ const ApproveRejectComponent = ({
       } else {
         ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
       }
-      navigation.navigate('ApprovalMainScreen');
+      action == 'approve' && navigation.navigate('ApprovalMainScreen');
     } catch (error) {
       console.error('Error:', error);
       ToastAndroid.show(errorMessage, ToastAndroid.SHORT);

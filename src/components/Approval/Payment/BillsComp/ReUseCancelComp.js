@@ -78,18 +78,22 @@ export const getUpdateCheckStatus = async (
   bankAccountNo,
   refNo,
   paymentMode,
-  currentLevel
+  currentLevel,
 ) => {
   // Log the API request URL for debugging purposes
   console.log(
     'API URL:',
-    `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${currentLevel==0?false:true}&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
+    `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${
+      currentLevel == 0 ? false : true
+    }&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
   );
 
   try {
     // Perform the GET request using axios
     const response = await axios.get(
-      `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${currentLevel==0?false:true}&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
+      `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${
+        currentLevel == 0 ? false : true
+      }&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
     );
 
     // Handle the successful response
@@ -114,66 +118,66 @@ export const updateModRejectPayStatus = async (
   transValue,
   transId,
   action,
-  currentLevel
+  currentLevel,
+  checkStatus,
 ) => {
   console.log('Rejection Successful, tryig to updateRejectPayStatus...');
   try {
     // const currentUserIdObject = await Keychain.getGenericPassword({
     //   service: 'loggedInUserId',
     // });
-    const checkStatus = await getUpdateCheckStatus(
-      transName,
-      paymentId,
-      bankAccountNo,
-      refNo,
-      paymentMode,currentLevel
-    );
+    // const checkStatus = await getUpdateCheckStatus(
+    //   transName,
+    //   paymentId,
+    //   bankAccountNo,
+    //   refNo,
+    //   paymentMode,currentLevel
+    // );
 
     // requestUpdateRejectPayStatus(transValue)
 
     // const currentUserId = currentUserIdObject.password;
     const requestUpdateRejectPayStatus = {
       trans_id: transId,
-      tranObject: await prepareTransObjectForModUpdateRejectPayStatus(
-        transValue,
-      ),
+      tranObject: transValue,
+
       user_id: sharedData.userName,
       trans_type: transName,
     };
     // const userChequeOpinionLoc = userChequeOpinion;
-
+    console.log('checkStatus:::' + JSON.stringify(checkStatus._j[0], null, 2));
     const parameters =
-      checkStatus.length === 0
+      checkStatus._j.length === 0
         ? 'noData'
-        : `${checkStatus[0] || 'null'},${action},${checkStatus[1] || 'null'},${
-            checkStatus[2] || 'null'
-          },`;
+        : `${checkStatus._j[0] || 'null'},${action},${
+            checkStatus._j[1] || 'null'
+          },${checkStatus._j[2] || 'null'},`;
 
     console.log(
-      //   '8783274828dsdd74782 : ',
-      //   parameters,
+      '8783274828dsdd74782 : ',
+      parameters,
       //   'chequeStatus : 8597578329afssfs0 : ',
       //   chequeStatus,
       //   'userChequeOpinion 786582h5974589 : ',
       //   userChequeOpinion,
       'Parameters : ',
-      requestUpdateRejectPayStatus,
+      JSON.stringify(requestUpdateRejectPayStatus, null, 2),
     );
 
     // setIsLoading(true);
     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
     const token = credentials.password;
-    // console.log(
-    //   '90859893gdgl',
-    //   `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
-    // );
+    console.log(
+      '90859893gdgl',
+      `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
+    );
     const response = await fetch(
       `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          //   Authorization: `${token}`,
+          Authorization: `${token}`,
         },
         body: JSON.stringify(requestUpdateRejectPayStatus),
       },

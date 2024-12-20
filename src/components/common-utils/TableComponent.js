@@ -225,6 +225,13 @@ const TableComponent = ({
   };
 
   const columns = Object.keys(data[0]);
+  const columnAlignments = columns.map(column => {
+    return data.some(
+      row => !isNaN(String(row[column])) || String(row[column]) === '-',
+    )
+      ? 'right'
+      : 'left';
+  });
 
   return (
     <View>
@@ -296,34 +303,36 @@ const TableComponent = ({
           },
         ]}>
         <View style={styles.headerRow}>
-          {columns.map((column, index) => (
-            <Text
-              key={index}
-              style={[
-                styles.headerCell,
-                {
-                  width:
-                    (columnWidths[column] / totalColumnWidths) * screenWidth -
-                    (showCheckBox ? 8 : 0),
+          {columns.map((column, index) => {
+            return (
+              <Text
+                key={index}
+                style={[
+                  styles.headerCell,
+                  {
+                    width:
+                      (columnWidths[column] / totalColumnWidths) * screenWidth -
+                      (showCheckBox ? 8 : 0),
 
-                  fontSize: DeviceInfo.isTablet()
-                    ? fontScale >= 1.2999999523162842
+                    fontSize: DeviceInfo.isTablet()
+                      ? fontScale >= 1.2999999523162842
+                        ? 10
+                        : fontScale == 0.8500000238418579
+                        ? 14
+                        : 12
+                      : sliderValue <= 1.5625
                       ? 10
-                      : fontScale == 0.8500000238418579
-                      ? 14
-                      : 12
-                    : sliderValue <= 1.5625
-                    ? 10
-                    : sliderValue <= 2.578125
-                    ? 10
-                    : sliderValue <= 3.578125
-                    ? 12
-                    : 14,
-                },
-              ]}>
-              {makeReadable(column)}
-            </Text>
-          ))}
+                      : sliderValue <= 2.578125
+                      ? 10
+                      : sliderValue <= 3.578125
+                      ? 12
+                      : 14,
+                  },
+                ]}>
+                {makeReadable(column)}
+              </Text>
+            );
+          })}
           {showCheckBox && (
             <Text
               style={[
@@ -353,7 +362,6 @@ const TableComponent = ({
             </Text>
           )}
         </View>
-
         {/* TABLE ROWS */}
         <ScrollView
           nestedScrollEnabled
@@ -377,7 +385,6 @@ const TableComponent = ({
                   toggleRowSelection(rowIndex);
                 }}
                 onLongPress={() => {
-                  // longPressIndex(rowIndex);
                   setLongPressData([row]);
                   console.log('cell dastaa::', row);
                   setDetailViewModalVisible(true);
@@ -405,6 +412,7 @@ const TableComponent = ({
                         style={[
                           cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
                           {
+                            textAlign: columnAlignments[cellIndex], // Use preprocessed alignment
                             width:
                               sliderValue == 0
                                 ? (columnWidths[column] / totalColumnWidths) *
@@ -435,9 +443,6 @@ const TableComponent = ({
                         {String(row[column]).length > 20
                           ? String(row[column])
                           : String(row[column])}
-                        {/* {String(row[column]).length > 20
-                          ? `${String(row[column]).slice(0, 20)}...`
-                          : String(row[column])} */}
                       </Text>
                     );
                   })}
@@ -481,21 +486,6 @@ const TableComponent = ({
                             : 18
                         }
                       />
-
-                      {/* MaterialIcons Eye Icon */}
-                      {/* <TouchableOpacity
-                        onPress={() => {
-                          setLongPressData([row]);
-                          console.log('cell dastaa::', row);
-                          setDetailViewModalVisible(true);
-                        }}>
-                        <MaterialIcons
-                          name="visibility" // Eye icon
-                          size={18} // Adjust size as needed
-                          color="gray" // Adjust color as needed
-                          style={{marginLeft: 0, padding: 0}} // Spacing between checkbox and icon
-                        />
-                      </TouchableOpacity> */}
                     </View>
                   )}
                 </View>
@@ -503,6 +493,7 @@ const TableComponent = ({
             ))}
           {/* PAGINATION BUTTONS */}
         </ScrollView>
+        
       </View>
 
       <CustomModal
@@ -589,6 +580,7 @@ const styles = StyleSheet.create({
   },
   oddCell: {
     // paddingBottom: 10,
+    paddingHorizontal: 5,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,

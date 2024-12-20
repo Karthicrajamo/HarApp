@@ -2262,7 +2262,7 @@ ORDER BY
             </View>
 
             {/* Second SubTableComponent */}
-            <View style={{ flexShrink: 1, marginTop: -25 }}>
+            <View style={{ flexShrink: 1, marginTop: -20 }}>
 
               {selectedSubData.length > 0 && (
                 <SubTableComponent
@@ -2945,6 +2945,7 @@ const styles = StyleSheet.create({
   },
   container: {
     padding: 10,
+    height:600
   },
   headerRow: {
     borderTopEndRadius: 10,

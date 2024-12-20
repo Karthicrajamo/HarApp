@@ -12,7 +12,7 @@ export const ReqBodyRejConv = (
 
   // Log the input array and relevant details
   const inpArray = [...inputArray];
-  inpArray.push(null)
+  inpArray.push(null);
 
   console.log('inputArray:', JSON.stringify(inpArray));
   const BnkAcNo = inpArray[1]?.ACCOUNT_NO || 'N/A'; // Use optional chaining to prevent errors
@@ -39,7 +39,7 @@ export const ReqBodyRejConv = (
     trans_id: transId,
     bankAccNo: BnkAcNo,
     tranObject: inpArray,
-    chqStatus: '',
+    chqStatus: 'Re-Use',
     payment_id: paymentId,
     user_id: 'admin',
     message: 'test',

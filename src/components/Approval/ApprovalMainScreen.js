@@ -138,7 +138,7 @@ const ApprovalScreen = () => {
 
       const data = await response.json();
       setApprovalListData(data);
-      console.log('data:::::', data);
+      // console.log('data:::::', data);
 
       const filteredData = data.filter(item =>
         [
@@ -156,7 +156,7 @@ const ApprovalScreen = () => {
           // 'AddBankTrans',
         ].includes(item.TRANS_NAME),
       );
-      console.log('Ap filteredData:::', filteredData);
+      // console.log('Ap filteredData:::', filteredData);
       setFilteredApprovalData(filteredData);
       setTempFilteredApprovalData(filteredData);
     } catch (error) {
@@ -265,7 +265,8 @@ const ApprovalScreen = () => {
             currentLevel: currentLevel,
           });
         }
-      } if (transName === 'AddBankTrans') {
+      }
+      if (transName === 'AddBankTrans') {
         navigation.navigate('BankAccountTransactionMain', {
           transName: transName,
           transId: transId,
@@ -280,7 +281,7 @@ const ApprovalScreen = () => {
     let formattedIdentification = item.IDENTIFICATION;
 
     // Debugging the original data
-    console.log('Original IDENTIFICATION:', formattedIdentification);
+    // console.log('Original IDENTIFICATION:', formattedIdentification);
 
     // Check if IDENTIFICATION matches the specific format
     if (

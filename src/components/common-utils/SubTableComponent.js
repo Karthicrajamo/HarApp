@@ -108,6 +108,7 @@ const SubTableComponent = ({
     // if (selectedCheckBoxData.length > 0) {
     console.log('present', selectedCheckBoxData);
     console.log('selectedPaymentTypedf', selectedPaymentType);
+    console.log('dataSSS', data);
 
     // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
 
@@ -328,6 +329,14 @@ const SubTableComponent = ({
   };
 
   const columns = Object.keys(data[0]);
+  const columnAlignments = columns.map((column) => {
+    // Check if any value in the column is a number or a hyphen
+    return data.some(
+      (row) => !isNaN(String(row[column])) || String(row[column]) === '-'
+    )
+      ? 'right'  // If numeric value is found, align to the right
+      : 'left';   // Otherwise, align to the left
+  });
 
   const handleRowCheckbox = rowIndex => {
     const updatedSelection = [...selectedRows];
@@ -537,7 +546,7 @@ const SubTableComponent = ({
                 flex: 1,
                 maxHeight:
                   fontScale >= 1.2999999523162842
-                    ? 140
+                    ? 130
                     : fontScale >= 1
                     ? 150
                     : 100,
@@ -545,119 +554,115 @@ const SubTableComponent = ({
               {/* <ScrollView horizontal> */}
               {/* TABLE ROWS */}
               {data
-                .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                .map((row, rowIndex) => (
-                  <TouchableOpacity
-                    key={rowIndex}
-                    onPress={() => {
-                      toggleRowSelection(rowIndex);
-                    }}>
-                    <View
-                      style={
-                        selectedRows[page * rowsPerPage + rowIndex] === false &&
-                        tableIndex === page * rowsPerPage + rowIndex
-                          ? styles.activeSelect
-                          : tableIndex === page * rowsPerPage + rowIndex
-                          ? styles.activeSelect
-                          : rowIndex % 2 === 0
-                          ? styles.oddRow
-                          : styles.evenRow
-                      }>
-                      {columns
-                        .filter(column => column !== 'groupId')
-                        .map((column, cellIndex) => (
-                          <Text
-                            key={cellIndex}
-                            style={[
-                              cellIndex % 2 === 0
-                                ? styles.oddCell
-                                : styles.oddCell,
-                              {
-                                width:
-                                  (columnWidths[column] / totalColumnWidths) *
-                                    screenWidth -
-                                  (showCheckBox ? 0 : 0),
-                                fontSize: DeviceInfo.isTablet()
-                                  ? fontScale >= 1.2999999523162842
-                                    ? 11
-                                    : fontScale == 0.8500000238418579
-                                    ? 14
-                                    : 12
-                                  : sliderValue <= 1.5625
-                                  ? 10
-                                  : sliderValue <= 2.578125
-                                  ? 10
-                                  : sliderValue <= 3.578125
-                                  ? 12
-                                  : 14,
-                              },
-                            ]}
-                            numberOfLines={1} // Ensures single-line display
-                            ellipsizeMode="tail">
-                            {String(row[column]).length > 22
-                              ? String(row[column])
-                              : String(row[column])}
-                          </Text>
-                        ))}
+  .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+  .map((row, rowIndex) => (
+    <TouchableOpacity
+      key={rowIndex}
+      onPress={() => {
+        toggleRowSelection(rowIndex);
+      }}>
+      <View
+        style={
+          selectedRows[page * rowsPerPage + rowIndex] === false &&
+          tableIndex === page * rowsPerPage + rowIndex
+            ? styles.activeSelect
+            : tableIndex === page * rowsPerPage + rowIndex
+            ? styles.activeSelect
+            : rowIndex % 2 === 0
+            ? styles.oddRow
+            : styles.evenRow
+        }>
+        {columns
+          .filter(column => column !== 'groupId') // Exclude 'groupId' from filtering
+          .map((column, cellIndex) => {
+            const cellText = String(row[column]);
+            const alignRightColumns = ["amtPaid", "groupId", "memberId", "batchNo", "paymentId", "noOfEmployees", "uai", "payableAmt", "tdsAmt","advancePaid", "transferId", "fromAc", "fromAmt", "toAc", "toAmt", "fx"]; // Columns to align right
+            const textAlign = alignRightColumns.includes(column)
+              ? 'right' // Align specific columns to the right
+              : 'left'; // Default alignment for other columns
 
-                      {showCheckBox && (
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            borderBottomWidth: 0.5,
-                          }}>
-                          <CheckBox
-                            checked={
-                              !mainTableSelectedIndex.includes(
-                                data[page * rowsPerPage + rowIndex].groupId,
-                              )
-                                ? false
-                                : selectedCheckBoxData?.[
-                                    `groupId:${
-                                      data[page * rowsPerPage + rowIndex]
-                                        .groupId
-                                    }`
-                                  ]?.includes(page * rowsPerPage + rowIndex) ||
-                                  false
-                            }
-                            onPress={() =>
-                              handleRowCheckbox(page * rowsPerPage + rowIndex)
-                            }
-                            containerStyle={{
-                              backgroundColor: 'transparent',
-                              borderWidth: 0,
-                              padding: 0,
-                              paddingLeft: 0,
-                              margin: 0,
-                            }}
-                            size={
-                              sliderValue <= 1.5625
-                                ? 14
-                                : sliderValue <= 2.578125
-                                ? 16
-                                : sliderValue <= 3.578125 && 18
-                            }
-                          />
-                          {/* <TouchableOpacity
-                            onPress={() => {
-                              setLongPressData([row]);
-                              console.log('cell dastaa::', row);
-                              setDetailViewModalVisible(true);
-                            }}>
-                            <MaterialIcons
-                              name="visibility" // Eye icon
-                              size={16} // Adjust size as needed
-                              color="gray" // Adjust color as needed
-                              style={{margin: 0, padding: 0}} // Spacing between checkbox and icon
-                            />
-                          </TouchableOpacity> */}
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              
+            return (
+              <Text
+                key={cellIndex}
+                style={[
+                  cellIndex % 2 === 0
+                    ? styles.oddCell
+                    : styles.oddCell,
+                  {
+                    textAlign: textAlign, // Set alignment based on column
+                    width:
+                      (columnWidths[column] / totalColumnWidths) *
+                        screenWidth -
+                      (showCheckBox ? 0 : 0),
+                    fontSize: DeviceInfo.isTablet()
+                      ? fontScale >= 1.2999999523162842
+                        ? 11
+                        : fontScale == 0.8500000238418579
+                        ? 14
+                        : 12
+                      : sliderValue <= 1.5625
+                      ? 10
+                      : sliderValue <= 2.578125
+                      ? 10
+                      : sliderValue <= 3.578125
+                      ? 12
+                      : 14,
+                  },
+                ]}
+                numberOfLines={1} // Ensures single-line display
+                ellipsizeMode="tail">
+                {String(row[column]).length > 22
+                  ? `${String(row[column]).slice(0, 22)}...`
+                  : String(row[column])}
+              </Text>
+            );
+          })}
+
+        {showCheckBox && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderBottomWidth: 0.5,
+            }}>
+            <CheckBox
+              checked={
+                !mainTableSelectedIndex.includes(
+                  data[page * rowsPerPage + rowIndex].groupId,
+                )
+                  ? false
+                  : selectedCheckBoxData?.[
+                      `groupId:${
+                        data[page * rowsPerPage + rowIndex].groupId
+                      }`
+                    ]?.includes(page * rowsPerPage + rowIndex) ||
+                    false
+              }
+              onPress={() =>
+                handleRowCheckbox(page * rowsPerPage + rowIndex)
+              }
+              containerStyle={{
+                backgroundColor: 'transparent',
+                borderWidth: 0,
+                padding: 0,
+                paddingLeft: 0,
+                margin: 0,
+              }}
+              size={
+                sliderValue <= 1.5625
+                  ? 14
+                  : sliderValue <= 2.578125
+                  ? 16
+                  : sliderValue <= 3.578125 && 18
+              }
+            />
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  ))}
+
+
               {/* PAGINATION BUTTONS */}
               {/* </ScrollView> */}
               {/* <View style={styles.paginationContainer}>
@@ -766,6 +771,7 @@ const styles = StyleSheet.create({
   },
   oddCell: {
     paddingVertical: 0,
+    paddingHorizontal: 5,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderBottomWidth: 0.5,

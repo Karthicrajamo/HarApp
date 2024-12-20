@@ -82,6 +82,7 @@ export const BillsPayment = ({route}) => {
   const [slabTaxes, setSlabTaxes] = useState('');
   const [slabFXRate, setSlabFXRate] = useState('');
   const [reUseCancel, setReUseCancel] = useState('');
+  const [checkStatus, setCheckStatus] = useState([]);
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -259,23 +260,55 @@ export const BillsPayment = ({route}) => {
 
         console.log('advance Adj:', advPayParams);
 
+        const adjKeys =
+          transValue[4]?.[0]?.ORDER_TYPE === 'JO'
+            ? [
+                'JO No',
+                'JO Status',
+                'JO Value',
+                'JO Currency',
+                'Advance Paid(INR)',
+                'Tax Paid',
+                'Advance %',
+                'Advance Adjusted(INR)',
+                'Remaining Advance(INR)',
+                'XRate',
+                'Remaining Adv(INR)',
+                'Adjust Advance(INR)',
+              ]
+            : transValue[4]?.[0]?.ORDER_TYPE === 'PO'
+            ? [
+                'P Order No',
+                'PO Status',
+                'PO Value',
+                'PO Currency',
+                'Advance Paid(INR)',
+                'Tax Paid',
+                'Advance %',
+                'Advance Adjusted(INR)',
+                'Remaining Advance(INR)',
+                'XRate',
+                'Remaining Adv(INR)',
+                'Adjust Advance(INR)',
+              ]
+            : [
+                'SO No',
+                'SO Status',
+                'SO Value',
+                'SO Currency',
+                'Advance Paid(INR)',
+                'Tax Paid',
+                'Advance %',
+                'Advance Adjusted(INR)',
+                'Remaining Advance(INR)',
+                'XRate',
+                'Remaining Adv(INR)',
+                'Adjust Advance(INR)',
+              ];
         // Advance adjustment Modal
         AdvanceAdjApi(
           `http://192.168.0.107:8100/rest/approval/getBillAdjustment/`,
-          [
-            'PO No',
-            'PO Status',
-            'PO Value',
-            'PO Currency',
-            'Advance Paid(INR)',
-            'Tax Paid',
-            'Advance %',
-            'Advance Adjusted(INR)',
-            'Remaining Advance(INR)',
-            'XRate',
-            'Remaining Adv(INR)',
-            'Adjust Advance(INR)',
-          ],
+          adjKeys,
           [2, 3, 4, 5, 6, 13, 17, 18],
           setAdvanceAdjustmentModal,
           advPayParams,
@@ -458,8 +491,16 @@ export const BillsPayment = ({route}) => {
       },
       'POST',
     );
+    const chkSts = getUpdateCheckStatus(
+      transName,
+      paymentId,
+      mainData[8],
+      transDetails[3],
+      mainData[7],
+      currentLevel,
+    );
+    setCheckStatus(chkSts);
     setIsLoading(false);
-
     // console.log('adadvPayParams', advPayParams);
   }, [paymentId]);
 
@@ -511,23 +552,6 @@ export const BillsPayment = ({route}) => {
   const toggleModalReUse = () => {
     setReUseCancel(!reUseCancel);
   };
-
-  const tableData = [
-    {
-      lastMessage: 'Hello',
-      lastMessageSentBy: 'admin',
-      newMessagesCount: 0,
-      userName: 'admifn',
-      lastMegssage: 'Hellgo',
-      lastMesfsageSentBy: 'adfmin',
-      newMesfsagesCount: 0,
-      usefrName: 'admin',
-      lastMefssage: 'Hello',
-      lastMessagefSentBy: 'admin',
-      newMessafgesCount: 0,
-      userNgame: 'admin',
-    },
-  ];
 
   const handleButtonClick = () => {
     setShowInfoPairs(!showInfoPairs); // Toggle visibility
@@ -954,7 +978,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={mainData[18] ? mainData[6].toString() : ''}
+                value={mainData[6] ? mainData[6].toString() : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -1209,9 +1233,11 @@ export const BillsPayment = ({route}) => {
               transValue,
               transId,
               'Re-Use',
-              currentLevel
+              currentLevel,
+              checkStatus,
             );
             toggleModalReUse();
+            navigation.navigate('ApprovalMainScreen');
           }}
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Re-Use</Text>
@@ -1227,9 +1253,11 @@ export const BillsPayment = ({route}) => {
               transValue,
               transId,
               'Cancelled',
-              currentLevel
+              currentLevel,
+              checkStatus,
             );
             toggleModalReUse();
+            navigation.navigate('ApprovalMainScreen');
           }}
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Cancelled</Text>

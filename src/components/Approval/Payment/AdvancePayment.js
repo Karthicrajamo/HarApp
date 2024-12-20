@@ -37,7 +37,10 @@ import {CustomThemeColors} from '../../CustomThemeColors';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import KeyValueJoiner from '../ApprovalComponents/KeyValueJoiner';
 import AdjustMinSlabFXRate from '../ApprovalComponents/AdjustMinSlabFXRate';
-import {updateModRejectPayStatus} from './BillsComp/ReUseCancelComp';
+import {
+  getUpdateCheckStatus,
+  updateModRejectPayStatus,
+} from './BillsComp/ReUseCancelComp';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -76,6 +79,7 @@ export const AdvancePayment = ({route}) => {
   const [slabFXRate, setSlabFXRate] = useState('');
   const [actualSlabMain, setActualSlabMain] = useState('');
   const [reUseCancel, setReUseCancel] = useState('');
+  const [checkStatus, setCheckStatus] = useState([]);
 
   useEffect(() => {
     console.log('isLoading:::', isLoading);
@@ -628,6 +632,15 @@ export const AdvancePayment = ({route}) => {
         },
       );
     }
+    const chkSts = getUpdateCheckStatus(
+      transName,
+      paymentId,
+      mainData[8],
+      transDetails[3],
+      mainData[7],
+      currentLevel,
+    );
+    setCheckStatus(chkSts);
     setIsLoading(false);
   }, [paymentId]);
 
@@ -1230,6 +1243,7 @@ export const AdvancePayment = ({route}) => {
               transId,
               'Re-Use',
               currentLevel,
+              checkStatus,
             );
             toggleModalReUse();
           }}
@@ -1248,6 +1262,7 @@ export const AdvancePayment = ({route}) => {
               transId,
               'Cancelled',
               currentLevel,
+              checkStatus,
             );
             toggleModalReUse();
           }}
