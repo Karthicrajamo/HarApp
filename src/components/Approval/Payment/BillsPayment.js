@@ -41,6 +41,9 @@ import {
   getUpdateCheckStatus,
   updateModRejectPayStatus,
 } from './BillsComp/ReUseCancelComp';
+import finLoadVectorwithContentsAPI, {
+  useFinLoadVectorwithContentsAPI,
+} from '../ApprovalComponents/finLoadVectorwithContentsAPI';
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
@@ -54,6 +57,7 @@ export const BillsPayment = ({route}) => {
   const [paymentId, setPaymentId] = useState('');
   const [accountNo, setAccountNo] = useState('');
   const [refNO, setRefNO] = useState('');
+  const [orderTyp, setOrderTyp] = useState('');
   const [currency, setCurrency] = useState('');
   const [actual, setActual] = useState('');
   const [mainData, setMainData] = useState([]);
@@ -84,6 +88,10 @@ export const BillsPayment = ({route}) => {
   const [reUseCancel, setReUseCancel] = useState('');
   const [checkStatus, setCheckStatus] = useState([]);
 
+  const [query, setQuery] = useState('');
+  const [finloadData, setFinloadData] = useState(null);
+  const [advAdjSub, setAdvAdjSub] = useState(null);
+
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
 
@@ -101,6 +109,169 @@ export const BillsPayment = ({route}) => {
   //     setActualPaidAftAdj(actualSlab + totalAmount);
   //   } // Start with an initial total of 0
   // }, [paidAdjustment]);
+
+  useEffect(() => {
+    console.log('advAdjSub::', advAdjSub);
+    if (advAdjSub != null) {
+      const generatePOData = data => {
+        const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
+        const orderNull = `(${data[0][2]},' ')`; // 31924, ''
+
+        // Aggregate values for hmtotalOrderMap
+        const hmtotalOrderMap = {
+          MAIN: {
+            [data[0][2]]: parseInt(data[0][11], 10), // 14850
+          },
+          CHARGES: {
+            [data[1][2]]: parseInt(data[1][11], 10), // 75000
+          },
+          ADJUSTMENT: {
+            [data[2][2]]: parseInt(data[2][11], 10) + parseInt(data[3][11], 10), // 20 + 5 = 25
+          },
+          TAX: {},
+        };
+
+        return {
+          type: 'PO',
+          adjustmentMethod: 'Payment Adjustment',
+          orderSelectedMat: selectedMat,
+          orderMat: mainData[3], // Assuming this is a fixed value
+          orderNull: orderNull,
+          hmtotalOrderMap: hmtotalOrderMap,
+          defaultLoad: false,
+          billNo: mainData[0], // Example bill number, adjust as needed
+        };
+      };
+      const generatedData = generatePOData(advAdjSub);
+      console.log('AdvAdjusted::', generatedData);
+      console.log('AdvAdjusted transValue[4]?.[0]?.ORDER_TYPE::', orderTyp);
+      const adjKeys =
+        orderTyp === 'JO'
+          ? [
+              'JO No',
+              'JO Status',
+              'JO Value',
+              'JO Currency',
+              'Advance Paid(INR)',
+              'Tax Paid',
+              'Advance %',
+              'Advance Adjusted(INR)',
+              'Remaining Advance(INR)',
+              'XRate',
+              'Remaining Adv(INR)',
+              'Adjust Advance(INR)',
+            ]
+          : orderTyp === 'PO'
+          ? [
+              'P Order No',
+              'PO Status',
+              'PO Value',
+              'PO Currency',
+              'Advance Paid(INR)',
+              'Tax Paid',
+              'Advance %',
+              'Advance Adjusted(INR)',
+              'Remaining Advance(INR)',
+              'XRate',
+              'Remaining Adv(INR)',
+              'Adjust Advance(INR)',
+            ]
+          : [
+              'SO No',
+              'SO Status',
+              'SO Value',
+              'SO Currency',
+              'Advance Paid(INR)',
+              'Tax Paid',
+              'Advance %',
+              'Advance Adjusted(INR)',
+              'Remaining Advance(INR)',
+              'XRate',
+              'Remaining Adv(INR)',
+              'Adjust Advance(INR)',
+            ];
+      // Advance adjustment Modal
+      AdvanceAdjApi(
+        `http://192.168.0.169:8100/rest/approval/getBillAdjustment/`,
+        adjKeys,
+        [0, 3, 4, 5, 6,7, 14, 18, 19],
+        // [],
+        setAdvanceAdjustmentModal,
+        generatedData,
+        'POST',
+        // ['22'],
+        [mainData[17]]
+      );
+    }
+  }, [advAdjSub]);
+
+  useEffect(() => {
+    console.log('finloadData::', finloadData);
+    if (finloadData != null) {
+      const generateQuery = data => {
+        // Generate the dynamic part of the query based on finloadDataa
+        const adjustments = data
+          .map(row => {
+            return `UNION ALL SELECT ${row[0]} AS bill_id, ${row[1]} AS order_no, 0 AS ref, 0 AS item, 0 AS mat_no, ${row[2]} AS adjustment_id, ' ' AS adjustment_name, ' ' AS adjustment_type, ' ' AS uom, 'ADJUSTMENT', ${row[3]} AS calculation_amt FROM dual`;
+          })
+          .join(' ');
+
+        // Construct the full query
+        const query = {
+          query: `
+          SELECT SB.INTERNAL_BILL_NO, SI.* FROM
+          (SELECT SI.BILL_ID, SI.SO_ID, SI.SERVICE_ID AS REFERENCE_NO, 0 AS ITEM_NO, 0 AS MAT_NO, 0 AS SERVICE_ID, SM.SERVICE_CATEGORY, SM.SERVICE_TYPE, SM.UOM, 'MAT' AS MAT_CHARGE,
+          SI.BILL_AMOUNT - COALESCE(SI.DISCOUNT, 0) - COALESCE(SI.DEBIT_QTY * SI.DEBIT_RATE, 0) AS AMOUNT
+          FROM SO_BILL_INFO SI
+          INNER JOIN service_master SM ON SI.service_id = SM.service_id
+          UNION ALL
+          SELECT SI.BILL_ID, SI.SO_ID, SI.REF_SERVICE_ID, 0 AS ITEM_NO, 0 AS MAT_NO, SI.SERVICE_ID, SI.MAT_SERV_CATEGORY, SI.MAT_SERV_TYPE, SI.UOM, 'CHARGE', SI.amount
+          FROM SO_BILL_ADD_CHARGES SI
+          ${adjustments}
+          ) SI
+          INNER JOIN SO_BILL SB ON SI.BILL_ID = SB.BILL_ID
+          WHERE (SB.INTERNAL_BILL_NO, 0) IN (('${transValue[7][0][1]}', 0))
+      
+          UNION ALL
+          SELECT SB.INTERNAL_BILL_REF_NO, SI.* FROM
+          (SELECT SI.BILL_ID, SI.PO_NO, SI.MAT_NO AS REFERENCE_NO, 0 AS ITEM_NO, 0 AS MAT_NO, 0 AS SERVICE_ID, M.CATEGORY, M.TYPE, M.UOM1, 'MAT',
+          SI.bill_qty * SI.bill_rate - COALESCE(discount_amt, 0) - COALESCE(debit_qty * debit_rate, 0)
+          FROM SUPPLIER_BILL_INFO SI
+          INNER JOIN MATERIAL M ON M.MAT_NO = SI.MAT_NO
+          UNION ALL
+          SELECT SI.BILL_ID, SI.PO_NO, SI.MAT_NO, 0 AS ITEM_NO, 0 AS MAT_NO, SI.SERVICE_ID, SI.MAT_SERV_CATEGORY, SI.MAT_SERV_TYPE, SI.UOM, 'CHARGE', SI.amount
+          FROM SUPPLIER_BILL_ADD_CHARGES SI
+          ${adjustments}
+          ) SI
+          INNER JOIN SUPPLIER_BILL SB ON SI.BILL_ID = SB.BILL_ID
+          WHERE (SB.INTERNAL_BILL_REF_NO, 0) IN (('${transValue[7][0][1]}', 0))
+      
+          UNION ALL
+          SELECT JB.INTERNAL_BILL_REF_NO, JI.* FROM
+          (SELECT JI.BILL_ID, JI.JO_ID, JI.JOB_ID AS REFERENCE_NO, ITEM_NO, JI.MAT_NO, 0 AS SERVICE_ID, M.CATEGORY, M.TYPE, M.UOM1, 'MAT',
+          JI.bill_qty * JI.bill_rate - COALESCE(discount_amt, 0) - COALESCE(debit_qty * debit_rate, 0)
+          FROM JOB_WORK_BILL_INFO JI
+          INNER JOIN MATERIAL M ON M.MAT_NO = JI.MAT_NO
+          UNION ALL
+          SELECT JI.BILL_ID, JI.JO_ID, JI.JOB_ID, JI.ITEM_NO, JI.MAT_NO, JI.SERVICE_ID, JI.MAT_SERV_CATEGORY, JI.MAT_SERV_TYPE, JI.UOM, 'CHARGE', JI.amount
+          FROM JOB_WORK_BILL_ADD_CHARGES JI
+          ${adjustments}
+          ) JI
+          INNER JOIN JOB_WORK_BILL JB ON JI.BILL_ID = JB.BILL_ID
+          WHERE (JB.INTERNAL_BILL_REF_NO, 0) IN (('${transValue[7][0][1]}', 0))
+        `,
+        };
+
+        return query;
+      };
+
+      const dynamicQuery = generateQuery(finloadData);
+      console.log('dynamicQuery::', dynamicQuery);
+      useFinLoadVectorwithContentsAPI(dynamicQuery, setAdvAdjSub);
+    }
+  }, [finloadData]);
+
+  useEffect(() => console.log('advAdjSub::', advAdjSub), [advAdjSub]);
 
   useEffect(
     () => console.log('advanceAdjustmentModal::', advanceAdjustmentModal),
@@ -233,11 +404,33 @@ export const BillsPayment = ({route}) => {
     const bodyApprovalStringified = JSON.stringify(body._j);
     const bodyRejStringified = JSON.stringify(rejBody);
     console.log('rejBodyJson::', JSON.stringify(rejBody));
-    console.log('rejBody::', rejBody);
     setRejParams(bodyRejStringified);
     setApprovalParams(bodyApprovalStringified);
     console.log('body req::', bodyRejStringified); // Log immediately before updating the state
+
     if (transValue.length > 0) {
+      console.log('transValue[8]::', JSON.stringify(transValue[7]));
+      if (transValue?.[7]?.[0]?.[0]) {
+        // const dynamicQuery = {
+        //   query: `SELECT t1.*, t2.adj_amt FROM (SELECT BA.BILL_ID, ba.po_so_jo_no AS jo_id, ba.adjustment_id, SUM(BA.CALCULATION_AMT) AS total_add FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE = 'Add' GROUP BY BA.BILL_ID, BA.PO_SO_JO_NO, ba.adjustment_id, BA.ADJUSTMENT_TYPE) t1 INNER JOIN (SELECT bill_id, jo_id, SUM(total_less) AS adj_amt FROM (SELECT BA.BILL_ID, ba.po_so_jo_no AS jo_id, SUM(BA.CALCULATION_AMT) AS total_less FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE = 'Less' GROUP BY BA.BILL_ID, ba.po_so_jo_no, BA.ADJUSTMENT_TYPEUNION ALLSELECT ba.bill_id, ba.po_so_jo_no AS jo_id, SUM(BA.CALCULATION_AMT) AS total_add FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE = 'Add' GROUP BY BA.BILL_ID, BA.PO_SO_JO_NO, BA.ADJUSTMENT_TYPE) GROUP BY BILL_ID, JO_ID) T2 ON T1.BILL_ID = T2.BILL_ID AND COALESCE(T2.JO_ID, 0) = COALESCE(T1.JO_ID, 0) WHERE (t1.bill_id, 0) IN (('${transValue[7][0][0]}', 0))`,
+        // };
+        const dynamicQuery = {
+          query: `SELECT t1.*,t2.adj_amt FROM (SELECT BA.BILL_ID, ba.po_so_jo_no AS jo_id, ba.adjustment_id, SUM(BA.CALCULATION_AMT) as total_add FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE='Add' GROUP BY BA.BILL_ID, BA.PO_SO_JO_NO, ba.adjustment_id, BA.ADJUSTMENT_TYPE) t1 INNER JOIN (SELECT bill_id, jo_id, SUM(total_less) as adj_amt FROM (SELECT BA.BILL_ID, ba.po_so_jo_no AS jo_id, SUM(BA.CALCULATION_AMT) as total_less FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE='Less' GROUP BY BA.BILL_ID, ba.po_so_jo_no, BA.ADJUSTMENT_TYPE UNION ALL SELECT ba.bill_id, ba.po_so_jo_no AS jo_id, SUM(BA.CALCULATION_AMT) as total_add FROM BILL_ADJUSTMENTS BA WHERE ADJUSTMENT_TYPE='Add' GROUP BY BA.BILL_ID, BA.PO_SO_JO_NO, BA.ADJUSTMENT_TYPE) GROUP BY BILL_ID, JO_ID) t2 ON T1.BILL_ID=T2.BILL_ID AND COALESCE(T2.JO_ID,0)=COALESCE(T1.JO_ID,0) WHERE (t1.bill_id,0) IN (('${transValue[7][0][0]}',0))`,
+        };
+        setQuery(dynamicQuery);
+        console.log('dynamicQuery[8]::', dynamicQuery);
+        useFinLoadVectorwithContentsAPI(dynamicQuery, setFinloadData);
+      }
+
+      // useFinLoadVectorwithContentsAPI(query, setFinloadData);
+      // where (t1.bill_id,0) in ((${transValue[7][0][0]},0))`,finloadData)
+
+      // console.log('finloadData::', finloadData);
+      // const finloadDataa = [
+      //   ['2612', '31924', '11', '20', '25'],
+      //   ['2612', '31924', '10', '5', '25'],
+      // ];
+
       if (transValue[13]) {
         const advPayParams = {
           type: transValue[13][0]?.['ORDER_TYPE'], // Access ORDER_TYPE
@@ -258,64 +451,7 @@ export const BillsPayment = ({route}) => {
           billNo: `${transValue[0]}`, // Use template literal for dynamic value
         };
 
-        console.log('advance Adj:', advPayParams);
-
-        const adjKeys =
-          transValue[4]?.[0]?.ORDER_TYPE === 'JO'
-            ? [
-                'JO No',
-                'JO Status',
-                'JO Value',
-                'JO Currency',
-                'Advance Paid(INR)',
-                'Tax Paid',
-                'Advance %',
-                'Advance Adjusted(INR)',
-                'Remaining Advance(INR)',
-                'XRate',
-                'Remaining Adv(INR)',
-                'Adjust Advance(INR)',
-              ]
-            : transValue[4]?.[0]?.ORDER_TYPE === 'PO'
-            ? [
-                'P Order No',
-                'PO Status',
-                'PO Value',
-                'PO Currency',
-                'Advance Paid(INR)',
-                'Tax Paid',
-                'Advance %',
-                'Advance Adjusted(INR)',
-                'Remaining Advance(INR)',
-                'XRate',
-                'Remaining Adv(INR)',
-                'Adjust Advance(INR)',
-              ]
-            : [
-                'SO No',
-                'SO Status',
-                'SO Value',
-                'SO Currency',
-                'Advance Paid(INR)',
-                'Tax Paid',
-                'Advance %',
-                'Advance Adjusted(INR)',
-                'Remaining Advance(INR)',
-                'XRate',
-                'Remaining Adv(INR)',
-                'Adjust Advance(INR)',
-              ];
-        // Advance adjustment Modal
-        AdvanceAdjApi(
-          `http://192.168.0.107:8100/rest/approval/getBillAdjustment/`,
-          adjKeys,
-          [2, 3, 4, 5, 6, 13, 17, 18],
-          setAdvanceAdjustmentModal,
-          advPayParams,
-          'POST',
-          ['22'],
-          [mainData[17]],
-        );
+        // console.log('advance Adj:', advPayParams);
       }
     }
     // getUpdateCheckStatus(
@@ -335,7 +471,11 @@ export const BillsPayment = ({route}) => {
     //   transId,
     // );
   }, [transValue]);
+  useEffect(() => {
+    console.log('query::', query);
 
+    // useFinLoadVectorwithContentsAPI(query, setFinloadData);
+  }, [query]);
   useEffect(() => {
     setIsLoading(true);
     console.log('accountNo:::::', accountNo);
@@ -609,6 +749,8 @@ export const BillsPayment = ({route}) => {
           setPaymentId(Main[0]);
           setAccountNo(Main[8]);
           setRefNO(transactionDetails[3].length < 5 ? 'Cheque' : 'TT');
+          console.log('orderType', parsedTransObj[13][0]['ORDER_TYPE']);
+          setOrderTyp(parsedTransObj[13][0]['ORDER_TYPE']);
 
           console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
@@ -1142,6 +1284,8 @@ export const BillsPayment = ({route}) => {
         <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
         <Text style={styles.modalBody}>
           Payment Amount: {parseFloat(mainData[19]).toFixed(4)} ({currency})
+          {/* Payment Amount: {parseFloat(transValue[2]["PAYABLE_AMOUNT"]).toFixed(4)} ({currency}) */}
+
         </Text>
         <View style={{height: 200}}>
           <ApprovalTableComponent

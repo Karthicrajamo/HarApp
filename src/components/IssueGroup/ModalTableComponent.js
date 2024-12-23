@@ -222,7 +222,8 @@ const ModalTableComponent = ({
         borderWidth: 1,
         borderRadius: 5,
         borderColor: CustomThemeColors.primary,
-        height: 400,
+        height: 200,
+        width: 'auto',
       }}>
       <View style={styles.selectSlide}></View>
       <View style={styles.headerRow}>

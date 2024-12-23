@@ -9,6 +9,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
+  PixelRatio,
 } from 'react-native';
 import CustomButton from '../common-utils/CustomButton';
 import {Text} from 'react-native';
@@ -26,10 +27,11 @@ import ModalTableComponent from './ModalTableComponent';
 import DeviceInfo from 'react-native-device-info';
 import {Alert} from 'react-native';
 import {ToastAndroid} from 'react-native';
-
-
+import CustomModal from '../common-utils/modal';
 
 const IssueGroups = () => {
+  const fontScale = PixelRatio.getFontScale();
+
   useEffect(() => {
     fetchTableData();
   }, []);
@@ -1169,7 +1171,7 @@ const IssueGroups = () => {
 
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      console.log('response>>>>>>>>>', response);
+      console.log('response>>>>>>>>> paysheet', response);
       const data = await response.json();
       console.log(
         'response model table adv tax : ===============>>>>>>>>>> ',
@@ -2151,20 +2153,33 @@ ORDER BY
         showFilterIcon={true}
         onFilterPress={() => setFilterModalVisible(true)}
       />
-      <View style={{justifyContent: 'center', alignItems: 'center',marginBottom:0}}>
+      <View
+        style={{
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginBottom: 0,
+        }}>
         <TouchableOpacity onPress={() => handleIssue()}>
-          <Text style={{backgroundColor:CustomThemeColors.primary,color:'white',paddingHorizontal:20,paddingVertical:5,borderRadius:10}}>Issue</Text>
+          <Text
+            style={{
+              backgroundColor: CustomThemeColors.primary,
+              color: 'white',
+              paddingHorizontal: 20,
+              paddingVertical: 5,
+              borderRadius: 10,
+            }}>
+            Issue
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* </View> */}
       <View style={{flex: 1}}>
         <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-        <View style={{ flexGrow: 1, paddingVertical: 0,marginTop:-10}}>
-
+          <View style={{flexGrow: 1, paddingVertical: 0, marginTop: -10}}>
             {/* First TableComponent */}
-            <View style={{ flexShrink: 1, marginTop: 0 }}>
-            {filteredMainData.length > 0 ? (
+            <View style={{flexShrink: 1, marginTop: 0}}>
+              {filteredMainData.length > 0 ? (
                 <TableComponent
                   key={filteredMainData.length}
                   initialData={filteredMainData}
@@ -2247,7 +2262,20 @@ ORDER BY
                   {/* Table Header */}
                   <View style={styles.headerRow}>
                     {headers.map((header, index) => (
-                      <Text key={index} style={styles.headerText}>
+                      <Text
+                        key={index}
+                        style={[
+                          styles.headerText,
+                          {
+                            fontSize: DeviceInfo.isTablet()
+                              ? fontScale >= 1.2999999523162842
+                                ? 10
+                                : fontScale == 0.8500000238418579
+                                ? 14
+                                : 12
+                              : 14,
+                          },
+                        ]}>
                         {header}
                       </Text>
                     ))}
@@ -2262,8 +2290,7 @@ ORDER BY
             </View>
 
             {/* Second SubTableComponent */}
-            <View style={{ flexShrink: 1, marginTop: -20 }}>
-
+            <View style={{flexShrink: 1, marginTop: -20}}>
               {selectedSubData.length > 0 && (
                 <SubTableComponent
                   initialData={selectedSubData}
@@ -2336,7 +2363,7 @@ ORDER BY
                         const key = `${type}:${groupId}`;
                         const currentIds = prevPayments[key] || [];
                         const updatedIds = currentIds.includes(selectedId)
-                          ? currentIds.filter(id => id !== selectedId) // Corrected condition to remove selectedId
+                          ? currentIds.filter(id => id == selectedId) // Corrected condition to remove selectedId
                           : [...currentIds, selectedId];
 
                         const updatedState = {...prevPayments};
@@ -2726,7 +2753,43 @@ ORDER BY
           </View>
         </TouchableOpacity>
       )}
-      {model && (
+      <CustomModal isVisible={model} onClose={() => isModel(false)} title="">
+        {/* <View style={styles.modalTableContainer}>
+        <View style={styles.modalTableContent}> */}
+        <Text style={[styles.modalTableTitle, {color: 'black'}]}>
+          {MainType === 'Paysheet Payment'
+            ? 'Employee Paysheet Details'
+            : MainType === 'Bills Payment'
+            ? 'Paid Bill Details'
+            : MainType === 'Tax Payment'
+            ? 'Paid Tax Details'
+            : activeDataPdf.orderType === 'PO'
+            ? 'PO Material-Wise Details'
+            : activeDataPdf.orderType === 'JO'
+            ? 'JO Job-Wise Details'
+            : activeDataPdf.orderType === 'SO' && 'SO Service-Wise Details'}
+        </Text>
+
+        {selectedModelData && (
+          <ModalTableComponent
+            key={selectedModelData}
+            initialData={selectedModelData}
+            onRowIndexSelect={index => {
+              console.log('Row selected:', index);
+            }}
+            noModel={false}
+            showCheckBox={false}
+            excludeColumns={[
+              'Payment Id',
+              'partyName',
+              'serviceName',
+              'ID',
+              'ExtraField',
+            ]}
+          />
+        )}
+      </CustomModal>
+      {/* {model && (
         // <IssueGroupTableThree selectedModelData={selectedModelData} MainType={MainType} activeDataPdf={activeDataPdf.orderType}/>
 
         <View style={styles.modalTableContainer}>
@@ -2787,7 +2850,7 @@ ORDER BY
             </TouchableOpacity>
           </View>
         </View>
-      )}
+      )} */}
       {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
     </View>
   );
@@ -2900,10 +2963,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     textAlign: 'left',
   },
-  headerText: {
-    fontWeight: 'bold',
-    color: 'white',
-  },
+  // headerText: {
+  //   fontWeight: 'bold',
+  //   color: 'white',
+  // },
   selectAllButton: {
     padding: 10,
     backgroundColor: '#e0e0e0', // Example color for visibility
@@ -2944,8 +3007,9 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   container: {
+    marginTop: 20,
     padding: 10,
-    height:600
+    height: 600,
   },
   headerRow: {
     borderTopEndRadius: 10,

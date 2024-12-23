@@ -40,12 +40,16 @@ const AdvanceAdjApi = async (
         : await axios.get(apiUrl, {params}); // GET request with query params
 
     // Validate the API response
-    console.log('Adv response.data:', response.data[0].length);
-    if (response.data && response.data !== undefined && response.data[0].length !== 0) {
+    console.log('Adv response.data:', response.data);
+    if (
+      response.data &&
+      response.data !== undefined &&
+      response.data[0].length !== 0
+    ) {
       const apiResponse = response.data[0][0];
       apiResponse.push(...inc);
 
-      console.log('AdvAdjapiResponse valueApi:', apiResponse);
+      console.log('AdvAdjapiResponse valueApi advAdj:', apiResponse);
       // Process the API response
       const row = apiResponse; // Get the first row, as it's a 2D array
 
@@ -65,7 +69,7 @@ const AdvanceAdjApi = async (
       }, {});
 
       console.log('Processed Table Data: adj1', result);
-      setData(result);
+      setData([result]);
     } else {
       // console.error(`Invalid response data:`, apiUrl, response.data);
 
