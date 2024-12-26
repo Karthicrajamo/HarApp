@@ -336,12 +336,12 @@ const LoginScreen = () => {
             // HEADER SECTION
             <View style={[styles.topContainer, {flex: 1}]}>
               <Svg
-                height={sysBasedFontSize.Large ? 210 : 210}
+                height={isTablet? sysBasedFontSize.Large ? 210 : 210 :500}
                 width="100%"
                 style={{
                   paddingVertical: 30,
                   position: 'absolute',
-                  top: sysBasedFontSize.Large ? -70 : -1,
+                  top:isTablet? sysBasedFontSize.Large ? -70 : -1:-10,
                 }}>
                 <Ellipse
                   cx="50%"
@@ -393,8 +393,16 @@ const LoginScreen = () => {
               style={[
                 styles.bottomLogo,
                 {
-                  width: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 50 : 40) : 80,
-                  height: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 50 : 40) : 80,
+                  width: isTablet
+                    ? currentFontScale >= sysBasedFontSize.Large
+                      ? 50
+                      : 40
+                    : 80,
+                  height: isTablet
+                    ? currentFontScale >= sysBasedFontSize.Large
+                      ? 50
+                      : 40
+                    : 80,
                 },
               ]}
             />
@@ -524,7 +532,7 @@ const LoginScreen = () => {
                   fontSize="14"
                   fill="white" // White text color
                   fontWeight="500">
-                  App version 1.4.0
+                  App version 1.4.1
                 </SvgText>
               </Svg>
             </View>

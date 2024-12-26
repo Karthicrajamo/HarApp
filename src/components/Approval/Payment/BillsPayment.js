@@ -110,6 +110,10 @@ export const BillsPayment = ({route}) => {
   //   } // Start with an initial total of 0
   // }, [paidAdjustment]);
 
+  // useEffect(() => {
+  //   console.log('billsPay::', billsPay[0]["Actual Amt"]);
+  // }, [billsPay]);
+
   useEffect(() => {
     console.log('advAdjSub::', advAdjSub);
     if (advAdjSub != null) {
@@ -190,17 +194,28 @@ export const BillsPayment = ({route}) => {
               'Remaining Adv(INR)',
               'Adjust Advance(INR)',
             ];
+      const advAdjExcluse =
+        orderTyp === 'PO'
+          ? [0, 3, 4, 5, 6, 7, 14, 18, 19]
+          : [2, 3, 4, 5, 6, 13, 17, 19];
+
+      const adjAdvUrl =
+        mainData[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+          ? mainData[7].toLowerCase() === 'Debit card'.toLowerCase()
+            ? ''
+            : ''
+          : `${API_URL}/api/approval/payment/getBillAdjustment`;
       // Advance adjustment Modal
       AdvanceAdjApi(
-        `http://192.168.0.169:8100/rest/approval/getBillAdjustment/`,
+        adjAdvUrl, //Verify this Karthic
         adjKeys,
-        [0, 3, 4, 5, 6,7, 14, 18, 19],
+        advAdjExcluse,
         // [],
         setAdvanceAdjustmentModal,
         generatedData,
         'POST',
         // ['22'],
-        [mainData[17]]
+        [mainData[17]],
       );
     }
   }, [advAdjSub]);
@@ -304,13 +319,16 @@ export const BillsPayment = ({route}) => {
 
       // const actualSlab = slabFXRate; // Assuming actualMinSlab is defined
 
+      console.log('totalAmount::', totalAmount);
       console.log('adjustments::', totalTaxAmount);
       console.log('actualSlab::', slabFXRate);
       // if(actualMinSlab === totalTaxAmount){
       // setActualMinSlab(totalTaxAmount);}
       setActualSlabMain(totalTaxAmount);
+      const add = parseFloat(totalTaxAmount) + parseFloat(totalAmount);
+      console.log('addd::', add);
 
-      setActualPaidAftAdj(totalTaxAmount + totalAmount);
+      setActualPaidAftAdj(add);
     } // Start with an initial total of 0
   }, [paidAdjustment, slabFXRate, slabTaxes, actualMinSlab]);
 
@@ -529,7 +547,7 @@ export const BillsPayment = ({route}) => {
         'Due Date',
         'Bill Status',
       ],
-      [0, 14, 21],
+      [0, 15, 21],
       setBillsPay,
     );
 
@@ -589,7 +607,7 @@ export const BillsPayment = ({route}) => {
     ];
 
     // Call the KeyValueJoiner function
-    KeyValueJoiner(keys, transValue[9], [9], setSlabTaxes);
+    KeyValueJoiner(keys, transValue[9], [0], setSlabTaxes);
     // console.log('filteredPairs', transValue[9]);
     // console.log('filteredPairs', filteredPairs);
     // setSlabTaxes(filteredPairs);
@@ -612,7 +630,7 @@ export const BillsPayment = ({route}) => {
 
     // Select Supplier Bank
     FetchValueAssignKeysAPI(
-      `${API_URL}/api/common/loadVectorwithContentsjson/`,
+      `http://192.168.0.169:8100/rest/approval/loadVectorwithContentsjson/`,
       [
         'Bank A/C No',
         'Party Name',
@@ -627,22 +645,36 @@ export const BillsPayment = ({route}) => {
       setSupplierBankMain,
       {
         Query:
-          "select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='6528420:::63:::OTP' or bad.account_no='6528420:::63:::OTP' ) and bad.account_category='Party'",
+          "select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='789:::14:::A2Z Travels' or bad.account_no='789:::14:::A2Z Travels' ) and bad.account_category='Party' ",
       },
       'POST',
     );
-    const chkSts = getUpdateCheckStatus(
-      transName,
-      paymentId,
-      mainData[8],
-      transDetails[3],
-      mainData[7],
-      currentLevel,
-    );
-    setCheckStatus(chkSts);
+    // const chkSts = getUpdateCheckStatus(
+    //   transName,
+    //   paymentId,
+    //   mainData[8],
+    //   transDetails[3],
+    //   mainData[7],
+    //   currentLevel,
+    // );
+    // setCheckStatus(chkSts);
     setIsLoading(false);
     // console.log('adadvPayParams', advPayParams);
   }, [paymentId]);
+
+  useEffect(() => {
+    if (paymentId != null && mainData != [] && transDetails != []) {
+      const chkSts = getUpdateCheckStatus(
+        transName,
+        paymentId,
+        mainData[8],
+        transDetails[3],
+        mainData[7],
+        currentLevel,
+      );
+      setCheckStatus(chkSts);
+    }
+  }, [paymentId, mainData, transDetails]);
 
   useEffect(() => {
     const getTaxCurrency = async () => {
@@ -749,8 +781,8 @@ export const BillsPayment = ({route}) => {
           setPaymentId(Main[0]);
           setAccountNo(Main[8]);
           setRefNO(transactionDetails[3].length < 5 ? 'Cheque' : 'TT');
-          console.log('orderType', parsedTransObj[13][0]['ORDER_TYPE']);
-          setOrderTyp(parsedTransObj[13][0]['ORDER_TYPE']);
+          console.log('orderType', processData(parsedTransObj[13][0]));
+          setOrderTyp(parsedTransObj?.[13][0]?.['ORDER_TYPE']);
 
           console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
@@ -795,26 +827,30 @@ export const BillsPayment = ({route}) => {
                 ? 'CC '
                 : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Ref '
             }No`]: transactionDetails[3],
             ...(['Demand', 'Debit Card', 'Cheque'].includes(Main[7]) && {
               'Favour of': transactionDetails[5],
             }),
             [`${
-              Main[7] === 'RTGS/NEFT'
+              Main[7].toLowerCase() === 'RTGS/NEFT'.toLowerCase()
                 ? 'RTGS/NEFT '
-                : Main[7] === 'Bank Transfer'
+                : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7] === 'Demand'
+                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
                 ? 'DD '
-                : Main[7] === 'MOBILE BANKING'
+                : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
-                : Main[7] === 'Debit Card'
+                : Main[7].toLowerCase() === 'Debit Card'.toLowerCase()
                 ? 'DC '
-                : Main[7] === 'Credit Card'
+                : Main[7].toLowerCase() === 'Credit Card'.toLowerCase()
                 ? 'CC '
-                : Main[7] === 'Cheque'
+                : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Cash '
             } Date`]: DateFormatComma(Main[1]),
             // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
@@ -833,6 +869,8 @@ export const BillsPayment = ({route}) => {
                 ? 'CC '
                 : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Cash '
             } Amt (${Main[9]})`]: Main[6],
             // }),
@@ -940,7 +978,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={mainData[5] !== undefined ? mainData[5].toString() : ''}
+                value={mainData[5] !== undefined ? mainData[13].toString() : ''}
                 editable={false} // Disables input
               />
             </View>
@@ -1186,6 +1224,9 @@ export const BillsPayment = ({route}) => {
                     ? 'CC '
                     : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                     ? 'Cheque '
+                    : mainData[7].toLowerCase() ===
+                      'Letter Of Credit'.toLowerCase()
+                    ? 'LL '
                     : 'Cash '}{' '}
                   Date
                 </Text>
@@ -1211,6 +1252,9 @@ export const BillsPayment = ({route}) => {
                     ? 'CC '
                     : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                     ? 'Cheque '
+                    : mainData[7].toLowerCase() ===
+                      'Letter Of Credit'.toLowerCase()
+                    ? 'LL '
                     : 'Cash '}
                   Amt ({mainData[9]})
                 </Text>
@@ -1283,9 +1327,12 @@ export const BillsPayment = ({route}) => {
         {/* Children Content */}
         <Text style={styles.modalBody}>Party Name: {mainData[3]}</Text>
         <Text style={styles.modalBody}>
-          Payment Amount: {parseFloat(mainData[19]).toFixed(4)} ({currency})
+          Payment Amount:{' '}
+          {parseFloat(
+            billsPay[0]?.['Actual Amt'] ? billsPay[0]['Actual Amt'] : 0,
+          ).toFixed(4)}{' '}
+          ({currency})
           {/* Payment Amount: {parseFloat(transValue[2]["PAYABLE_AMOUNT"]).toFixed(4)} ({currency}) */}
-
         </Text>
         <View style={{height: 200}}>
           <ApprovalTableComponent
@@ -1379,6 +1426,8 @@ export const BillsPayment = ({route}) => {
               'Re-Use',
               currentLevel,
               checkStatus,
+              rejParams,
+              `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');
@@ -1399,6 +1448,8 @@ export const BillsPayment = ({route}) => {
               'Cancelled',
               currentLevel,
               checkStatus,
+              rejParams,
+              `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');

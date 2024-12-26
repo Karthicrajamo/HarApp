@@ -21,6 +21,7 @@ const ApproveRejectComponent = ({
   rejectUrl,
   params,
   rejParams,
+  setRejParams,
   setReUseCancel,
   paymentMode,
 }) => {
@@ -82,28 +83,31 @@ const ApproveRejectComponent = ({
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
-    //if (action == 'reject' && paymentMode == "Cheque" )
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json', // Set the content type to JSON
-        },
-        body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
-      });
-      console.log('response ApRejCom::', response);
+    if (action == 'reject' && paymentMode == 'Cheque') {
+      setRejParams(rejectParams);
+    } else {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json', // Set the content type to JSON
+          },
+          body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
+        });
+        console.log('response ApRejCom::', response);
 
-      if (response.ok) {
-        const data = await response.json();
-        ToastAndroid.show(successMessage, ToastAndroid.SHORT);
-        console.log('Response:', data);
-      } else {
+        if (response.ok) {
+          const data = await response.json();
+          ToastAndroid.show(successMessage, ToastAndroid.SHORT);
+          console.log('Response:', data);
+        } else {
+          ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+        }
+        action == 'approve' && navigation.navigate('ApprovalMainScreen');
+      } catch (error) {
+        console.error('Error:', error);
         ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
       }
-      action == 'approve' && navigation.navigate('ApprovalMainScreen');
-    } catch (error) {
-      console.error('Error:', error);
-      ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
     }
   };
 

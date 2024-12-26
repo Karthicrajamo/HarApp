@@ -1,6 +1,8 @@
 import axios from 'axios';
 import {sharedData} from '../../../Login/UserId';
 import * as Keychain from 'react-native-keychain';
+import {ToastAndroid} from 'react-native'
+import { API_URL } from '../../../ApiUrl';
 
 // const updateAddRejectPayStatus = async () => {
 //     console.log('Rejection Succfull, tryig to updateRejectPayStatus...');
@@ -81,17 +83,17 @@ export const getUpdateCheckStatus = async (
   currentLevel,
 ) => {
   // Log the API request URL for debugging purposes
-  console.log(
-    'API URL:',
-    `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${
-      currentLevel == 0 ? false : true
-    }&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
-  );
+  // console.log(
+  //   'API URL:',
+  //   `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${
+  //     currentLevel == 0 ? false : true
+  //   }&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
+  // );
 
   try {
     // Perform the GET request using axios
     const response = await axios.get(
-      `http://192.168.0.107:8100/rest/approval/getupdateChequeStatus?isFinalLevel=${
+      `${API_URL}/api/approval/payment/getupdateChequeStatus?isFinalLevel=${
         currentLevel == 0 ? false : true
       }&isReject=${true}&transType=${transName}&payment_id=${paymentId}&bankAccNo=${bankAccountNo}&chqStatusdef=${''}&chqNo1=${refNo}&payment_mode=${paymentMode}`,
     );
@@ -120,6 +122,7 @@ export const updateModRejectPayStatus = async (
   action,
   currentLevel,
   checkStatus,
+  rejParams,url
 ) => {
   console.log('Rejection Successful, tryig to updateRejectPayStatus...');
   try {
@@ -167,12 +170,13 @@ export const updateModRejectPayStatus = async (
     // setIsLoading(true);
     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
     const token = credentials.password;
-    console.log(
-      '90859893gdgl',
-      `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
-    );
+    // console.log(
+    //   '90859893gdgl',
+    //   `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
+    // );
     const response = await fetch(
-      `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
+      `${API_URL}/api/approval/payment/updateRejectPayStatus/${parameters}`,
+      // `http://192.168.0.107:8100/rest/approval/updateRejectPayStatus/${parameters}`,
       {
         method: 'POST',
         headers: {
@@ -200,31 +204,55 @@ export const updateModRejectPayStatus = async (
   } finally {
     // setIsLoading(false);
   }
+  try {
+    // console.log("urldd::",url)
+    // console.log("rejParams::",JSON.stringify(rejParams,null,2))
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json', // Set the content type to JSON
+      },
+      body: JSON.stringify(rejParams), // Convert the body to a JSON string
+    });
+    console.log('response ApRejCom::', response);
+
+    if (response.ok) {
+      const data = await response.json();
+      ToastAndroid.show('Reject Successfully', ToastAndroid.SHORT);
+      console.log('Response:', data);
+    } else {
+      ToastAndroid.show('Rejection Failed', ToastAndroid.SHORT);
+    }
+    action == 'approve' && navigation.navigate('ApprovalMainScreen');
+  } catch (error) {
+    console.error('Error:', error);
+    ToastAndroid.show('Rejection reuse Failed', ToastAndroid.SHORT);
+  }
 };
 
-const prepareTransObjectForModUpdateRejectPayStatus = async transobj => {
-  if (!transobj) return [];
+// const prepareTransObjectForModUpdateRejectPayStatus = async transobj => {
+//   if (!transobj) return [];
 
-  // Extract existing sections from the input object (second structure).
-  const paymentId = transobj[0];
-  const metadata = transobj[1];
-  const relatedDocs = transobj[2];
-  const paymentDetails = transobj[3];
-  const summary = transobj[8];
+//   // Extract existing sections from the input object (second structure).
+//   const paymentId = transobj[0];
+//   const metadata = transobj[1];
+//   const relatedDocs = transobj[2];
+//   const paymentDetails = transobj[3];
+//   const summary = transobj[8];
 
-  // Define repeated sections.
-  const repeatedSections = [
-    metadata,
-    relatedDocs,
-    paymentDetails,
-    null,
-    {},
-    'admin',
-    [],
-    summary,
-  ];
+//   // Define repeated sections.
+//   const repeatedSections = [
+//     metadata,
+//     relatedDocs,
+//     paymentDetails,
+//     null,
+//     {},
+//     'admin',
+//     [],
+//     summary,
+//   ];
 
-  const desiredStructure = [paymentId, ...repeatedSections, [], []];
+//   const desiredStructure = [paymentId, ...repeatedSections, [], []];
 
-  return desiredStructure;
-};
+//   return desiredStructure;
+// };

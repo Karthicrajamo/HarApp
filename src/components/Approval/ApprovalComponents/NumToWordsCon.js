@@ -1,9 +1,18 @@
 import axios from 'axios';
+import { API_URL } from '../../ApiUrl';
 
 export const NumToWordsCon = async (amt, cur) => {
   try {
+    console.log(
+      'rupees::',
+      amt,
+    );console.log(
+      'rupees::',
+      cur,
+    );
     const response = await axios.get(
-      `http://192.168.0.107:8100/rest/approval/getAmountInWords?amount=${amt}&currency=${cur}`,
+      `${API_URL}/api/common/getAmountInWords?amount=${amt}&currency=${cur}`,
+      // `http://192.168.0.107:8100/rest/approval/getAmountInWords?amount=${amt}&currency=${cur}`,
     );
 
     if (response.status !== 200) {

@@ -3,9 +3,10 @@ import {API_URL} from '../../ApiUrl';
 
 export const useFinLoadVectorwithContentsAPI = async (query, setResult) => {
   try {
-    console.log('FinloadContent111 result:',query);
+    console.log('FinloadContent111 result:', query);
     const response = await fetch(
       `${API_URL}/api/common/finLoadVectorwithContentsjson`,
+      // `${API_URL}/api/common/finLoadVectorwithContentsjson`,
       {
         method: 'POST',
         headers: {

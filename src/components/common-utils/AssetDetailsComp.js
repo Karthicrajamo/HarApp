@@ -407,10 +407,10 @@ const AssetListDetails = () => {
     fetchSubDetailsLabel(assetItem.type);
   }, [assetItem.type]);
   console.log('type>>>>>>>>>>>>>>>>>>>>>>>>>>>>>', type);
-  console.log(
-    'query>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
-    `http://192.168.0.169:8084/api/assetList/assetSubDetailsLabel?type=${type}`,
-  );
+  // console.log(
+  //   'query>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',
+  //   `http://192.168.0.169:8084/api/assetList/assetSubDetailsLabel?type=${type}`,
+  // );
 
   const fetchSubDetailsLabel = async type => {
     console.log('hii>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');

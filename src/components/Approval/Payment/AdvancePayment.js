@@ -57,7 +57,7 @@ export const AdvancePayment = ({route}) => {
   const [transValue, setTransValue] = useState([]);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentId, setPaymentId] = useState('');
+  const [paymentId, setPaymentId] = useState(null);
   const [orderDetails, setOrderDetails] = useState('');
   const [materialAdPayment, setMaterialAdPayment] = useState('');
   const [additionalCharges, setAdditionalCharges] = useState('');
@@ -105,7 +105,9 @@ export const AdvancePayment = ({route}) => {
         const totalAmount = slabTaxes
           .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
           .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
-        totalTaxAmount = actualMinSlab - totalAmount * slabFXRate;
+        totalTaxAmount =
+          parseFloat(actualMinSlab) -
+          parseFloat(totalAmount) * parseFloat(slabFXRate);
         console.log('Total Tax Amount:', actualMinSlab);
       } else {
         totalTaxAmount = actualMinSlab;
@@ -128,7 +130,7 @@ export const AdvancePayment = ({route}) => {
       // setActualMinSlab(totalTaxAmount);}
       setActualSlabMain(totalTaxAmount);
 
-      setActualPaidAftAdj(totalTaxAmount + totalAmount);
+      setActualPaidAftAdj(parseFloat(totalTaxAmount) + parseFloat(totalAmount));
     } // Start with an initial total of 0
   }, [adjWithoutTax, slabFXRate, slabTaxes, actualMinSlab]);
 
@@ -231,7 +233,7 @@ export const AdvancePayment = ({route}) => {
       const headArrTb1 =
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [
-              'PO No',
+              'P Order No',
               'Supplier Name',
               'PO Qty',
               'Discount %',
@@ -279,10 +281,14 @@ export const AdvancePayment = ({route}) => {
               'Remaining Balance',
               'SO Currency',
             ];
+      const otherDltsExclude =
+        transValue[4][0]?.ORDER_TYPE === 'PO'
+          ? [0, 7, 10, 11, 16]
+          : [6, 9, 10, 15];
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderMain`,
         headArrTb1,
-        [6, 9, 10, 15],
+        otherDltsExclude,
         setOrderDetails,
         {
           payment_id: paymentId,
@@ -297,7 +303,7 @@ export const AdvancePayment = ({route}) => {
       const headArr =
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [
-              'PO No',
+              'P Order No',
               'Supplier Name',
               'Mat No',
               'Color',
@@ -357,7 +363,7 @@ export const AdvancePayment = ({route}) => {
               'Discount %',
               'Discount(SO)',
               `Discount(${currency})`,
-              ,
+
               'Total Amount (SO)',
               `Total Amount(${currency})`,
               'Payable Amt',
@@ -367,11 +373,14 @@ export const AdvancePayment = ({route}) => {
               'Remaining Balance',
               'Currency',
             ];
-
+      const matAdExc =
+        transValue[4][0]?.ORDER_TYPE === 'PO'
+          ? [0, 16, 18, 21, 25, 26]
+          : [13, 14, 18, 20, 22];
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderDetails`,
         headArr,
-        [13, , 14, 17, 20, 22],
+        matAdExc,
         setMaterialAdPayment,
         {
           payment_id: paymentId,
@@ -409,7 +418,7 @@ export const AdvancePayment = ({route}) => {
             ]
           : transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [
-              'PO No',
+              'P Order No',
               'Mat No',
               'SID',
               'Service/Material Category',
@@ -450,11 +459,15 @@ export const AdvancePayment = ({route}) => {
               'Currency',
               'Select',
             ];
+      const adChargeExc =
+        transValue[4][0]?.ORDER_TYPE === 'PO'
+          ? [0, 12, 14, 17, 21, 22]
+          : [13, 15, 20, 21, 23];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayChargesDetails`,
         chargeArr,
-        [13, 15, 20, 21, 23],
+        adChargeExc,
         setAdditionalCharges,
         {
           payment_id: paymentId,
@@ -483,7 +496,7 @@ export const AdvancePayment = ({route}) => {
             ]
           : transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [
-              'PO No',
+              'P Order No',
               'Tax Name',
               'Rate',
               'Tax Amount',
@@ -504,10 +517,14 @@ export const AdvancePayment = ({route}) => {
               'Inclusive Tax',
               'Apply TDS',
             ];
+      const excExclude =
+        transValue[4][0]?.ORDER_TYPE === 'PO'
+          ? [0, 3, 9, 10, 11]
+          : [2, 8, 9, 10];
       FetchValueAssignKeysAPIDoubleArray(
         `${API_URL}/api/approval/payment/getOrderTaxProfileAdvPay`,
         excludeArr,
-        [2, 8, 9, 10],
+        excExclude,
         setExcludeTaxes,
         {
           payment_id: paymentId,
@@ -545,6 +562,7 @@ export const AdvancePayment = ({route}) => {
       //   'POST',
       // );
 
+      //Applicable Slab Taxes
       const keys = [
         'Party Name',
         'Party Type',
@@ -561,7 +579,7 @@ export const AdvancePayment = ({route}) => {
 
       // Call the KeyValueJoiner function
       // const filteredPairs = KeyValueJoiner(keys, transValue[9], [0]);
-      KeyValueJoiner(keys, transValue[9], [9], setSlabTaxes);
+      KeyValueJoiner(keys, transValue[9], [0], setSlabTaxes);
 
       // console.log('filteredPairs', transValue[9]);
       // console.log('filteredPairs', filteredPairs);
@@ -581,7 +599,7 @@ export const AdvancePayment = ({route}) => {
             ]
           : transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [
-              'PO No',
+              'P Order No',
               'Adjustment ID',
               'Adjustment Name',
               'Adjustment Type',
@@ -598,10 +616,12 @@ export const AdvancePayment = ({route}) => {
               'Amount',
               'Remarks',
             ];
+      const outExclude =
+        transValue[4][0]?.ORDER_TYPE === 'PO' ? [0, 3, 4] : [2, 3];
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
         otherTaxArr,
-        [2, 3],
+        outExclude,
         setAdjWithoutTax,
         {
           payment_id: paymentId,
@@ -632,17 +652,31 @@ export const AdvancePayment = ({route}) => {
         },
       );
     }
-    const chkSts = getUpdateCheckStatus(
-      transName,
-      paymentId,
-      mainData[8],
-      transDetails[3],
-      mainData[7],
-      currentLevel,
-    );
-    setCheckStatus(chkSts);
+    // const chkSts = getUpdateCheckStatus(
+    //   transName,
+    //   paymentId,
+    //   mainData[8],
+    //   transDetails[3],
+    //   mainData[7],
+    //   currentLevel,
+    // );
+    // setCheckStatus(chkSts);
     setIsLoading(false);
   }, [paymentId]);
+
+  useEffect(() => {
+    if (paymentId != null && mainData != [] && transDetails != []) {
+      const chkSts = getUpdateCheckStatus(
+        transName,
+        paymentId,
+        mainData[8],
+        transDetails[3],
+        mainData[7],
+        currentLevel,
+      );
+      setCheckStatus(chkSts);
+    }
+  }, [paymentId, mainData, transDetails]);
 
   useEffect(() => {
     console.log('pairsData::', pairsData);
@@ -758,6 +792,8 @@ export const AdvancePayment = ({route}) => {
                 ? 'CC '
                 : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Ref '
             }No`]: transactionDetails[3],
             [['Demand', 'Debit Card', 'Cheque'].includes(Main[7])
@@ -778,6 +814,8 @@ export const AdvancePayment = ({route}) => {
                 ? 'CC '
                 : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Cash '
             } Date`]: DateFormatComma(Main[1]),
             [`${
@@ -795,6 +833,8 @@ export const AdvancePayment = ({route}) => {
                 ? 'CC '
                 : Main[7].toLowerCase() === 'Cheque'.toLowerCase()
                 ? 'Cheque '
+                : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
+                ? 'LL '
                 : 'Cash '
             } Amt (${Main[9]})`]: Main[6],
           };
@@ -1103,6 +1143,9 @@ export const AdvancePayment = ({route}) => {
                   ? 'CC '
                   : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
+                  : mainData[7].toLowerCase() ===
+                    'Letter Of Credit'.toLowerCase()
+                  ? 'LL '
                   : 'Cash '}
                 Ref No <Text style={commonStyles.redAsterisk}>*</Text>
               </Text>
@@ -1137,6 +1180,9 @@ export const AdvancePayment = ({route}) => {
                   ? 'CC '
                   : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
+                  : mainData[7].toLowerCase() ===
+                    'Letter Of Credit'.toLowerCase()
+                  ? 'LL '
                   : 'Cash '}
                 Date
               </Text>
@@ -1160,6 +1206,9 @@ export const AdvancePayment = ({route}) => {
                   ? 'CC '
                   : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                   ? 'Cheque '
+                  : mainData[7].toLowerCase() ===
+                    'Letter Of Credit'.toLowerCase()
+                  ? 'LL '
                   : 'Cash '}
                 Amt ({mainData[9]})
               </Text>
@@ -1244,6 +1293,8 @@ export const AdvancePayment = ({route}) => {
               'Re-Use',
               currentLevel,
               checkStatus,
+              rejParams,
+              `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
           }}
@@ -1263,6 +1314,8 @@ export const AdvancePayment = ({route}) => {
               'Cancelled',
               currentLevel,
               checkStatus,
+              rejParams,
+              `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
           }}
@@ -1288,6 +1341,7 @@ export const AdvancePayment = ({route}) => {
               approveUrl={`${API_URL}/api/common/approveTransaction`}
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
+              setRejParams={setRejParams}
               setReUseCancel={setReUseCancel}
               paymentMode={mainData[7]}
             />

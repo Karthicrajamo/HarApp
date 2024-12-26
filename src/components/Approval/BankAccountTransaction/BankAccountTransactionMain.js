@@ -51,7 +51,7 @@ export const BankAccountTransactionMain = ({route}) => {
 
       const response = await axios.get(
         // `${API_URL}/api/approval/payment/getApprovalDetails`,
-        `http://192.168.0.107:8100/rest/approval/getApprovalDetails`,
+        `${API_URL}/api/common/getApprovalDetails`,
         {
           params: {
             trans_id: transId,

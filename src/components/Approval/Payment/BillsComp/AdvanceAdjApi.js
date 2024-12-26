@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_URL } from '../../ApiUrl';
 
 /**
  * Fetch data from an API, process it to exclude specific indices, and map it to headers.

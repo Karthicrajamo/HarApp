@@ -71,10 +71,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 10,
-    marginTop: sysBasedFontSize.Large ? 65 : 0,
+    marginTop: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 55
+        : 65
+      : 0,
   },
   secondheadingText: {
-    fontSize: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 16 : 16) : 16, // Adjust font size for tablet/phone
+    fontSize: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 16
+        : 16
+      : 16, // Adjust font size for tablet/phone
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,
@@ -90,7 +98,11 @@ const styles = StyleSheet.create({
   },
 
   thirdHeading: {
-    fontSize: isTablet ? (currentFontScale >= sysBasedFontSize.Large ? 16 : 24) : 16,
+    fontSize: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 16
+        : 24
+      : 16,
     textAlign: 'center',
     marginBottom: height * 0.02,
     color: 'black',
@@ -146,7 +158,8 @@ const styles = StyleSheet.create({
 
   passwordInput: {
     borderWidth: 1,
-    borderRadius: 15, paddingVertical: 8,
+    borderRadius: 15,
+    paddingVertical: 8,
     paddingHorizontal: 15,
     fontSize: 16,
     color: 'black',
@@ -181,7 +194,11 @@ const styles = StyleSheet.create({
 
   loginButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 10
+        : 10
+      : 16,
     fontWeight: 'bold',
   },
 
