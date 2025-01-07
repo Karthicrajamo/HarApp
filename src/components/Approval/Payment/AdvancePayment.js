@@ -86,8 +86,34 @@ export const AdvancePayment = ({route}) => {
   }, [isLoading]);
 
   useEffect(() => {
-    console.log('slabFXRate:::', slabFXRate);
-  }, [slabFXRate]);
+    console.log('additionalCharges:::', additionalCharges);
+    if (additionalCharges) {
+      const total =
+        parseFloat(additionalCharges[0]['Remaining Balance']) +
+        parseFloat(additionalCharges[0]['Advance Amount']) +
+        parseFloat(additionalCharges[0]['Advance Paid']) +
+        parseFloat(additionalCharges[0]['TDS Amount']);
+      console.log('totaladditionalCharges:::', Math.round(total));
+      additionalCharges[0][`Total Amount(${currency})`] = Math.round(total);
+    }
+  }, [additionalCharges]);
+
+  useEffect(() => {
+    console.log('materialAdPayment:::', materialAdPayment);
+    if (materialAdPayment) {
+      const total =
+        parseFloat(materialAdPayment[0]['Remaining Balance']) +
+        parseFloat(materialAdPayment[0]['Advance Amt']) +
+        parseFloat(materialAdPayment[0]['Advance Paid']) +
+        parseFloat(materialAdPayment[0]['TDS Amount']);
+      console.log('totalmaterialAdPayment:::', Math.round(total));
+      materialAdPayment[0][`Total Amount(${currency})`] = parseFloat(total).toFixed(4);
+    }
+  }, [materialAdPayment]);
+
+  useEffect(() => {
+    console.log('orderDetails:::', orderDetails);
+  }, [orderDetails]);
 
   useEffect(() => {
     console.log('mainData::', mainData);
@@ -375,7 +401,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const matAdExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
-          ? [0, 16, 18, 21, 25, 26]
+          ? [0, 16, 18, 22, 24, 26]
           : [13, 14, 18, 20, 22];
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderDetails`,
@@ -461,7 +487,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const adChargeExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
-          ? [0, 12, 14, 17, 21, 22]
+          ? [0, 12, 14, 17, 21, 22, 24]
           : [13, 15, 20, 21, 23];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
@@ -924,6 +950,7 @@ export const AdvancePayment = ({route}) => {
                 'MB Ref No',
                 'DC No',
                 'CC No',
+                'Party Name',
               ]}
               valueChanger={{
                 [`TDS Amount (${tDSCurrency})`]:
@@ -932,6 +959,9 @@ export const AdvancePayment = ({route}) => {
                   parseFloat(actualPaidAftAdj).toFixed(4),
                 [`Actual Amount-Slab Tax Amount (${transValue[1]?.PARTY_CURRENCY})`]:
                   parseFloat(actualSlabMain).toFixed(4),
+                'Party Name': orderDetails[0]?.['Supplier Name']
+                  ? orderDetails[0]['Supplier Name']
+                  : 0,
               }}
             />
           </ScrollView>

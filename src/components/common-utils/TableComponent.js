@@ -18,6 +18,8 @@ import CustomModal from './modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
+import {useNavigation} from '@react-navigation/native';
+
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -68,6 +70,8 @@ const TableComponent = ({
   setMainTableSelectedIndex,
   setMainTableSelectAll,
 }) => {
+
+  const navigation = useNavigation(); 
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
   const [columnWidths, setColumnWidths] = useState({});
@@ -198,6 +202,7 @@ const TableComponent = ({
   }
 
   const handleSelectAllCheckbox = () => {
+    setIsLoading(true);
     setMainTableSelectAll(isChecked);
     const newIsChecked = !isChecked;
     setIsChecked(newIsChecked);
@@ -216,12 +221,13 @@ const TableComponent = ({
       data.forEach((_, index) =>
         setTimeout(() => {
           onRowIndexSelect(index);
-        }, 1000),
+        }, 0),
       ); // Pass all indices
       // onPressCheckBoxHandle(true)
     } else {
       onRowIndexSelect([]); // Pass empty array if none are selected
     }
+    setIsLoading(false);
   };
 
   const columns = Object.keys(data[0]);
@@ -285,7 +291,12 @@ const TableComponent = ({
             fontSize: 8,
           }}
           onPress={() => {
+          //   isChecked&&setTimeout(() => {
+          //   navigation.replace('IssueGroups');
+          // }, 1000);
+            setIsLoading(true);
             handleSelectAllCheckbox();
+            setIsLoading(false);
           }}
         />
         {/* </View> */}
@@ -310,10 +321,16 @@ const TableComponent = ({
                 style={[
                   styles.headerCell,
                   {
-                    width:
-                      (columnWidths[column] / totalColumnWidths) * screenWidth -
-                      (showCheckBox ? 8 : 0),
-
+                    // width:
+                    //   (columnWidths[column] / totalColumnWidths) * screenWidth -
+                    //   (showCheckBox ? 8 : 0),
+                    width: DeviceInfo.isTablet()
+                      ? (columnWidths[column] / totalColumnWidths) *
+                          screenWidth -
+                        (showCheckBox ? 8 : 0)
+                      : (columnWidths[column] / totalColumnWidths) *
+                          screenWidth -
+                        (showCheckBox ? 6 : 0),
                     fontSize: DeviceInfo.isTablet()
                       ? fontScale >= 1.2999999523162842
                         ? 10
@@ -413,12 +430,19 @@ const TableComponent = ({
                           cellIndex % 2 === 0 ? styles.oddCell : styles.oddCell,
                           {
                             textAlign: columnAlignments[cellIndex], // Use preprocessed alignment
-                            width:
-                              sliderValue == 0
-                                ? (columnWidths[column] / totalColumnWidths) *
-                                    screenWidth -
-                                  (showCheckBox ? 8 : 0)
-                                : columnWidths[column] - 35,
+                            // width:
+                            //   sliderValue == 0
+                            //     ? (columnWidths[column] / totalColumnWidths) *
+                            //         screenWidth -
+                            //       (showCheckBox ? 8 : 0)
+                            //     : columnWidths[column] - 35,
+                            width: DeviceInfo.isTablet()
+                              ? (columnWidths[column] / totalColumnWidths) *
+                                  screenWidth -
+                                (showCheckBox ? 8 : 0)
+                              : (columnWidths[column] / totalColumnWidths) *
+                                  screenWidth -
+                                (showCheckBox ? 6 : 0),
 
                             fontSize: DeviceInfo.isTablet()
                               ? fontScale >= 1.2999999523162842
@@ -493,7 +517,6 @@ const TableComponent = ({
             ))}
           {/* PAGINATION BUTTONS */}
         </ScrollView>
-        
       </View>
 
       <CustomModal

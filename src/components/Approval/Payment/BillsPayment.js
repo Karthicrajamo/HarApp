@@ -118,6 +118,7 @@ export const BillsPayment = ({route}) => {
     console.log('advAdjSub::', advAdjSub);
     if (advAdjSub != null) {
       const generatePOData = data => {
+        console.log('datadata' + JSON.stringify(data, null, 2));
         const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
         const orderNull = `(${data[0][2]},' ')`; // 31924, ''
 
@@ -130,7 +131,10 @@ export const BillsPayment = ({route}) => {
             [data[1][2]]: parseInt(data[1][11], 10), // 75000
           },
           ADJUSTMENT: {
-            [data[2][2]]: parseInt(data[2][11], 10) + parseInt(data[3][11], 10), // 20 + 5 = 25
+            [data[2][2]]:
+              parseInt(data[2][11], 10) + data[3]
+                ? parseInt(data[3][11], 10)
+                : 0, // 20 + 5 = 25
           },
           TAX: {},
         };
@@ -1031,10 +1035,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={(transValue[13][0]?.['FROM_AMOUNT']
-                  ? transValue[13][0]?.['FROM_AMOUNT']
-                  : 0
-                ).toString()}
+                value={(mainData[17] ? mainData[17] : 0).toString()}
                 // value={mainData[17].toString()}
                 editable={false} // Disables input
               />
@@ -1048,7 +1049,7 @@ export const BillsPayment = ({route}) => {
                 placeholder="" // Placeholder text
                 value={(advanceAdjustmentModal['XRate']
                   ? actual - mainData[17]
-                  : actual
+                  : actual - mainData[17]
                 ).toString()}
                 editable={false} // Disables input
               />
@@ -1060,7 +1061,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={parseFloat(actualSlabMain).toFixed(4)}
+                value={parseFloat(actualSlabMain - mainData[17]).toFixed(4)}
                 editable={false} // Disables input
               />
             </View>
@@ -1072,7 +1073,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={parseFloat(actualPaidAftAdj).toFixed(4)}
+                value={parseFloat(actualPaidAftAdj - mainData[17]).toFixed(4)}
                 editable={false} // Disables input
               />
             </View>

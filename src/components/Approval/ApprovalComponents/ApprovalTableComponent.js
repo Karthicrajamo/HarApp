@@ -1,21 +1,21 @@
-import React, {useState} from 'react';
-import {View, Text, ScrollView, StyleSheet, Dimensions} from 'react-native';
-import {Checkbox} from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { Checkbox } from 'react-native-paper';
 import commonStyles from './../ApprovalCommonStyles';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const isMobile = width < 768;
 
 const ApprovalTableComponent = ({
   tableData,
   highlightVal = [],
   heading = '',
+  exclude = [], // Add an exclude prop to omit specific columns
 }) => {
-  // Sample Data
   const [data, setData] = useState(tableData);
 
-  // Extract headers dynamically from the first object
-  const headers = Object.keys(tableData[0]);
+  // Filter headers based on the exclude array
+  const headers = Object.keys(tableData[0]).filter(header => !exclude.includes(header));
 
   // Calculate column widths based on header text length for alignment
   const columnWidths = headers.map(header => Math.max(header.length * 10, 120)); // Minimum width of 120px
@@ -46,15 +46,15 @@ const ApprovalTableComponent = ({
                   alignItems: 'center',
                   width: columnWidths[index],
                 }}>
-                <Text style={[styles.headerCell, {width: columnWidths[index]}]}>
+                <Text style={[styles.headerCell, { width: columnWidths[index] }]}>
                   {header}
                 </Text>
                 {/* Render a disabled checkbox in the header if any value is true */}
-                {tableData.some(row => row[header] === true|| row[header] === "Y") && (
+                {tableData.some(row => row[header] === true || row[header] === "Y") && (
                   <Checkbox
                     status="checked"
                     disabled={true}
-                    style={{marginLeft: 5}}
+                    style={{ marginLeft: 5 }}
                   />
                 )}
               </View>
@@ -78,15 +78,14 @@ const ApprovalTableComponent = ({
                       width: columnWidths[colIndex], // Set the width
                     }}>
                     {/* Render a disabled checkbox if the value is true */}
-                    {row[header] === true || row[header] === false  || row[header] === "Y"? (
+                    {row[header] === true || row[header] === false || row[header] === "Y" ? (
                       <Checkbox
-                      status={
-                        row[header] === true || row[header] === 'true'|| row[header] === "Y" ? 'checked' : 'unchecked'
-                      }
-                      disabled={true}
-                      style={{ alignItems: 'center' }} // Adjust margin as needed
-                    />
-                    
+                        status={
+                          row[header] === true || row[header] === 'true' || row[header] === "Y" ? 'checked' : 'unchecked'
+                        }
+                        disabled={true}
+                        style={{ alignItems: 'center' }} // Adjust margin as needed
+                      />
                     ) : (
                       <Text
                         style={[

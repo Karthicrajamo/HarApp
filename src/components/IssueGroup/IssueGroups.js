@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import TableComponent from '../common-utils/TableComponent';
 import TitleBar from '../common-utils/TitleBar';
 import {useNavigation} from '@react-navigation/native';
@@ -53,6 +53,8 @@ const IssueGroups = () => {
   const [tableDataForFilter, setTableDataForFilter] = useState([]);
   const navigation = useNavigation(); //For Nagivation
   const [isLoading, setIsLoading] = useState(false);
+  const loadingRef = useRef(isLoading);
+
   //Refresh Component
   const [refreshing, setRefreshing] = useState(false);
 
@@ -137,6 +139,10 @@ const IssueGroups = () => {
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
+    console.log(
+      'selectedPayments.length::',
+      Object.keys(selectedPayments).length,
+    );
   }, [selectedPayments]);
   useEffect(() => {
     console.log('mainTableSelectAll::', mainTableSelectAll);
@@ -150,6 +156,10 @@ const IssueGroups = () => {
   useEffect(() => {
     console.log('Updated selectedGroupData:', selectedGroupData);
   }, selectedGroupData);
+
+  useEffect(() => {
+    console.log('isLoadingRef::' + loadingRef);
+  }, [loadingRef]);
 
   useEffect(() => {
     console.log('sfsggmainType', MainType);
@@ -268,6 +278,15 @@ const IssueGroups = () => {
       ToastAndroid.CENTER,
     );
   };
+  const showNotIssuedMessage = () => {
+    console.log('Showing issued unsuccessful message!!! ');
+    // Showing toast when button is pressed while disabled
+    ToastAndroid.showWithGravity(
+      `Payment Issued Failed.`,
+      ToastAndroid.SHORT,
+      ToastAndroid.CENTER,
+    );
+  };
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -278,7 +297,15 @@ const IssueGroups = () => {
   };
 
   const handleHomeScreen = async () => {
-    navigation.navigate('HomeScreen');
+    try {
+      // Perform any asynchronous operations here if needed
+      navigation.reset({
+        index: 0, // Index to set the first screen
+        routes: [{ name: 'HomeScreen' }], // Define the new stack
+      });
+    } catch (error) {
+      console.error('Error navigating to HomeScreen:', error);
+    }
   };
 
   //-------------------------Working and also has only 3 payments -------------------------------------------------------------------
@@ -887,14 +914,14 @@ const IssueGroups = () => {
       // Handle End Date
       if (tempFormattedEndDate.includes(' ')) {
         let dateParts = tempFormattedEndDate.split(' ');
-        let day = (parseInt(dateParts[0], 10) + 1).toString().padStart(2, '0'); // Increment and format day
+        let day = parseInt(dateParts[0], 10).toString().padStart(2, '0'); // Increment and format day
         const month = dateParts[1];
         const year = dateParts[2];
 
         updatedEndDate = `${day} ${month} ${year}`;
       } else if (tempFormattedEndDate.includes('-')) {
         let dateParts = tempFormattedEndDate.split('-');
-        let day = (parseInt(dateParts[0], 10) + 1).toString().padStart(2, '0'); // Increment and format day
+        let day = parseInt(dateParts[0], 10).toString().padStart(2, '0'); // Increment and format day
         const month = dateParts[1];
         const year = dateParts[2];
 
@@ -1375,7 +1402,8 @@ const IssueGroups = () => {
 
       // Define mapping keys based on order type
       const poKeys = [
-        'PO NO',
+        'PO No',
+        'P Order NO',
         'partyName',
         'Mat No',
         'Color',
@@ -1667,7 +1695,15 @@ ORDER BY
       console.log(
         'data params >>>>>' + JSON.stringify({items: selectedPayments}),
       );
-
+      // const params = {
+      //   status: 'Issued',
+      //   payment_id: selectedPayments,
+      //   reason: '',
+      //   slabTaxData: [],
+      //   payDetails: ['', 'Advance Payment', 'AddPayment', sharedData.userName],
+      //   oldChqStatus: ['Issued', 'admin'],
+      // };
+      // console.log('data params params >>>>>' + JSON.stringify(params));
       const response = await fetch(
         // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
         // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
@@ -1681,24 +1717,30 @@ ORDER BY
           body: JSON.stringify({items: selectedPayments}),
         },
       );
-      showIssuedMessage();
 
       console.log(
         'response for response data : ===============>>>>>>>>>> ',
         response,
       );
-      // if (!response.ok) {
-      //   // setIsLoading(true);
+      if (!response.ok) {
+        // setIsLoading(true);
 
-      //   throw new Error(`HTTP error! Status: ${response.status}`);
-      // }
+        showNotIssuedMessage();
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      if (response.ok) {
+        // setIsLoading(true);
 
+        // showNotIssuedMessage();
+        showIssuedMessage();
+        // throw new Error(`HTTP error! Status: ${response.status}`);
+      }
       const data = await response.json();
       console.log('response for issue data : ===============>>>>>>>>>> ', data);
       setTimeout(() => handleRefresh(), 1000);
     } catch (error) {
       // console.error('Error fetching table data:', error);
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -2061,6 +2103,15 @@ ORDER BY
   };
   useEffect(() => {
     console.log('Updated mainTableSelectedIndex:', mainTableSelectedIndex);
+    // if (mainTableSelectedIndex.length == 0) {
+    //   console.log('Updated mainTableSelectedIndex:00000000000000000');
+    //   setSelectedPayments({});
+    //   setSelectedCheckBoxData([])
+    // }
+    console.log(
+      'Updated mainTableSelectedIndex.length:',
+      mainTableSelectedIndex.length,
+    );
   }, [mainTableSelectedIndex]);
 
   const handleSelectAllToggle = () => {
@@ -2159,10 +2210,28 @@ ORDER BY
           alignItems: 'center',
           marginBottom: 0,
         }}>
-        <TouchableOpacity onPress={() => handleIssue()}>
+        {mainTableSelectedIndex.length ===
+          Object.keys(selectedPayments).length && (
+        <TouchableOpacity
+          onPress={() => {
+            // setTimeout(() => {
+            //   setIsLoading(true);
+            // }, 10000);
+            // setIsLoading(false);
+            mainTableSelectedIndex.length ===
+              Object.keys(selectedPayments).length &&
+            mainTableSelectedIndex.length !== 0
+              ? handleIssue()
+              : null;
+          }}>
           <Text
             style={{
-              backgroundColor: CustomThemeColors.primary,
+              backgroundColor:
+                mainTableSelectedIndex.length ===
+                  Object.keys(selectedPayments).length &&
+                mainTableSelectedIndex.length !== 0
+                  ? CustomThemeColors.primary
+                  : CustomThemeColors.fadedPrimary,
               color: 'white',
               paddingHorizontal: 20,
               paddingVertical: 5,
@@ -2171,6 +2240,7 @@ ORDER BY
             Issue
           </Text>
         </TouchableOpacity>
+         )} 
       </View>
 
       {/* </View> */}
@@ -2199,6 +2269,7 @@ ORDER BY
                       console.log('empty data::::');
                       setMainTableSelectedIndex([]);
                       setSelectedCheckBoxData([]);
+                      setSelectedPayments({});
                       setTimeout(() => setOnPressCheckBoxHandle(false), 0);
                       setActiveDataPdf([]);
                     } else {
@@ -2298,6 +2369,8 @@ ORDER BY
                   noModel={false}
                   selectAllIsChecked={onPressCheckBoxHandle}
                   onRowIndexSelect={data => {
+                    setIsLoading(true);
+
                     if (data.length == 0) {
                       const ids = selectedSubData
                         .map(item => item.paymentId || item.transferId)
@@ -2336,9 +2409,12 @@ ORDER BY
 
                         return updatedArray;
                       });
+                      setIsLoading(false);
 
                       // }
                     } else {
+                      setIsLoading(true);
+
                       const {transferId, paymentId} = data;
                       // const type = tableData[selectedRow].type;
                       const groupId = data.groupId;
@@ -2377,6 +2453,8 @@ ORDER BY
 
                         return updatedState;
                       });
+                      setIsLoading(false);
+
                       // if (MainType !== 'Fund Transfer') {
                       //   setModelButton(true);
                       // }
@@ -2398,6 +2476,8 @@ ORDER BY
                   selectedPaymentType={MainType}
                   excludeColumns={['groupId']}
                   toggleData={index => {
+                    setIsLoading(true);
+
                     const dataa = selectedSubData[index];
                     setSelectedSubRow(index);
                     console.log('toggledata::', index);
@@ -2405,8 +2485,10 @@ ORDER BY
                     // if (MainType !== 'Fund Transfer') {
                     //   setModelButton(true);
                     // }
+                    setIsLoading(false);
                   }}
                   RowDataForIssue={data => {
+                    setIsLoading(true);
                     const {transferId, paymentId} = data;
                     // const type = data.type;
                     // const groupId = data.groupId;
@@ -2441,6 +2523,7 @@ ORDER BY
                           : [...prevArray, selectedId];
                       });
                     }
+                    setIsLoading(false);
                   }}
                   mainTableSelectAll={mainTableSelectAll}
                   setIsLoading={setIsLoading}
@@ -2785,6 +2868,7 @@ ORDER BY
               'serviceName',
               'ID',
               'ExtraField',
+              'PO No',
             ]}
           />
         )}
@@ -2852,6 +2936,11 @@ ORDER BY
         </View>
       )} */}
       {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
+      {loadingRef.current == true ? (
+        <LoadingIndicator message="Please wait..." />
+      ) : (
+        <></>
+      )}
     </View>
   );
 };

@@ -4,7 +4,7 @@ import {Button} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {CustomThemeColors} from '../CustomThemeColors';
 import CustomAlert from './CustomAlert';
-import { Alert } from 'react-native';
+import {Alert} from 'react-native';
 
 // Helper function to parse a formatted date string into a Date object
 const parseDate = dateStr => {
@@ -68,7 +68,7 @@ const DateFilter = ({
   const [endDateVisible, setEndDateVisible] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
 
-  const [   tempStartDate, setTempStartDate] = useState(
+  const [tempStartDate, setTempStartDate] = useState(
     parseDate(formattedStartDate),
   );
   const [tempEndDate, setTempEndDate] = useState(parseDate(formattedEndDate));
@@ -90,7 +90,6 @@ const DateFilter = ({
   };
   useEffect(() => {
     console.log('dateUpdatess::', tempEndDate);
-   
   }, [tempEndDate, tempStartDate]);
 
   // const applyFilter = () => {
@@ -147,6 +146,7 @@ const DateFilter = ({
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleStartDateConfirm}
+          maximumDate={new Date()}
         />
       )}
 
@@ -156,6 +156,7 @@ const DateFilter = ({
           mode="date"
           display={Platform.OS === 'ios' ? 'inline' : 'default'}
           onChange={handleEndDateConfirm}
+          maximumDate={new Date()}
         />
       )}
 
