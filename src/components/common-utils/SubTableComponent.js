@@ -674,12 +674,17 @@ const SubTableComponent = ({
                           })}
 
                         {showCheckBox && (
-                          <View
+                          <TouchableOpacity
                             style={{
                               flexDirection: 'row',
                               alignItems: 'center',
+                              justifyContent: 'center', // Ensures content is centered horizontally
                               borderBottomWidth: 0.5,
-                            }}>
+                              paddingHorizontal: DeviceInfo.isTablet() ? 8 : 0,
+                            }}
+                            onPress={() =>
+                              handleRowCheckbox(page * rowsPerPage + rowIndex)
+                            }>
                             <CheckBox
                               checked={
                                 !mainTableSelectedIndex.includes(
@@ -695,9 +700,9 @@ const SubTableComponent = ({
                                       page * rowsPerPage + rowIndex,
                                     ) || false
                               }
-                              onPress={() =>
-                                handleRowCheckbox(page * rowsPerPage + rowIndex)
-                              }
+                              // onPress={() =>
+                              //   handleRowCheckbox(page * rowsPerPage + rowIndex)
+                              // }
                               containerStyle={{
                                 backgroundColor: 'transparent',
                                 borderWidth: 0,
@@ -713,7 +718,7 @@ const SubTableComponent = ({
                                   : sliderValue <= 3.578125 && 18
                               }
                             />
-                          </View>
+                          </TouchableOpacity>
                         )}
                       </View>
                     </TouchableOpacity>

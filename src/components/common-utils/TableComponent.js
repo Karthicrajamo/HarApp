@@ -20,7 +20,6 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {useNavigation} from '@react-navigation/native';
 
-
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
   data.forEach(row => {
@@ -70,8 +69,7 @@ const TableComponent = ({
   setMainTableSelectedIndex,
   setMainTableSelectAll,
 }) => {
-
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
   const [columnWidths, setColumnWidths] = useState({});
@@ -291,9 +289,9 @@ const TableComponent = ({
             fontSize: 8,
           }}
           onPress={() => {
-          //   isChecked&&setTimeout(() => {
-          //   navigation.replace('IssueGroups');
-          // }, 1000);
+            //   isChecked&&setTimeout(() => {
+            //   navigation.replace('IssueGroups');
+            // }, 1000);
             setIsLoading(true);
             handleSelectAllCheckbox();
             setIsLoading(false);
@@ -471,46 +469,62 @@ const TableComponent = ({
                     );
                   })}
                   {showCheckBox && (
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        borderBottomWidth: 0.5,
-                      }}>
-                      {/* CheckBox */}
-                      <CheckBox
-                        checked={mainTableSelectedIndex.includes(
-                          data[page * rowsPerPage + rowIndex].groupId,
-                        )}
-                        onPress={() => {
-                          const actualIndex = page * rowsPerPage + rowIndex;
-                          const updatedSelection = [...selectedRows];
-                          updatedSelection[actualIndex] =
-                            !updatedSelection[actualIndex];
-                          setSelectedRows(updatedSelection);
-                          toggleRowSelectionCheckBox(actualIndex);
+                    <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center', // Ensures content is centered horizontally
+                      borderBottomWidth: 0.5,
+                      paddingHorizontal: DeviceInfo.isTablet()?8:0, 
+                    }}
+                      onPress={() => {
+                        const actualIndex = page * rowsPerPage + rowIndex;
+                        const updatedSelection = [...selectedRows];
+                        updatedSelection[actualIndex] =
+                          !updatedSelection[actualIndex];
+                        setSelectedRows(updatedSelection);
+                        toggleRowSelectionCheckBox(actualIndex);
 
-                          if (selectedRows.length < 1) {
-                            setIsChecked(false);
-                          }
-                          setMainTableSelectAll(true);
-                        }}
-                        containerStyle={{
-                          backgroundColor: 'transparent',
-                          padding: 0,
-                          margin: 0,
-                        }}
-                        size={
-                          sliderValue <= 1.5625
-                            ? 14
-                            : sliderValue <= 2.578125
-                            ? 16
-                            : sliderValue <= 3.578125
-                            ? 16
-                            : 18
+                        if (selectedRows.length < 1) {
+                          setIsChecked(false);
                         }
-                      />
-                    </View>
+                        setMainTableSelectAll(true);
+                      }}>
+                      
+                        {/* CheckBox */}
+                        <CheckBox
+                          checked={mainTableSelectedIndex.includes(
+                            data[page * rowsPerPage + rowIndex].groupId,
+                          )}
+                          // onPress={() => {
+                          //   const actualIndex = page * rowsPerPage + rowIndex;
+                          //   const updatedSelection = [...selectedRows];
+                          //   updatedSelection[actualIndex] =
+                          //     !updatedSelection[actualIndex];
+                          //   setSelectedRows(updatedSelection);
+                          //   toggleRowSelectionCheckBox(actualIndex);
+
+                          //   if (selectedRows.length < 1) {
+                          //     setIsChecked(false);
+                          //   }
+                          //   setMainTableSelectAll(true);
+                          // }}
+                          containerStyle={{
+                            backgroundColor: 'transparent',
+                            padding: 0,
+                            margin: 0,
+                          }}
+                          size={
+                            sliderValue <= 1.5625
+                              ? 14
+                              : sliderValue <= 2.578125
+                              ? 16
+                              : sliderValue <= 3.578125
+                              ? 16
+                              : 18
+                          }
+                        />
+                    </TouchableOpacity>
                   )}
                 </View>
               </TouchableOpacity>

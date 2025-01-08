@@ -301,7 +301,7 @@ const IssueGroups = () => {
       // Perform any asynchronous operations here if needed
       navigation.reset({
         index: 0, // Index to set the first screen
-        routes: [{ name: 'HomeScreen' }], // Define the new stack
+        routes: [{name: 'HomeScreen'}], // Define the new stack
       });
     } catch (error) {
       console.error('Error navigating to HomeScreen:', error);
@@ -2103,6 +2103,28 @@ ORDER BY
   };
   useEffect(() => {
     console.log('Updated mainTableSelectedIndex:', mainTableSelectedIndex);
+
+    const filteredSelectedPayments = Object.keys(selectedPayments).reduce(
+      (acc, key) => {
+        // Extract groupId from the key
+        const [, groupId] = key.split(':'); // Splitting "Bills Payment:257" to get groupId
+        const numericGroupId = parseInt(groupId, 10); // Convert groupId to a number
+        
+        // Check if the groupId is in MainTableSelectedIndex
+        if (mainTableSelectedIndex.includes(numericGroupId)) {
+          // Retain the entry if the groupId is in MainTableSelectedIndex
+          acc[key] = selectedPayments[key];
+        }
+        console.log('acc::', acc);
+        return acc;
+      },
+      {}
+    );
+    
+    // Log the updated `selectedPayments` object
+    console.log('Filtered SelectedPayments:', filteredSelectedPayments);
+    setSelectedPayments(filteredSelectedPayments); 
+
     // if (mainTableSelectedIndex.length == 0) {
     //   console.log('Updated mainTableSelectedIndex:00000000000000000');
     //   setSelectedPayments({});
@@ -2210,37 +2232,37 @@ ORDER BY
           alignItems: 'center',
           marginBottom: 0,
         }}>
-        {mainTableSelectedIndex.length ===
-          Object.keys(selectedPayments).length && (
-        <TouchableOpacity
-          onPress={() => {
-            // setTimeout(() => {
-            //   setIsLoading(true);
-            // }, 10000);
-            // setIsLoading(false);
-            mainTableSelectedIndex.length ===
-              Object.keys(selectedPayments).length &&
-            mainTableSelectedIndex.length !== 0
-              ? handleIssue()
-              : null;
-          }}>
-          <Text
-            style={{
-              backgroundColor:
-                mainTableSelectedIndex.length ===
-                  Object.keys(selectedPayments).length &&
-                mainTableSelectedIndex.length !== 0
-                  ? CustomThemeColors.primary
-                  : CustomThemeColors.fadedPrimary,
-              color: 'white',
-              paddingHorizontal: 20,
-              paddingVertical: 5,
-              borderRadius: 10,
+        {/* {mainTableSelectedIndex.length ===
+          Object.keys(selectedPayments).length && ( */}
+          <TouchableOpacity
+            onPress={() => {
+              // setTimeout(() => {
+              //   setIsLoading(true);
+              // }, 10000);
+              // setIsLoading(false);
+              mainTableSelectedIndex.length ===
+                Object.keys(selectedPayments).length &&
+              mainTableSelectedIndex.length !== 0
+                ? handleIssue()
+                : null;
             }}>
-            Issue
-          </Text>
-        </TouchableOpacity>
-         )} 
+            <Text
+              style={{
+                backgroundColor:
+                  mainTableSelectedIndex.length ===
+                    Object.keys(selectedPayments).length &&
+                  mainTableSelectedIndex.length !== 0
+                    ? CustomThemeColors.primary
+                    : CustomThemeColors.fadedPrimary,
+                color: 'white',
+                paddingHorizontal: 20,
+                paddingVertical: 5,
+                borderRadius: 10,
+              }}>
+              Issue
+            </Text>
+          </TouchableOpacity>
+        {/* )} */}
       </View>
 
       {/* </View> */}
@@ -2290,9 +2312,18 @@ ORDER BY
                           console.log('groupKey:', groupKey);
                           console.log('groupId:', groupId);
 
-                          const filteredData = Object.keys(
-                            selectedCheckBoxData,
-                          ).reduce((acc, key) => {
+                          // const filteredData = Object?.keys(
+                          //   selectedCheckBoxData,
+                          // ).reduce((acc, key) => {
+                          //   // Check if the groupId in the key matches the groupId we want to remove
+                          //   if (!key.includes(`groupId:${groupId}`)) {
+                          //     // Add the entry to the accumulator if the condition is met
+                          //     acc[key] = selectedCheckBoxData[key];
+                          //   }
+                          //   return acc;
+                          // }, {});
+
+                          const filteredData = Object.keys(selectedCheckBoxData || {}).reduce((acc, key) => {
                             // Check if the groupId in the key matches the groupId we want to remove
                             if (!key.includes(`groupId:${groupId}`)) {
                               // Add the entry to the accumulator if the condition is met
@@ -2300,9 +2331,11 @@ ORDER BY
                             }
                             return acc;
                           }, {});
+                          
                           console.log('filteredData::', filteredData);
                           setSelectedCheckBoxData(filterMainData);
                           // Log the entire object after filtering
+                          
                           console.log(
                             'selectedCheckBoxData after filtering:',
                             filteredData,
