@@ -492,7 +492,19 @@ const TableComponent = ({
                       }}>
                       
                         {/* CheckBox */}
-                        <CheckBox
+                        <CheckBox onPress={() => {
+                        const actualIndex = page * rowsPerPage + rowIndex;
+                        const updatedSelection = [...selectedRows];
+                        updatedSelection[actualIndex] =
+                          !updatedSelection[actualIndex];
+                        setSelectedRows(updatedSelection);
+                        toggleRowSelectionCheckBox(actualIndex);
+
+                        if (selectedRows.length < 1) {
+                          setIsChecked(false);
+                        }
+                        setMainTableSelectAll(true);
+                      }}
                           checked={mainTableSelectedIndex.includes(
                             data[page * rowsPerPage + rowIndex].groupId,
                           )}

@@ -685,7 +685,9 @@ const SubTableComponent = ({
                             onPress={() =>
                               handleRowCheckbox(page * rowsPerPage + rowIndex)
                             }>
-                            <CheckBox
+                            <CheckBox onPress={() =>
+                              handleRowCheckbox(page * rowsPerPage + rowIndex)
+                            }
                               checked={
                                 !mainTableSelectedIndex.includes(
                                   data[page * rowsPerPage + rowIndex].groupId,

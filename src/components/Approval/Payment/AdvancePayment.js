@@ -1368,7 +1368,7 @@ export const AdvancePayment = ({route}) => {
               // approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
               // rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
               params={approvalParams}
-              approveUrl={`${API_URL}/api/common/approveTransaction`}
+              // approveUrl={`${API_URL}/api/common/approveTransaction`}
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
               setRejParams={setRejParams}

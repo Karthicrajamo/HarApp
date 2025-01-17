@@ -28,6 +28,7 @@ import DeviceInfo from 'react-native-device-info';
 import {Alert} from 'react-native';
 import {ToastAndroid} from 'react-native';
 import CustomModal from '../common-utils/modal';
+import CustomAlert from '../common-utils/CustomAlert';
 
 const IssueGroups = () => {
   const fontScale = PixelRatio.getFontScale();
@@ -126,6 +127,8 @@ const IssueGroups = () => {
   const [activeGroupId, SetActiveGroupId] = useState('');
   const isAdvancePayment = MainType === 'advance payment';
   const [selectedFilters, setSelectedFilters] = useState([]);
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+
 
   const isAnyFilterSelected = selectedFilters.length > 0;
 
@@ -1722,6 +1725,10 @@ ORDER BY
         'response for response data : ===============>>>>>>>>>> ',
         response,
       );
+      console.log(
+        'response for response data : ===============>>>>>>>>>> ',
+        JSON.stringify(response.json),
+      );
       if (!response.ok) {
         // setIsLoading(true);
 
@@ -1732,7 +1739,9 @@ ORDER BY
         // setIsLoading(true);
 
         // showNotIssuedMessage();
+        setIsAlertVisible(true)
         showIssuedMessage();
+       
         // throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
@@ -2906,6 +2915,13 @@ ORDER BY
           />
         )}
       </CustomModal>
+
+      <CustomAlert
+            visible={isAlertVisible}
+            title={'Alert'}
+            message={'Server Unreachable Relogin again'}
+            onClose={()=>setIsAlertVisible(false)}
+          />
       {/* {model && (
         // <IssueGroupTableThree selectedModelData={selectedModelData} MainType={MainType} activeDataPdf={activeDataPdf.orderType}/>
 
