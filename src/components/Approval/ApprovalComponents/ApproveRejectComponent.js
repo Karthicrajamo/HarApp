@@ -21,9 +21,10 @@ const ApproveRejectComponent = ({
   rejectUrl,
   params,
   rejParams,
-  setRejParams,
+  setAppRejParams,
   setReUseCancel,
   paymentMode,
+  setAppRejUrl,
 }) => {
   const navigation = useNavigation();
   const [isRejectPop, setRejectPop] = useState(false);
@@ -83,8 +84,16 @@ const ApproveRejectComponent = ({
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
-    if (action == 'reject' && paymentMode == 'Cheque') {
-      setRejParams(rejectParams);
+    console.log('rejUrl type::', rejectParams['trans_type']);
+    console.log('params["handler"] type::', params['handler']);
+    if (
+      rejectParams['trans_type'] == 'ModPayment' ||
+      params['handler'] == 'ModPayment'
+    ) {
+      action === 'approve'
+        ? setAppRejParams(params)
+        : setAppRejParams(rejectParams);
+      action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
     } else {
       try {
         const response = await fetch(url, {

@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import TableComponent from '../common-utils/TableComponent';
+import TableComponent from './TableComponent';
 import TitleBar from '../common-utils/TitleBar';
 import {useNavigation} from '@react-navigation/native';
 import {
@@ -18,7 +18,7 @@ import {API_URL} from '../ApiUrl';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
 import DateFilter from '../common-utils/DateFilter';
 import {sharedData} from '../Login/UserId';
-import SubTableComponent from '../common-utils/SubTableComponent';
+import SubTableComponent from './SubTableComponent';
 import RNFetchBlob from 'rn-fetch-blob';
 import RNFS from 'react-native-fs';
 import PdfComponent from './PdfComponent';
@@ -29,6 +29,7 @@ import {Alert} from 'react-native';
 import {ToastAndroid} from 'react-native';
 import CustomModal from '../common-utils/modal';
 import CustomAlert from '../common-utils/CustomAlert';
+import {ActivityIndicator} from 'react-native-paper';
 
 const IssueGroups = () => {
   const fontScale = PixelRatio.getFontScale();
@@ -129,7 +130,6 @@ const IssueGroups = () => {
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
 
-
   const isAnyFilterSelected = selectedFilters.length > 0;
 
   useEffect(() => {
@@ -152,6 +152,7 @@ const IssueGroups = () => {
   }, [mainTableSelectAll]);
   useEffect(() => {
     console.log('Updated onPressCheckBoxHandle----:', onPressCheckBoxHandle);
+    // SetActiveGroupId('')
   }, [onPressCheckBoxHandle]);
   useEffect(() => {
     console.log('Updated selectedArray----:', selectedArray);
@@ -206,6 +207,9 @@ const IssueGroups = () => {
 
   useEffect(() => {
     console.log('selectedCheckBoxData:::', selectedCheckBoxData);
+    // setSelectedPayments(prev=>
+    // {}
+    // )
 
     // setSelectedCheckBoxData(selectedCheckBoxData.filter(dataa=>dataa.length !=0))
   }, [selectedCheckBoxData]);
@@ -879,9 +883,12 @@ const IssueGroups = () => {
     return parsedDate;
   };
 
+  // const [firstTableLoading, setFirstTableLoading] = useState(false);
+  const firstTableLoadingRef = useRef(false);
   // First Main Table API
   const fetchTableData = async () => {
     try {
+      firstTableLoadingRef.current = true;
       setIsLoading(true);
 
       // Fetch the JWT token from Keychain
@@ -943,8 +950,13 @@ const IssueGroups = () => {
           Authorization: `${token}`,
         },
       });
+      if (response.ok) {
+        firstTableLoadingRef.current = false;
+      }
 
       if (!response.ok) {
+        firstTableLoadingRef.current = false;
+
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
@@ -966,8 +978,11 @@ const IssueGroups = () => {
         // Try to parse the JSON data
         responseData = JSON.parse(responseText);
       } catch (jsonError) {
+        firstTableLoadingRef.current = false;
         console.error('Error parsing JSON:', jsonError);
         return;
+      } finally {
+        firstTableLoadingRef.current = false;
       }
 
       // Check if data is available
@@ -1731,17 +1746,19 @@ ORDER BY
       );
       if (!response.ok) {
         // setIsLoading(true);
-
+        Alert.alert(
+          'Server unreachable',
+          `Error code : DRMI004\nPlease contact admin.`,
+        );
         showNotIssuedMessage();
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       if (response.ok) {
         // setIsLoading(true);
-
         // showNotIssuedMessage();
-        setIsAlertVisible(true)
+        // setIsAlertVisible(true);
         showIssuedMessage();
-       
+
         // throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
@@ -2112,27 +2129,59 @@ ORDER BY
   };
   useEffect(() => {
     console.log('Updated mainTableSelectedIndex:', mainTableSelectedIndex);
+    console.log('Updated MainType:', MainType);
 
     const filteredSelectedPayments = Object.keys(selectedPayments).reduce(
       (acc, key) => {
         // Extract groupId from the key
         const [, groupId] = key.split(':'); // Splitting "Bills Payment:257" to get groupId
         const numericGroupId = parseInt(groupId, 10); // Convert groupId to a number
-        
-        // Check if the groupId is in MainTableSelectedIndex
+
+        // Check if the groupId is in mainTableSelectedIndex
         if (mainTableSelectedIndex.includes(numericGroupId)) {
-          // Retain the entry if the groupId is in MainTableSelectedIndex
+          // Retain the entry if the groupId is in mainTableSelectedIndex
           acc[key] = selectedPayments[key];
         }
-        console.log('acc::', acc);
         return acc;
       },
-      {}
+      {},
     );
-    
-    // Log the updated `selectedPayments` object
+
+    // Log the filtered results
     console.log('Filtered SelectedPayments:', filteredSelectedPayments);
-    setSelectedPayments(filteredSelectedPayments); 
+
+    // Find missing IDs in the filtered results
+    // const includedGroupIds = Object.keys(filteredSelectedPayments).map(key => {
+    //   const [, groupId] = key.split(':');
+    //   return parseInt(groupId, 10);
+    // });
+
+    // const missingGroupIds = mainTableSelectedIndex.filter(
+    //   id => !includedGroupIds.includes(id),
+    // );
+
+    // // Log missing IDs for debugging
+    // if (missingGroupIds.length > 0) {
+    //   console.log(
+    //     'Missing group IDs in filteredSelectedPayments:',
+    //     missingGroupIds,
+    //   );
+    // }
+
+    // // Optionally handle missing IDs (if needed)
+    // // Example: Add placeholders for missing IDs
+    // missingGroupIds.forEach(id => {
+    //   filteredSelectedPayments[`${MainType}:${id}`] = []; // Or set a default value
+    // });
+
+    // Update state with filtered results
+    setSelectedPayments(filteredSelectedPayments);
+
+    // Final output log
+    console.log(
+      'Final SelectedPayments (with placeholders if applicable):',
+      filteredSelectedPayments,
+    );
 
     // if (mainTableSelectedIndex.length == 0) {
     //   console.log('Updated mainTableSelectedIndex:00000000000000000');
@@ -2243,34 +2292,34 @@ ORDER BY
         }}>
         {/* {mainTableSelectedIndex.length ===
           Object.keys(selectedPayments).length && ( */}
-          <TouchableOpacity
-            onPress={() => {
-              // setTimeout(() => {
-              //   setIsLoading(true);
-              // }, 10000);
-              // setIsLoading(false);
-              mainTableSelectedIndex.length ===
-                Object.keys(selectedPayments).length &&
-              mainTableSelectedIndex.length !== 0
-                ? handleIssue()
-                : null;
+        <TouchableOpacity
+          onPress={() => {
+            // setTimeout(() => {
+            //   setIsLoading(true);
+            // }, 10000);
+            // setIsLoading(false);
+            mainTableSelectedIndex.length ===
+              Object.keys(selectedPayments).length &&
+            mainTableSelectedIndex.length !== 0
+              ? handleIssue()
+              : null;
+          }}>
+          <Text
+            style={{
+              backgroundColor:
+                mainTableSelectedIndex.length ===
+                  Object.keys(selectedPayments).length &&
+                mainTableSelectedIndex.length !== 0
+                  ? CustomThemeColors.primary
+                  : CustomThemeColors.fadedPrimary,
+              color: 'white',
+              paddingHorizontal: 20,
+              paddingVertical: 5,
+              borderRadius: 10,
             }}>
-            <Text
-              style={{
-                backgroundColor:
-                  mainTableSelectedIndex.length ===
-                    Object.keys(selectedPayments).length &&
-                  mainTableSelectedIndex.length !== 0
-                    ? CustomThemeColors.primary
-                    : CustomThemeColors.fadedPrimary,
-                color: 'white',
-                paddingHorizontal: 20,
-                paddingVertical: 5,
-                borderRadius: 10,
-              }}>
-              Issue
-            </Text>
-          </TouchableOpacity>
+            Issue
+          </Text>
+        </TouchableOpacity>
         {/* )} */}
       </View>
 
@@ -2332,7 +2381,9 @@ ORDER BY
                           //   return acc;
                           // }, {});
 
-                          const filteredData = Object.keys(selectedCheckBoxData || {}).reduce((acc, key) => {
+                          const filteredData = Object.keys(
+                            selectedCheckBoxData || {},
+                          ).reduce((acc, key) => {
                             // Check if the groupId in the key matches the groupId we want to remove
                             if (!key.includes(`groupId:${groupId}`)) {
                               // Add the entry to the accumulator if the condition is met
@@ -2340,11 +2391,11 @@ ORDER BY
                             }
                             return acc;
                           }, {});
-                          
+
                           console.log('filteredData::', filteredData);
                           setSelectedCheckBoxData(filterMainData);
                           // Log the entire object after filtering
-                          
+
                           console.log(
                             'selectedCheckBoxData after filtering:',
                             filteredData,
@@ -2393,23 +2444,34 @@ ORDER BY
                       </Text>
                     ))}
                   </View>
-
-                  {/* Table Data */}
-                  <View style={styles.dataRow}>
-                    <Text style={styles.dataText}>No Data to Display</Text>
-                  </View>
+                  {firstTableLoadingRef.current === true && (
+                    <View style={styles.dataRow}>
+                      <Text style={styles.dataText}>Please wait...</Text>
+                    </View>
+                  )}
+                  {firstTableLoadingRef.current === false &&
+                    filteredMainData.length === 0 && (
+                      <View style={styles.dataRow}>
+                        <Text style={styles.dataText}>No data to display.</Text>
+                      </View>
+                    )}
                 </View>
               )}
             </View>
 
-            {/* Second SubTableComponent */}
-            <View style={{flexShrink: 1, marginTop: -20}}>
+            <View
+              style={{
+                flexShrink: 1,
+                // marginTop: -20,
+              }}>
+              {/* Second SubTableComponent */}
               {selectedSubData.length > 0 && (
                 <SubTableComponent
                   initialData={selectedSubData}
                   showCheckBox={true}
                   noModel={false}
                   selectAllIsChecked={onPressCheckBoxHandle}
+                  setSelectAllIsChecked={setOnPressCheckBoxHandle}
                   onRowIndexSelect={data => {
                     setIsLoading(true);
 
@@ -2418,19 +2480,80 @@ ORDER BY
                         .map(item => item.paymentId || item.transferId)
                         .filter(Boolean);
                       console.log('IDs:', ids);
-                      setSelectedPayments([]);
+                      // setSelectedPayments([]);
+                      setSelectedPayments(prev => {
+                        // Create a new object to avoid mutating the previous state directly
+                        const updatedPayments = {...prev};
 
+                        // Construct the key to filter out
+                        const keyToRemove = `${MainType}:${activeGroupId}`;
+
+                        // Delete the key from the updated object
+                        delete updatedPayments[keyToRemove];
+
+                        // Return the updated state
+                        return updatedPayments;
+                      });
                       // Remove the activeGroupId from the mainTableSelectedIndex
+                      // setMainTableSelectedIndex(prev => {
+                      //   console.log(
+                      //     'Active group ID being removed:',
+                      //     activeGroupId,
+                      //   );
+                      //   const filtered = prev.filter(
+                      //     item => item !== activeGroupId,
+                      //   );
+                      //   console.log('New filtered indexes:', filtered);
+                      //   return filtered;
+                      // });
                       setMainTableSelectedIndex(prev => {
-                        console.log(
-                          'Active group ID being removed:',
-                          activeGroupId,
-                        );
-                        const filtered = prev.filter(
-                          item => item !== activeGroupId,
-                        );
-                        console.log('New filtered indexes:', filtered);
-                        return filtered;
+                        if (prev.includes(activeGroupId)) {
+                          const groupKey = `activeGroupId:${activeGroupId}`;
+                          console.log(
+                            'selectedCheckBoxData before filtering:',
+                            selectedCheckBoxData,
+                          );
+                          console.log('groupKey:', groupKey);
+                          console.log('activeGroupId:', activeGroupId);
+
+                          // const filteredData = Object?.keys(
+                          //   selectedCheckBoxData,
+                          // ).reduce((acc, key) => {
+                          //   // Check if the groupId in the key matches the groupId we want to remove
+                          //   if (!key.includes(`groupId:${groupId}`)) {
+                          //     // Add the entry to the accumulator if the condition is met
+                          //     acc[key] = selectedCheckBoxData[key];
+                          //   }
+                          //   return acc;
+                          // }, {});
+
+                          const filteredData = Object.keys(
+                            selectedCheckBoxData || {},
+                          ).reduce((acc, key) => {
+                            // Check if the groupId in the key matches the groupId we want to remove
+                            if (
+                              !key.includes(`activeGroupId:${activeGroupId}`)
+                            ) {
+                              // Add the entry to the accumulator if the condition is met
+                              acc[key] = selectedCheckBoxData[key];
+                            }
+                            return acc;
+                          }, {});
+
+                          console.log('filteredData::', filteredData);
+                          setSelectedCheckBoxData(filterMainData);
+                          // Log the entire object after filtering
+
+                          console.log(
+                            'selectedCheckBoxData after filtering:',
+                            filteredData,
+                          );
+                          setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                          return prev.filter(id => id !== activeGroupId);
+                        } else {
+                          setTimeout(() => setOnPressCheckBoxHandle(true), 0);
+                          return [...prev, activeGroupId];
+                        }
                       });
 
                       // Prepare the updated selectedArray
@@ -2479,6 +2602,7 @@ ORDER BY
                       setSelectedPayments(prevPayments => {
                         console.log('selectedPayments---::::', selectedId);
                         const key = `${type}:${groupId}`;
+                        console.log('key---::::', key);
                         const currentIds = prevPayments[key] || [];
                         const updatedIds = currentIds.includes(selectedId)
                           ? currentIds.filter(id => id == selectedId) // Corrected condition to remove selectedId
@@ -2486,13 +2610,15 @@ ORDER BY
 
                         const updatedState = {...prevPayments};
                         console.log('updatedState::', updatedState);
+                        console.log('updatedIds::', updatedIds);
                         console.log('key::', key);
                         if (updatedIds.length > 0) {
                           updatedState[key] = updatedIds;
+                          console.log('updatedState4::', updatedState);
                         } else {
                           delete updatedState[key];
                         }
-
+                        setSelectedPayments(updatedState);
                         return updatedState;
                       });
                       setIsLoading(false);
@@ -2851,7 +2977,46 @@ ORDER BY
           </View>
         </View>
       </Modal>
+      {isLoading && (
+        <View style={{flex: 1}}>
+          <View
+            style={{
+              height: 100,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#ffffff', // White background for contrast
+              borderRadius: 12, // Rounded corners for a modern look
+              padding: 20, // Increased padding for better spacing
+              margin: 10,
+              // position: 'absolute',
+              // top: '30%',
+              // left: '40%',
+              shadowColor: '#000', // Shadow color for iOS
+              shadowOffset: {width: 0, height: 4}, // Shadow offset for iOS
+              shadowOpacity: 0.25, // Shadow opacity for iOS
+              shadowRadius: 4, // Shadow blur for iOS
+              elevation: 8, // Elevation for Android shadow
+            }}>
+            <ActivityIndicator size="small" color="#e63946" />
+            {/* Modern loading indicator */}
+            <Text
+              style={{
+                marginTop: 12, // Space between the indicator and text
+                fontSize: 10,
+                fontWeight: '600',
+                color: '#e63946',
+              }}>
+              Loading, please wait...
+            </Text>
+          </View>
 
+          {loadingRef.current == true ? (
+            <LoadingIndicator message="Please wait..." />
+          ) : (
+            <></>
+          )}
+        </View>
+      )}
       {isModelButton && (
         <TouchableOpacity onPress={() => isModel(true)}>
           <View
@@ -2878,6 +3043,7 @@ ORDER BY
           </View>
         </TouchableOpacity>
       )}
+
       <CustomModal isVisible={model} onClose={() => isModel(false)} title="">
         {/* <View style={styles.modalTableContainer}>
         <View style={styles.modalTableContent}> */}
@@ -2917,11 +3083,11 @@ ORDER BY
       </CustomModal>
 
       <CustomAlert
-            visible={isAlertVisible}
-            title={'Alert'}
-            message={'Server Unreachable Relogin again'}
-            onClose={()=>setIsAlertVisible(false)}
-          />
+        visible={isAlertVisible}
+        title={'Alert'}
+        message={'Server Unreachable Relogin again'}
+        onClose={() => setIsAlertVisible(false)}
+      />
       {/* {model && (
         // <IssueGroupTableThree selectedModelData={selectedModelData} MainType={MainType} activeDataPdf={activeDataPdf.orderType}/>
 
@@ -2984,12 +3150,7 @@ ORDER BY
           </View>
         </View>
       )} */}
-      {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>}
-      {loadingRef.current == true ? (
-        <LoadingIndicator message="Please wait..." />
-      ) : (
-        <></>
-      )}
+      {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
     </View>
   );
 };

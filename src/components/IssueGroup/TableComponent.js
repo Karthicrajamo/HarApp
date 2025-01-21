@@ -14,7 +14,7 @@ import {CustomThemeColors} from '../CustomThemeColors';
 import {CheckBox} from 'react-native-elements';
 import {Button} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
-import CustomModal from './modal';
+import CustomModal from '../common-utils/modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
@@ -259,15 +259,30 @@ const TableComponent = ({
         {/* MaterialIcons Eye Icon */}
         <TouchableOpacity
           disabled={selectedRow.length < 1}
+          // onPress={() => {
+          //   setLongPressData([selectedRow]);
+          //   console.log('selectedRow cell dastaa::', selectedRow);
+          //   setDetailViewModalVisible(true);
+          // }}
           onPress={() => {
-            setLongPressData([selectedRow]);
-            console.log('selectedRow cell dastaa::', selectedRow);
+            const transformedRow = Object.entries(selectedRow || {}).reduce(
+              (acc, [key, value]) => {
+                acc[makeReadable(key)] = value; // Transform the key
+                return acc; // Accumulate the result
+              },
+              {},
+            );
+
+            // Set the transformed data
+            setLongPressData([transformedRow]);
+            // setLongPressData([selectedRow]);
+            console.log('cell dastaa::', transformedRow);
             setDetailViewModalVisible(true);
           }}>
           <MaterialIcons
             name="visibility" // Eye icon
             size={24} // Adjust size as needed
-            color="gray" // Adjust color as needed
+            color={selectedRow.length < 1 ? 'darkgrey' : 'green'} // Adjust color as needed
             style={{
               // marginRight: 700,
               marginLeft: DeviceInfo.isTablet() ? 670 : 150,
@@ -278,6 +293,7 @@ const TableComponent = ({
             }} // Spacing between checkbox and icon
           />
         </TouchableOpacity>
+
         <CheckBox
           title={!isChecked ? 'Select All' : 'Deselect All'}
           checked={isChecked}
@@ -293,7 +309,9 @@ const TableComponent = ({
             //   navigation.replace('IssueGroups');
             // }, 1000);
             setIsLoading(true);
+            setSelectedRow([]);
             handleSelectAllCheckbox();
+
             setIsLoading(false);
           }}
         />
@@ -399,18 +417,22 @@ const TableComponent = ({
                 onPress={() => {
                   toggleRowSelection(rowIndex);
                 }}
-                onLongPress={() => {
-                  setLongPressData([row]);
-                  console.log('cell dastaa::', row);
-                  setDetailViewModalVisible(true);
-                }}>
+                // onLongPress={() => {
+                //   setLongPressData([row]);
+                //   console.log('cell dastaa::', row);
+                //   setDetailViewModalVisible(true);
+                // }}
+              >
                 <View
                   style={
-                    selectedRows[page * rowsPerPage + rowIndex] === false &&
-                    tableIndex === page * rowsPerPage + rowIndex
-                      ? styles.activeSelect
+                    selectedRow.length < 1
+                      ? rowIndex % 2 === 0
+                        ? styles.oddRow
+                        : styles.evenRow // Uncomment if you need even-row styling
                       : tableIndex === page * rowsPerPage + rowIndex
-                      ? styles.activeSelect
+                      ? selectedRows[page * rowsPerPage + rowIndex] === false
+                        ? styles.activeSelect
+                        : styles.activeSelect
                       : rowIndex % 2 === 0
                       ? styles.oddRow
                       : styles.evenRow
@@ -470,13 +492,13 @@ const TableComponent = ({
                   })}
                   {showCheckBox && (
                     <TouchableOpacity
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center', // Ensures content is centered horizontally
-                      borderBottomWidth: 0.5,
-                      paddingHorizontal: DeviceInfo.isTablet()?8:0, 
-                    }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center', // Ensures content is centered horizontally
+                        borderBottomWidth: 0.5,
+                        paddingHorizontal: DeviceInfo.isTablet() ? 8 : 0,
+                      }}
                       onPress={() => {
                         const actualIndex = page * rowsPerPage + rowIndex;
                         const updatedSelection = [...selectedRows];
@@ -490,52 +512,52 @@ const TableComponent = ({
                         }
                         setMainTableSelectAll(true);
                       }}>
-                      
-                        {/* CheckBox */}
-                        <CheckBox onPress={() => {
-                        const actualIndex = page * rowsPerPage + rowIndex;
-                        const updatedSelection = [...selectedRows];
-                        updatedSelection[actualIndex] =
-                          !updatedSelection[actualIndex];
-                        setSelectedRows(updatedSelection);
-                        toggleRowSelectionCheckBox(actualIndex);
+                      {/* CheckBox */}
+                      <CheckBox
+                        onPress={() => {
+                          const actualIndex = page * rowsPerPage + rowIndex;
+                          const updatedSelection = [...selectedRows];
+                          updatedSelection[actualIndex] =
+                            !updatedSelection[actualIndex];
+                          setSelectedRows(updatedSelection);
+                          toggleRowSelectionCheckBox(actualIndex);
 
-                        if (selectedRows.length < 1) {
-                          setIsChecked(false);
-                        }
-                        setMainTableSelectAll(true);
-                      }}
-                          checked={mainTableSelectedIndex.includes(
-                            data[page * rowsPerPage + rowIndex].groupId,
-                          )}
-                          // onPress={() => {
-                          //   const actualIndex = page * rowsPerPage + rowIndex;
-                          //   const updatedSelection = [...selectedRows];
-                          //   updatedSelection[actualIndex] =
-                          //     !updatedSelection[actualIndex];
-                          //   setSelectedRows(updatedSelection);
-                          //   toggleRowSelectionCheckBox(actualIndex);
-
-                          //   if (selectedRows.length < 1) {
-                          //     setIsChecked(false);
-                          //   }
-                          //   setMainTableSelectAll(true);
-                          // }}
-                          containerStyle={{
-                            backgroundColor: 'transparent',
-                            padding: 0,
-                            margin: 0,
-                          }}
-                          size={
-                            sliderValue <= 1.5625
-                              ? 14
-                              : sliderValue <= 2.578125
-                              ? 16
-                              : sliderValue <= 3.578125
-                              ? 16
-                              : 18
+                          if (selectedRows.length < 1) {
+                            setIsChecked(false);
                           }
-                        />
+                          setMainTableSelectAll(true);
+                        }}
+                        checked={mainTableSelectedIndex.includes(
+                          data[page * rowsPerPage + rowIndex].groupId,
+                        )}
+                        // onPress={() => {
+                        //   const actualIndex = page * rowsPerPage + rowIndex;
+                        //   const updatedSelection = [...selectedRows];
+                        //   updatedSelection[actualIndex] =
+                        //     !updatedSelection[actualIndex];
+                        //   setSelectedRows(updatedSelection);
+                        //   toggleRowSelectionCheckBox(actualIndex);
+
+                        //   if (selectedRows.length < 1) {
+                        //     setIsChecked(false);
+                        //   }
+                        //   setMainTableSelectAll(true);
+                        // }}
+                        containerStyle={{
+                          backgroundColor: 'transparent',
+                          padding: 0,
+                          margin: 0,
+                        }}
+                        size={
+                          sliderValue <= 1.5625
+                            ? 14
+                            : sliderValue <= 2.578125
+                            ? 16
+                            : sliderValue <= 3.578125
+                            ? 16
+                            : 18
+                        }
+                      />
                     </TouchableOpacity>
                   )}
                 </View>

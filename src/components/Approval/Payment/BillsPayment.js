@@ -75,6 +75,7 @@ export const BillsPayment = ({route}) => {
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
   const [approvalParams, setApprovalParams] = useState([]);
   const [rejParams, setRejParams] = useState([]);
+  const [appRejParams, setAppRejParams] = useState([]);
   const [fxRate, setFxRate] = useState('');
   const [tDSCurrency, setTDSCurrency] = useState('');
   const [calculatedTDS, setCalculatedTDS] = useState('');
@@ -86,6 +87,7 @@ export const BillsPayment = ({route}) => {
   const [slabTaxes, setSlabTaxes] = useState('');
   const [slabFXRate, setSlabFXRate] = useState('');
   const [reUseCancel, setReUseCancel] = useState('');
+  const [appRejUrl, setAppRejUrl] = useState('');
   const [checkStatus, setCheckStatus] = useState([]);
 
   const [query, setQuery] = useState('');
@@ -125,15 +127,15 @@ export const BillsPayment = ({route}) => {
         // Aggregate values for hmtotalOrderMap
         const hmtotalOrderMap = {
           MAIN: {
-            [data[0][2]]: parseInt(data[0][11], 10), // 14850
+            [data?.[0]?.[2]]: parseInt(data[0]?.[11], 10), // 14850
           },
           CHARGES: {
-            [data[1][2]]: parseInt(data[1][11], 10), // 75000
+            [data?.[1]?.[2]]: parseInt(data[1]?.[11], 10), // 75000
           },
           ADJUSTMENT: {
-            [data[2][2]]:
-              parseInt(data[2][11], 10) + data[3]
-                ? parseInt(data[3][11], 10)
+            [data[2]?.[2]]:
+              parseInt(data[2]?.[11], 10) + data[3]
+                ? parseInt(data[3]?.[11], 10)
                 : 0, // 20 + 5 = 25
           },
           TAX: {},
@@ -160,14 +162,14 @@ export const BillsPayment = ({route}) => {
               'JO Status',
               'JO Value',
               'JO Currency',
-              'Advance Paid(INR)',
+              `Advance Paid(${currency})`,
               'Tax Paid',
               'Advance %',
-              'Advance Adjusted(INR)',
-              'Remaining Advance(INR)',
+              `Advance Adjusted(${currency})`,
+              `Remaining Advance(${currency})`,
               'XRate',
-              'Remaining Adv(INR)',
-              'Adjust Advance(INR)',
+              `Remaining Adv(${currency})`,
+              `Adjust Advance(${currency})`,
             ]
           : orderTyp === 'PO'
           ? [
@@ -175,28 +177,28 @@ export const BillsPayment = ({route}) => {
               'PO Status',
               'PO Value',
               'PO Currency',
-              'Advance Paid(INR)',
+              `Advance Paid(${currency})`,
               'Tax Paid',
               'Advance %',
-              'Advance Adjusted(INR)',
-              'Remaining Advance(INR)',
+              `Advance Adjusted(${currency})`,
+              `Remaining Advance(${currency})`,
               'XRate',
-              'Remaining Adv(INR)',
-              'Adjust Advance(INR)',
+              `Remaining Adv(${currency})`,
+              `Adjust Advance(${currency})`,
             ]
           : [
               'SO No',
               'SO Status',
               'SO Value',
               'SO Currency',
-              'Advance Paid(INR)',
+              `Advance Paid(${currency})`,
               'Tax Paid',
               'Advance %',
-              'Advance Adjusted(INR)',
-              'Remaining Advance(INR)',
+              `Advance Adjusted(I${currency})`,
+              `Remaining Advance(${currency})`,
               'XRate',
-              'Remaining Adv(INR)',
-              'Adjust Advance(INR)',
+              `Remaining Adv(${currency})`,
+              `Adjust Advance(${currency})`,
             ];
       const advAdjExcluse =
         orderTyp === 'PO'
@@ -219,7 +221,13 @@ export const BillsPayment = ({route}) => {
         generatedData,
         'POST',
         // ['22'],
-        [mainData[17]],
+        [
+          parseFloat(
+            transValue[1]?.['ADVANCE_ADJUSTED']
+              ? transValue[1]['ADVANCE_ADJUSTED']
+              : 0,
+          ),
+        ],
       );
     }
   }, [advAdjSub]);
@@ -301,15 +309,33 @@ export const BillsPayment = ({route}) => {
     console.log('paidAdjustment::', paidAdjustment);
     let totalTaxAmount = 0;
     // console.log('slabTaxes:', slabTaxes[0]['ST Paid']);
+    let actual = 0;
+    for (let i = 0; billsPay.length > i; i++) {
+      actual += parseFloat(billsPay[i]['Actual Amt']);
+    }
+    console.log('actualAmt0::', actual);
+    actual += Math.abs(
+      parseFloat(
+        transValue[1]?.['TAX_ADJUSTED'] ? transValue[1]['TAX_ADJUSTED'] : 0,
+      ),
+    );
+    console.log('actualAmt1::', actual);
+    actual -= parseFloat(
+      transValue[1]?.['ADVANCE_ADJUSTED']
+        ? transValue[1]['ADVANCE_ADJUSTED']
+        : 0,
+    );
+    console.log('actualAmt::', actual);
+    setActualMinSlab(actual);
     if (slabTaxes) {
       if (slabTaxes[0]['ST Paid']) {
         const totalAmount = slabTaxes
           .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
           .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
-        totalTaxAmount = actualMinSlab - totalAmount * slabFXRate;
+        totalTaxAmount = actual - totalAmount * slabFXRate;
         console.log('Total Tax Amount:', totalAmount);
       } else {
-        totalTaxAmount = actualMinSlab;
+        totalTaxAmount = actual;
       }
     }
     // setActualMinSlab(totalTaxAmount*slabFXRate)
@@ -334,7 +360,7 @@ export const BillsPayment = ({route}) => {
 
       setActualPaidAftAdj(add);
     } // Start with an initial total of 0
-  }, [paidAdjustment, slabFXRate, slabTaxes, actualMinSlab]);
+  }, [paidAdjustment, slabFXRate, slabTaxes, actualMinSlab, billsPay]);
 
   useEffect(() => {
     if (tDSCurrency.length > 0) {
@@ -346,21 +372,24 @@ export const BillsPayment = ({route}) => {
   }, [tDSCurrency]);
 
   useEffect(() => {
-    console.log('excluseTblTwo::', tDSCurrency);
-    const totalTdsAmount = (excluseTblTwo || []).reduce((sum, item) => {
+    console.log('tDSCurrency::', tDSCurrency);
+    console.log('excluseTblTwo::', excluseTblTwo);
+    const totalTdsAmount = excluseTblTwo.reduce((sum, item) => {
       return item['Apply TDS'] === true
-        ? sum + Number(item['TDS Amount'] || 0)
+        ? sum + Number(item['TDS Amount'])
         : sum;
     }, 0);
 
     console.log('totalTdsAmount:', totalTdsAmount * fxRate);
+    console.log('totalTdsAmount* fxRate:', totalTdsAmount * fxRate);
+
     const tds = totalTdsAmount * fxRate;
     setCalculatedTDS(tds);
 
-    console.log('calculatedTDS:', calculatedTDS);
+    console.log('calculatedTDS:', tds);
 
     // pairsData[0][`TDS Amount (${tDSCurrency[0]})`] = tds;
-  }, [excluseTblTwo]);
+  }, [excluseTblTwo, fxRate]);
 
   // useEffect(() => {
   //   if (transValue.length > 9 && transValue[9].length > 0) {
@@ -1035,7 +1064,10 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={(mainData[17] ? mainData[17] : 0).toString()}
+                value={(transValue[1]['ADVANCE_ADJUSTED']
+                  ? transValue[1]['ADVANCE_ADJUSTED']
+                  : 0
+                ).toString()}
                 // value={mainData[17].toString()}
                 editable={false} // Disables input
               />
@@ -1048,8 +1080,32 @@ export const BillsPayment = ({route}) => {
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
                 value={(advanceAdjustmentModal['XRate']
-                  ? actual - mainData[17]
-                  : actual - mainData[17]
+                  ? parseFloat(actual) -
+                    parseFloat(
+                      transValue[1]?.['ADVANCE_ADJUSTED']
+                        ? transValue[1]?.['ADVANCE_ADJUSTED']
+                        : 0,
+                    ) +
+                    Math.abs(
+                      parseFloat(
+                        transValue[1]?.['TAX_ADJUSTED']
+                          ? transValue[1]?.['TAX_ADJUSTED']
+                          : 0,
+                      ),
+                    )
+                  : parseFloat(actual) -
+                    parseFloat(
+                      transValue[1]?.['ADVANCE_ADJUSTED']
+                        ? transValue[1]?.['ADVANCE_ADJUSTED']
+                        : 0,
+                    ) +
+                    Math.abs(
+                      parseFloat(
+                        transValue[1]['TAX_ADJUSTED']
+                          ? transValue[1]['TAX_ADJUSTED']
+                          : 0,
+                      ),
+                    )
                 ).toString()}
                 editable={false} // Disables input
               />
@@ -1061,7 +1117,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={parseFloat(actualSlabMain - mainData[17]).toFixed(4)}
+                value={parseFloat(actualSlabMain).toFixed(4)}
                 editable={false} // Disables input
               />
             </View>
@@ -1073,7 +1129,7 @@ export const BillsPayment = ({route}) => {
               <TextInput
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
-                value={parseFloat(actualPaidAftAdj - mainData[17]).toFixed(4)}
+                value={parseFloat(actualPaidAftAdj).toFixed(4)}
                 editable={false} // Disables input
               />
             </View>
@@ -1105,7 +1161,12 @@ export const BillsPayment = ({route}) => {
                 style={[commonStyles.oneLineValue, commonStyles.input]}
                 placeholder="" // Placeholder text
                 value={
-                  transName !== 'ModPayment' ? mainData[16].toString() : ''
+                  // transName !== 'ModPayment'
+                  // ?
+                  transValue[1]?.['REMARKS']
+                    ? transValue[1]['REMARKS'].toString()
+                    : ''
+                  // : ''
                 }
                 editable={false} // Disables input
               />
@@ -1427,8 +1488,8 @@ export const BillsPayment = ({route}) => {
               'Re-Use',
               currentLevel,
               checkStatus,
-              rejParams,
-              `${API_URL}/api/common/rejectTransaction`,
+              appRejParams,
+              appRejUrl,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');
@@ -1449,8 +1510,8 @@ export const BillsPayment = ({route}) => {
               'Cancelled',
               currentLevel,
               checkStatus,
-              rejParams,
-              `${API_URL}/api/common/rejectTransaction`,
+              appRejParams,
+              appRejUrl,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');
@@ -1477,8 +1538,11 @@ export const BillsPayment = ({route}) => {
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
               params={approvalParams}
+              // setRejParams={setRejParams}
+              setAppRejParams={setAppRejParams}
               setReUseCancel={setReUseCancel}
-              paymentMode={mainData[7]}
+              paymentMode={transValue[1]?.['PAYMENT_MODE']}
+              setAppRejUrl={setAppRejUrl}
             />
           </View>
         </>

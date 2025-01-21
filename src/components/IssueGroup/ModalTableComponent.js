@@ -238,9 +238,10 @@ const ModalTableComponent = ({
                     ? (columnWidths[column] / totalColumnWidths) * screenWidth -
                       (showCheckBox ? 6 : 2)
                     : columnWidths[column] - 35,
-                fontSize: isTablet ? 14 : 8,
+                fontSize: isTablet ? 10 : 8,
                 color: 'white',
                 borderRightWidth: 0.5,
+                paddingHorizontal: 3,
                 borderRightWidth: index === columns.length - 1 ? 0 : 0.5,
                 // paddingHorizontal: 5,
               },
@@ -253,7 +254,7 @@ const ModalTableComponent = ({
             style={[
               styles.headerCell,
               {
-                fontSize: isTablet ? 14 : 12,
+                fontSize: isTablet ? 10 : 8,
               },
             ]}>
             Select
@@ -298,9 +299,10 @@ const ModalTableComponent = ({
                                 (showCheckBox ? 6 : 2)
                               : columnWidths[column] - 35,
 
-                          fontSize: isTablet ? 14 : 8,
+                          fontSize: isTablet ? 10 : 8,
                           fontWeight: '400',
                           color: '#000000',
+                          paddingHorizontal: 3,
                           borderRightWidth:
                             cellIndex === columns.length - 1 ? 0 : 0.5,
                         },

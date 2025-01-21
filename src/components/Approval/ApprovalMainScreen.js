@@ -147,6 +147,7 @@ const ApprovalScreen = () => {
           // 'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
+          'CancelPayment'
           // 'CanPayment',
           // 'AddDocumentApproval',
           // 'ModDocumentApproval',
@@ -237,7 +238,7 @@ const ApprovalScreen = () => {
           transId: transId,
           status: status,
         });
-      } else if (transName === 'AddPayment' || 'ModPayment') {
+      } else if (transName === 'AddPayment' || 'ModPayment' ||'CancelPayment') {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
           navigation.navigate('AdvancePayment', {

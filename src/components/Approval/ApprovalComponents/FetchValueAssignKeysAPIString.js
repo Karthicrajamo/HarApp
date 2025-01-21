@@ -44,7 +44,7 @@ const FetchValueAssignKeysAPIString = async (
     ) {
       // Deserialize the stringified JSON in the result field
       const parsedResult = JSON.parse(response.data.result);
-      console.log('parsedResultdata:', parsedResult);
+      console.log('parsedResultdata:' + apiUrl + '---', parsedResult);
 
       if (Array.isArray(parsedResult) && parsedResult.length > 0) {
         const result = parsedResult.map(innerArray => {
@@ -60,7 +60,7 @@ const FetchValueAssignKeysAPIString = async (
           }, {});
         });
 
-        console.log('Processed Table Data:', result);
+        console.log('Processed Table Data:' + apiUrl + '---', result);
         setData(result);
       } else {
         // console.error(`Invalid parsed result:`, apiUrl, parsedResult);

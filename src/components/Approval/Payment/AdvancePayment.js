@@ -68,6 +68,7 @@ export const AdvancePayment = ({route}) => {
   const [approvalRejParams, setApprovalRejParams] = useState([]);
   const [approvalParams, setApprovalParams] = useState([]);
   const [rejParams, setRejParams] = useState([]);
+  const [appRejParams, setAppRejParams] = useState([]);
   const [fxRate, setFxRate] = useState('');
   const [currency, setCurrency] = useState('');
   const [numToWords, setNumToWords] = useState('');
@@ -107,7 +108,8 @@ export const AdvancePayment = ({route}) => {
         parseFloat(materialAdPayment[0]['Advance Paid']) +
         parseFloat(materialAdPayment[0]['TDS Amount']);
       console.log('totalmaterialAdPayment:::', Math.round(total));
-      materialAdPayment[0][`Total Amount(${currency})`] = parseFloat(total).toFixed(4);
+      materialAdPayment[0][`Total Amount(${currency})`] =
+        parseFloat(total).toFixed(4);
     }
   }, [materialAdPayment]);
 
@@ -126,17 +128,22 @@ export const AdvancePayment = ({route}) => {
   useEffect(() => {
     console.log('adjWithoutTax::', adjWithoutTax);
     let totalTaxAmount = 0;
+    let actual = 0;
+    for (let i = 0; orderDetails.length > i; i++) {
+      actual += parseFloat(orderDetails[i]['Advance Amount']);
+    }
+    console.log('actualAmt::', actual);
+    setActualMinSlab(actual);
     if (slabTaxes) {
       if (slabTaxes[0]['ST Paid']) {
         const totalAmount = slabTaxes
           .map(item => parseFloat(item['ST Paid'])) // Convert Tax Amount to a number
           .reduce((sum, amount) => sum + amount, 0); // Sum all Tax Amounts
         totalTaxAmount =
-          parseFloat(actualMinSlab) -
-          parseFloat(totalAmount) * parseFloat(slabFXRate);
-        console.log('Total Tax Amount:', actualMinSlab);
+          parseFloat(actual) - parseFloat(totalAmount) * parseFloat(slabFXRate);
+        console.log('Total Tax Amount:', actual);
       } else {
-        totalTaxAmount = actualMinSlab;
+        totalTaxAmount = actual;
       }
     }
     // setActualMinSlab(totalTaxAmount*slabFXRate)
@@ -311,6 +318,17 @@ export const AdvancePayment = ({route}) => {
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [0, 7, 10, 11, 16]
           : [6, 9, 10, 15];
+      // Extract the PO_SO_JO_NO values
+      const poSoJoNos = transValue[4].map(item => item.PO_SO_JO_NO);
+
+      // Remove duplicates if needed
+      const uniquePoSoJoNos = [...new Set(poSoJoNos)];
+      console.log('OtherDetails params::', {
+        payment_id: paymentId,
+        type: transValue[4][0].ORDER_TYPE,
+        orders: [transValue[4][0].PO_SO_JO_NO],
+        datafor: 'Approval',
+      });
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderMain`,
         headArrTb1,
@@ -319,7 +337,7 @@ export const AdvancePayment = ({route}) => {
         {
           payment_id: paymentId,
           type: transValue[4][0].ORDER_TYPE,
-          orders: [transValue[4][0].PO_SO_JO_NO],
+          orders: uniquePoSoJoNos,
           datafor: 'Approval',
         },
         'POST',
@@ -1323,7 +1341,7 @@ export const AdvancePayment = ({route}) => {
               'Re-Use',
               currentLevel,
               checkStatus,
-              rejParams,
+              appRejParams,
               `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
@@ -1344,7 +1362,7 @@ export const AdvancePayment = ({route}) => {
               'Cancelled',
               currentLevel,
               checkStatus,
-              rejParams,
+              appRejParams,
               `${API_URL}/api/common/rejectTransaction`,
             );
             toggleModalReUse();
@@ -1368,12 +1386,13 @@ export const AdvancePayment = ({route}) => {
               // approveUrl="http://192.168.0.107:8100/rest/approval/approveTransaction"
               // rejectUrl="http://192.168.0.107:8100/rest/approval/rejectTransaction"
               params={approvalParams}
-              // approveUrl={`${API_URL}/api/common/approveTransaction`}
+              approveUrl={`${API_URL}/api/common/approveTransaction`}
               rejectUrl={`${API_URL}/api/common/rejectTransaction`}
               rejParams={rejParams}
-              setRejParams={setRejParams}
+              // setRejParams={setRejParams}
+              setAppRejParams={setAppRejParams}
               setReUseCancel={setReUseCancel}
-              paymentMode={mainData[7]}
+              paymentMode={transValue[1]?.['PAYMENT_MODE']}
             />
           </View>
         </>

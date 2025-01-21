@@ -70,7 +70,7 @@ switch (ENVIRONMENT) {
 
   case 'Test':
     // API_URL = 'http://192.168.0.169:8084'; // Harish
-    API_URL = 'http://192.168.0.107:8084'; // Corrected the IP address
+    API_URL = 'http://192.168.0.107:8089'; // Corrected the IP address
     // API_URL = 'http://192.168.0.207:8087'; // Corrected the IP address
     // CompanyName = 'ADISHTAM VENTURES';
     // logo = 'av';

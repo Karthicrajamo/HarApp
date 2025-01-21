@@ -1,8 +1,9 @@
 import axios from 'axios';
 import {sharedData} from '../../../Login/UserId';
 import * as Keychain from 'react-native-keychain';
-import {ToastAndroid} from 'react-native'
-import { API_URL } from '../../../ApiUrl';
+import {ToastAndroid} from 'react-native';
+import {API_URL} from '../../../ApiUrl';
+import {Alert} from 'react-native';
 
 // const updateAddRejectPayStatus = async () => {
 //     console.log('Rejection Succfull, tryig to updateRejectPayStatus...');
@@ -122,7 +123,8 @@ export const updateModRejectPayStatus = async (
   action,
   currentLevel,
   checkStatus,
-  rejParams,url
+  appRejParams,
+  url,
 ) => {
   console.log('Rejection Successful, tryig to updateRejectPayStatus...');
   try {
@@ -188,7 +190,7 @@ export const updateModRejectPayStatus = async (
     );
 
     if (!response.ok) {
-      setIsLoading(false);
+      // setIsLoading(false);
       Alert.alert('Something went wrong', 'Please try again later.');
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
@@ -201,18 +203,21 @@ export const updateModRejectPayStatus = async (
     console.log('UpdateModRejectPayStatus success.');
   } catch (error) {
     console.error('FAILED: UpdateRejectPayStatus Failed.', error);
-  } finally {
-    // setIsLoading(false);
   }
   try {
-    // console.log("urldd::",url)
-    // console.log("rejParams::",JSON.stringify(rejParams,null,2))
+    console.log('urldd::', url);
+    // const sanitizedParams = appRejParams.replace(/\\"/g, '"'); // Replace escaped quotes with regular quotes
+
+    // // Parse the sanitized JSON string
+    // const parsedParams = JSON.parse(sanitizedParams);
+    console.log('appRejParams::', appRejParams);
+    console.log('appRejParams::', JSON.stringify(appRejParams));
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json', // Set the content type to JSON
       },
-      body: JSON.stringify(rejParams), // Convert the body to a JSON string
+      body: JSON.stringify(appRejParams), // Convert the body to a JSON string
     });
     console.log('response ApRejCom::', response);
 

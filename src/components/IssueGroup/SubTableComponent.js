@@ -14,11 +14,12 @@ import {CustomThemeColors} from '../CustomThemeColors';
 import {CheckBox} from 'react-native-elements';
 import {Button} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
-import CustomModal from './modal';
+import CustomModal from '../common-utils/modal';
 import ApprovalTableComponent from '../Approval/ApprovalComponents/ApprovalTableComponent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
+import {ActivityIndicator} from 'react-native-paper';
 
 const calculateColumnWidths = (data, scaleFactor) => {
   const widths = {};
@@ -279,7 +280,7 @@ const SubTableComponent = ({
   };
 
   if (!calculated) {
-    return <Text>Loading...</Text>;
+    return <Text style={{flex: 1, textAlign: 'center'}}></Text>;
   }
 
   const handleSelectAllCheckbox = () => {
@@ -429,6 +430,76 @@ const SubTableComponent = ({
   return (
     <>
       <View>
+        {/* {!mainTableSelectAll && loading && (
+          <>
+            <View
+              style={{
+                height: 100,
+                // backgroundColor: 'red',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Text>Loading Please Wait...</Text>
+            </View>
+          </>
+        )} */}
+        {!mainTableSelectAll && loading && (
+          // <View
+          //   style={{
+          //     flex: 1,
+          //     // height: 100,
+          //     alignItems: 'center',
+          //     justifyContent: 'center',
+          //     backgroundColor: '#f9f9f9', // Light background color
+          //     borderRadius: 10, // Rounded corners
+          //     padding: 10,
+          //     margin: 10,
+          //   }}>
+          //   <ActivityIndicator size="small" color="#e63946" />
+          //   {/* Modern loading indicator */}
+          //   <Text
+          //     style={{
+          //       marginTop: 10,
+          //       fontSize: 16,
+          //       fontWeight: '500',
+          //       color: '#e63946',
+          //     }}>
+          //     Loading, please wait..
+          //   </Text>
+          // </View>
+          <View style={{flex: 1}}>
+            <View
+              style={{
+                height: 100,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#ffffff', // White background for contrast
+                borderRadius: 12, // Rounded corners for a modern look
+                padding: 20, // Increased padding for better spacing
+                margin: 10,
+                // position: 'absolute',
+                // top: '30%',
+                // left: '40%',
+                shadowColor: '#000', // Shadow color for iOS
+                shadowOffset: {width: 0, height: 4}, // Shadow offset for iOS
+                shadowOpacity: 0.25, // Shadow opacity for iOS
+                shadowRadius: 4, // Shadow blur for iOS
+                elevation: 8, // Elevation for Android shadow
+              }}>
+              <ActivityIndicator size="small" color="#e63946" />
+              {/* Modern loading indicator */}
+              <Text
+                style={{
+                  marginTop: 12, // Space between the indicator and text
+                  fontSize: 10,
+                  fontWeight: '600',
+                  color: '#e63946',
+                }}>
+                Loading, please wait...
+              </Text>
+            </View>
+          </View>
+        )}
         {mainTableSelectAll && (
           <>
             <View style={styles.selectSlide}>
@@ -448,6 +519,7 @@ const SubTableComponent = ({
                   ? 'Transfer From and To Account Details '
                   : 'Payment List                         '}
               </Text>
+
               {/* </View> */}
               {/* <View style={styles.container}> */}
               <TouchableOpacity
@@ -469,7 +541,7 @@ const SubTableComponent = ({
                 <MaterialIcons
                   name="visibility" // Eye icon
                   size={24} // Adjust size as needed
-                  color="gray" // Adjust color as needed
+                  color={selectedRow.length < 1 ? 'darkgrey' : 'green'} // Adjust color as needed
                   style={{
                     // marginRight: 700,
                     marginLeft: DeviceInfo.isTablet() ? 600 : 120,
@@ -685,9 +757,10 @@ const SubTableComponent = ({
                             onPress={() =>
                               handleRowCheckbox(page * rowsPerPage + rowIndex)
                             }>
-                            <CheckBox onPress={() =>
-                              handleRowCheckbox(page * rowsPerPage + rowIndex)
-                            }
+                            <CheckBox
+                              onPress={() =>
+                                handleRowCheckbox(page * rowsPerPage + rowIndex)
+                              }
                               checked={
                                 !mainTableSelectedIndex.includes(
                                   data[page * rowsPerPage + rowIndex].groupId,
@@ -748,13 +821,19 @@ const SubTableComponent = ({
             </View>
           </>
         )}
-        {!mainTableSelectAll && loading && (
-          <>
-            <View style={{height: 200}}>
-              <Text>Loading Please Wait...</Text>
-            </View>
-          </>
-        )}
+        {/* {!mainTableSelectAll && loading && ( */}
+        {/* <>
+          <View
+            style={{
+              height: 200,
+              // backgroundColor: 'red',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Text>Loading Please Wait...</Text>
+          </View>
+        </> */}
+        {/* )} */}
         <CustomModal
           isVisible={detailViewModalVisible}
           onClose={toggleModalDetail}
