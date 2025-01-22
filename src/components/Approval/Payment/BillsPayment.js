@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Text,
   View,
@@ -49,7 +49,8 @@ const isMobile = width < 768;
 
 // Karthic Nov 25
 export const BillsPayment = ({route}) => {
-  const {transName, transId, status, currentLevel} = route.params || {};
+  const {transName, transId, status, currentLevel, totalNoOfLevels} =
+    route.params || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -93,6 +94,7 @@ export const BillsPayment = ({route}) => {
   const [query, setQuery] = useState('');
   const [finloadData, setFinloadData] = useState(null);
   const [advAdjSub, setAdvAdjSub] = useState(null);
+  const totalActualAmtRef = useRef(0);
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -112,9 +114,19 @@ export const BillsPayment = ({route}) => {
   //   } // Start with an initial total of 0
   // }, [paidAdjustment]);
 
-  // useEffect(() => {
-  //   console.log('billsPay::', billsPay[0]["Actual Amt"]);
-  // }, [billsPay]);
+  useEffect(() => {
+    console.log('billsPay::', billsPay);
+    if (Array.isArray(billsPay)) {
+      totalActualAmtRef.current = billsPay
+        .filter(
+          bill => bill['Actual Amt'] && !isNaN(parseFloat(bill['Actual Amt'])),
+        ) // Filter valid numbers
+        .reduce((sum, bill) => sum + parseFloat(bill['Actual Amt']), 0);
+
+      // setTotalActualAmt(totalActualAmtRef.current); // Update state to display
+    }
+    console.log('totalActualAmtRef.current::', totalActualAmtRef.current);
+  }, [billsPay]);
 
   useEffect(() => {
     console.log('advAdjSub::', advAdjSub);
@@ -314,6 +326,7 @@ export const BillsPayment = ({route}) => {
       actual += parseFloat(billsPay[i]['Actual Amt']);
     }
     console.log('actualAmt0::', actual);
+    setActual(actual)
     actual += Math.abs(
       parseFloat(
         transValue[1]?.['TAX_ADJUSTED'] ? transValue[1]['TAX_ADJUSTED'] : 0,
@@ -977,6 +990,8 @@ export const BillsPayment = ({route}) => {
                 'CC No',
               ]}
               valueChanger={{
+                [`Actual Amount (${transValue[1]?.PARTY_CURRENCY})`]:
+                  totalActualAmtRef.current,
                 [`TDS Amount (${tDSCurrency})`]:
                   parseFloat(calculatedTDS).toFixed(4),
                 [`Actual Paid After Adjustment`]:
@@ -1543,6 +1558,9 @@ export const BillsPayment = ({route}) => {
               setReUseCancel={setReUseCancel}
               paymentMode={transValue[1]?.['PAYMENT_MODE']}
               setAppRejUrl={setAppRejUrl}
+              transName={transName}
+              currentLevel={currentLevel}
+              totalNoOfLevels={totalNoOfLevels}
             />
           </View>
         </>

@@ -129,6 +129,7 @@ const IssueGroups = () => {
   const isAdvancePayment = MainType === 'advance payment';
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [mainLoading, setMainLoading] = useState(false);
 
   const isAnyFilterSelected = selectedFilters.length > 0;
 
@@ -1713,57 +1714,49 @@ ORDER BY
       console.log(
         'data params >>>>>' + JSON.stringify({items: selectedPayments}),
       );
-      // const params = {
-      //   status: 'Issued',
-      //   payment_id: selectedPayments,
-      //   reason: '',
-      //   slabTaxData: [],
-      //   payDetails: ['', 'Advance Payment', 'AddPayment', sharedData.userName],
-      //   oldChqStatus: ['Issued', 'admin'],
-      // };
-      // console.log('data params params >>>>>' + JSON.stringify(params));
-      const response = await fetch(
-        // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
-        // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
-        `${API_URL}/api/issueGroup/issueButton?`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify({items: selectedPayments}),
-        },
-      );
 
-      console.log(
-        'response for response data : ===============>>>>>>>>>> ',
-        response,
-      );
-      console.log(
-        'response for response data : ===============>>>>>>>>>> ',
-        JSON.stringify(response.json),
-      );
-      if (!response.ok) {
-        // setIsLoading(true);
-        Alert.alert(
-          'Server unreachable',
-          `Error code : DRMI004\nPlease contact admin.`,
-        );
-        showNotIssuedMessage();
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      if (response.ok) {
-        // setIsLoading(true);
-        // showNotIssuedMessage();
-        // setIsAlertVisible(true);
-        showIssuedMessage();
+      // const response = await fetch(
+      //   // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
+      //   // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
+      //   `${API_URL}/api/issueGroup/issueButton?`,
+      //   {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       Authorization: `${token}`,
+      //     },
+      //     body: JSON.stringify({items: selectedPayments}),
+      //   },
+      // );
 
-        // throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('response for issue data : ===============>>>>>>>>>> ', data);
-      setTimeout(() => handleRefresh(), 1000);
+      // console.log(
+      //   'response for response data : ===============>>>>>>>>>> ',
+      //   response,
+      // );
+      // console.log(
+      //   'response for response data : ===============>>>>>>>>>> ',
+      //   JSON.stringify(response.json),
+      // );
+      // if (!response.ok) {
+      //   // setIsLoading(true);
+      //   Alert.alert(
+      //     'Server unreachable',
+      //     `Error code : DRMI004\nPlease contact admin.`,
+      //   );
+      //   showNotIssuedMessage();
+      //   throw new Error(`HTTP error! Status: ${response.status}`);
+      // }
+      // if (response.ok) {
+      //   // setIsLoading(true);
+      //   // showNotIssuedMessage();
+      //   // setIsAlertVisible(true);
+      //   showIssuedMessage();
+
+      //   // throw new Error(`HTTP error! Status: ${response.status}`);
+      // }
+      // const data = await response.json();
+      // console.log('response for issue data : ===============>>>>>>>>>> ', data);
+      // setTimeout(() => handleRefresh(), 1000);
     } catch (error) {
       // console.error('Error fetching table data:', error);
       throw new Error(`HTTP error! Status: ${error}`);
@@ -2977,46 +2970,6 @@ ORDER BY
           </View>
         </View>
       </Modal>
-      {isLoading && (
-        <View style={{flex: 1}}>
-          <View
-            style={{
-              height: 100,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#ffffff', // White background for contrast
-              borderRadius: 12, // Rounded corners for a modern look
-              padding: 20, // Increased padding for better spacing
-              margin: 10,
-              // position: 'absolute',
-              // top: '30%',
-              // left: '40%',
-              shadowColor: '#000', // Shadow color for iOS
-              shadowOffset: {width: 0, height: 4}, // Shadow offset for iOS
-              shadowOpacity: 0.25, // Shadow opacity for iOS
-              shadowRadius: 4, // Shadow blur for iOS
-              elevation: 8, // Elevation for Android shadow
-            }}>
-            <ActivityIndicator size="small" color="#e63946" />
-            {/* Modern loading indicator */}
-            <Text
-              style={{
-                marginTop: 12, // Space between the indicator and text
-                fontSize: 10,
-                fontWeight: '600',
-                color: '#e63946',
-              }}>
-              Loading, please wait...
-            </Text>
-          </View>
-
-          {loadingRef.current == true ? (
-            <LoadingIndicator message="Please wait..." />
-          ) : (
-            <></>
-          )}
-        </View>
-      )}
       {isModelButton && (
         <TouchableOpacity onPress={() => isModel(true)}>
           <View
@@ -3150,7 +3103,12 @@ ORDER BY
           </View>
         </View>
       )} */}
-      {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
+      {mainTableSelectedIndex.length !==
+      Object.keys(selectedPayments).length ? (
+        <LoadingIndicator message="Please wait..." />
+      ) : (
+        <></>
+      )}
     </View>
   );
 };

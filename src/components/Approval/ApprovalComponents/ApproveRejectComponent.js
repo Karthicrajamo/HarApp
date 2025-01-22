@@ -25,6 +25,9 @@ const ApproveRejectComponent = ({
   setReUseCancel,
   paymentMode,
   setAppRejUrl,
+  transName,
+  currentLevel,
+  totalNoOfLevels,
 }) => {
   const navigation = useNavigation();
   const [isRejectPop, setRejectPop] = useState(false);
@@ -69,7 +72,20 @@ const ApproveRejectComponent = ({
         },
         {
           text: 'Yes',
-          onPress: () => handleAction(action),
+          onPress: () => {
+            if (
+              (transName == 'ModPayment' && action === 'reject'
+                ? true
+                : currentLevel == totalNoOfLevels - 1) ||
+              (transName == 'AddPayment' && action === 'reject') ||
+              (transName == 'CancelPayment' && action === 'reject'
+                ? false
+                : currentLevel == totalNoOfLevels - 1)
+            ) {
+              setRejectPop(true);
+            }
+            handleAction(action);
+          },
         },
       ],
       {cancelable: false},
@@ -84,11 +100,16 @@ const ApproveRejectComponent = ({
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
-    console.log('rejUrl type::', rejectParams['trans_type']);
-    console.log('params["handler"] type::', params['handler']);
+    // console.log('rejUrl type::', rejectParams['trans_type']);
+    console.log('transName type::', transName);
     if (
-      rejectParams['trans_type'] == 'ModPayment' ||
-      params['handler'] == 'ModPayment'
+      (transName == 'ModPayment' && action === 'reject'
+        ? true
+        : currentLevel == totalNoOfLevels - 1) ||
+      (transName == 'AddPayment' && action === 'reject') ||
+      (transName == 'CancelPayment' && action === 'reject'
+        ? false
+        : currentLevel == totalNoOfLevels - 1)
     ) {
       action === 'approve'
         ? setAppRejParams(params)
@@ -112,7 +133,8 @@ const ApproveRejectComponent = ({
         } else {
           ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
         }
-        action == 'approve' && navigation.navigate('ApprovalMainScreen');
+        navigation.navigate('ApprovalMainScreen');
+        // action == 'approve' && navigation.navigate('ApprovalMainScreen');
       } catch (error) {
         console.error('Error:', error);
         ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
@@ -130,7 +152,18 @@ const ApproveRejectComponent = ({
       <TouchableOpacity
         style={[styles.button, styles.rejectButton]}
         onPress={() => {
-          setRejectPop(true);
+          if (
+            (transName == 'ModPayment' && action === 'reject'
+              ? true
+              : currentLevel == totalNoOfLevels - 1) ||
+            (transName == 'AddPayment' && action === 'reject') ||
+            (transName == 'CancelPayment' && action === 'reject'
+              ? false
+              : currentLevel == totalNoOfLevels - 1)
+          ) {
+            setRejectPop(true);
+          }
+          // setRejectPop(true);
           console.log('pressed;;;');
         }}>
         <Text style={[styles.buttonText, {color: 'white'}]}>Reject</Text>

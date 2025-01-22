@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Text,
   View,
@@ -47,7 +47,8 @@ const isMobile = width < 768;
 
 // Karthic Nov 25
 export const AdvancePayment = ({route}) => {
-  const {transName, transId, status, currentLevel} = route.params || {};
+  const {transName, transId, status, currentLevel, totalNoOfLevels} =
+    route.params || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [accountNo, setAccountNo] = useState('');
@@ -80,7 +81,10 @@ export const AdvancePayment = ({route}) => {
   const [slabFXRate, setSlabFXRate] = useState('');
   const [actualSlabMain, setActualSlabMain] = useState('');
   const [reUseCancel, setReUseCancel] = useState('');
+  const [appRejUrl, setAppRejUrl] = useState('');
+
   const [checkStatus, setCheckStatus] = useState([]);
+  const totalPayableAmtRef = useRef(0);
 
   useEffect(() => {
     console.log('isLoading:::', isLoading);
@@ -115,6 +119,17 @@ export const AdvancePayment = ({route}) => {
 
   useEffect(() => {
     console.log('orderDetails:::', orderDetails);
+    // Function to calculate totalPayableAmt
+    // const calculateTotalPayableAmt = () => {
+    // totalPayableAmtRef.current = (
+    //   Array.isArray(orderDetails) ? orderDetails : []
+    // ).reduce((sum, order) => sum + parseFloat(order['Payable Amt'] || '0'), 0);
+    totalPayableAmtRef.current = (
+      Array.isArray(orderDetails) ? orderDetails : []
+    )
+      .filter(order => parseFloat(order['Payable Amt']) > 0) // Filter only positive amounts
+      .reduce((sum, order) => sum + parseFloat(order['Payable Amt'] || '0'), 0);
+    // };
   }, [orderDetails]);
 
   useEffect(() => {
@@ -165,7 +180,7 @@ export const AdvancePayment = ({route}) => {
 
       setActualPaidAftAdj(parseFloat(totalTaxAmount) + parseFloat(totalAmount));
     } // Start with an initial total of 0
-  }, [adjWithoutTax, slabFXRate, slabTaxes, actualMinSlab]);
+  }, [adjWithoutTax, slabFXRate, slabTaxes, actualMinSlab, orderDetails]);
 
   // Using async functions inside useEffect
   useEffect(() => {
@@ -323,12 +338,12 @@ export const AdvancePayment = ({route}) => {
 
       // Remove duplicates if needed
       const uniquePoSoJoNos = [...new Set(poSoJoNos)];
-      console.log('OtherDetails params::', {
-        payment_id: paymentId,
-        type: transValue[4][0].ORDER_TYPE,
-        orders: [transValue[4][0].PO_SO_JO_NO],
-        datafor: 'Approval',
-      });
+      // console.log('OtherDetails params::', {
+      //   payment_id: paymentId,
+      //   type: transValue[4][0].ORDER_TYPE,
+      //   orders: [transValue[4][0].PO_SO_JO_NO],
+      //   datafor: 'Approval',
+      // });
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderMain`,
         headArrTb1,
@@ -421,6 +436,7 @@ export const AdvancePayment = ({route}) => {
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [0, 16, 18, 22, 24, 26]
           : [13, 14, 18, 20, 22];
+
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderDetails`,
         headArr,
@@ -429,7 +445,7 @@ export const AdvancePayment = ({route}) => {
         {
           payment_id: paymentId,
           type: transValue[4][0].ORDER_TYPE,
-          orders: [transValue[4][0].PO_SO_JO_NO],
+          orders: uniquePoSoJoNos,
           datafor: 'Approval',
         },
         'POST',
@@ -516,7 +532,7 @@ export const AdvancePayment = ({route}) => {
         {
           payment_id: paymentId,
           type: transValue[4][0].ORDER_TYPE,
-          orders: [transValue[4][0].PO_SO_JO_NO],
+          orders: uniquePoSoJoNos,
           datafor: 'Approval',
         },
         'POST',
@@ -971,6 +987,8 @@ export const AdvancePayment = ({route}) => {
                 'Party Name',
               ]}
               valueChanger={{
+                [`Payment Amount (${transValue[1]?.PARTY_CURRENCY})`]:
+                  totalPayableAmtRef.current,
                 [`TDS Amount (${tDSCurrency})`]:
                   parseFloat(calculatedTDS).toFixed(4),
                 [`Actual Paid After Adjustment`]:
@@ -1342,7 +1360,7 @@ export const AdvancePayment = ({route}) => {
               currentLevel,
               checkStatus,
               appRejParams,
-              `${API_URL}/api/common/rejectTransaction`,
+              appRejUrl,
             );
             toggleModalReUse();
           }}
@@ -1363,7 +1381,7 @@ export const AdvancePayment = ({route}) => {
               currentLevel,
               checkStatus,
               appRejParams,
-              `${API_URL}/api/common/rejectTransaction`,
+              appRejUrl,
             );
             toggleModalReUse();
           }}
@@ -1393,6 +1411,10 @@ export const AdvancePayment = ({route}) => {
               setAppRejParams={setAppRejParams}
               setReUseCancel={setReUseCancel}
               paymentMode={transValue[1]?.['PAYMENT_MODE']}
+              setAppRejUrl={setAppRejUrl}
+              transName={transName}
+              currentLevel={currentLevel}
+              totalNoOfLevels={totalNoOfLevels}
             />
           </View>
         </>

@@ -228,7 +228,7 @@ export const updateModRejectPayStatus = async (
     } else {
       ToastAndroid.show('Rejection Failed', ToastAndroid.SHORT);
     }
-    action == 'approve' && navigation.navigate('ApprovalMainScreen');
+    navigation.navigate('ApprovalMainScreen');
   } catch (error) {
     console.error('Error:', error);
     ToastAndroid.show('Rejection reuse Failed', ToastAndroid.SHORT);

@@ -68,6 +68,7 @@ const TableComponent = ({
   mainTableSelectedIndex,
   setMainTableSelectedIndex,
   setMainTableSelectAll,
+  // setMainLoading
 }) => {
   const navigation = useNavigation();
   const {width: screenWidth} = Dimensions.get('window');
@@ -200,32 +201,38 @@ const TableComponent = ({
   }
 
   const handleSelectAllCheckbox = () => {
+    // setMainLoading(true)
+    // if (isLoading) return; // Prevent multiple clicks while loading
     setIsLoading(true);
-    setMainTableSelectAll(isChecked);
-    const newIsChecked = !isChecked;
-    setIsChecked(newIsChecked);
 
-    // Update selectedRows based on the newIsChecked state
+    // Prevent the checkbox from toggling immediately
+    const newIsChecked = !isChecked;
+
+    // Do not update isChecked yet, process selection first
     const updatedSelection = newIsChecked
-      ? new Array(data.length).fill(true) // Select all if checked
-      : new Array(data.length).fill(false); // Deselect all if unchecked
+      ? new Array(data.length).fill(true) // Select all
+      : new Array(data.length).fill(false); // Deselect all
 
     setSelectedRows(updatedSelection);
     console.log('SelectAllCheckBox::', data);
 
-    // Pass the selected indices to the parent function if required
+    // Update parent component state
     if (newIsChecked) {
       setMainTableSelectedIndex([]);
-      data.forEach((_, index) =>
+      data.forEach((_, index) => {
         setTimeout(() => {
           onRowIndexSelect(index);
-        }, 0),
-      ); // Pass all indices
-      // onPressCheckBoxHandle(true)
+        });
+      });
     } else {
-      onRowIndexSelect([]); // Pass empty array if none are selected
+      onRowIndexSelect([]);
     }
-    setIsLoading(false);
+
+    // Now safely update isChecked **after processing is complete**
+    setTimeout(() => {
+      setIsChecked(newIsChecked);
+      setIsLoading(false);
+    }, 300); // Optional delay to ensure smooth UI updates
   };
 
   const columns = Object.keys(data[0]);

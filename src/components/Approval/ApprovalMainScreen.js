@@ -147,7 +147,7 @@ const ApprovalScreen = () => {
           // 'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
-          'CancelPayment'
+          'CancelPayment',
           // 'CanPayment',
           // 'AddDocumentApproval',
           // 'ModDocumentApproval',
@@ -226,6 +226,7 @@ const ApprovalScreen = () => {
     status,
     identification,
     currentLevel,
+    totalNoOfLevels,
   ) => {
     return () => {
       if (
@@ -238,7 +239,11 @@ const ApprovalScreen = () => {
           transId: transId,
           status: status,
         });
-      } else if (transName === 'AddPayment' || 'ModPayment' ||'CancelPayment') {
+      } else if (
+        transName === 'AddPayment' ||
+        'ModPayment' ||
+        'CancelPayment'
+      ) {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
           navigation.navigate('AdvancePayment', {
@@ -246,6 +251,7 @@ const ApprovalScreen = () => {
             transId: transId,
             status: status,
             currentLevel: currentLevel,
+            totalNoOfLevels: totalNoOfLevels,
           });
         } else if (firstWord === 'Bill') {
           navigation.navigate('BillsPayment', {
@@ -253,6 +259,7 @@ const ApprovalScreen = () => {
             transId: transId,
             status: status,
             currentLevel: currentLevel,
+            totalNoOfLevels: totalNoOfLevels,
           });
         }
         if (
@@ -315,6 +322,7 @@ const ApprovalScreen = () => {
           item.STATUS,
           item.IDENTIFICATION,
           item.CURRENT_LEVEL,
+          item.NO_OF_LEVELS,
         )}>
         <View style={styles.infoContainer}>
           <View style={styles.row}>
