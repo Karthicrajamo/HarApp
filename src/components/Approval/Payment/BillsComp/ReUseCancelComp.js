@@ -107,7 +107,7 @@ export const getUpdateCheckStatus = async (
     return response.data[0];
   } catch (error) {
     // Handle errors (e.g., network issues, non-2xx status codes)
-    console.error('API failed with error:', error);
+    console.warn('API failed with error:', error);
     // You can handle errors here (e.g., show a notification or a toast)
   }
 };

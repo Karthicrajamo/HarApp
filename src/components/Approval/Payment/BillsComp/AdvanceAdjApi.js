@@ -19,13 +19,11 @@ const AdvanceAdjApi = async (
   method = 'GET',
   inc = [],
 ) => {
-  // Check if the API URL is empty or undefined
   if (!apiUrl || apiUrl.trim() === '') {
     const emptyResult = [{}];
     headers.forEach(header => {
-      emptyResult[0][header] = ''; // Set value as empty for each header
+      emptyResult[0][header] = ''; 
     });
-
     console.log('Empty API response, returning empty data:', emptyResult);
     setData(emptyResult);
     return;
@@ -34,46 +32,42 @@ const AdvanceAdjApi = async (
   try {
     console.log('Advance adjust::', params);
     console.log('Advance adjust method::', method);
-    // Choose GET or POST request based on the method
+
     const response =
       method.toUpperCase() === 'POST'
-        ? await axios.post(apiUrl, params) // POST request with body
-        : await axios.get(apiUrl, {params}); // GET request with query params
+        ? await axios.post(apiUrl, params)
+        : await axios.get(apiUrl, { params });
 
-    // Validate the API response
     console.log('Adv response.data:', response.data);
+
     if (
       response.data &&
-      response.data !== undefined &&
-      response.data[0].length !== 0
+      Array.isArray(response.data[0]) &&
+      response.data[0].length > 0
     ) {
-      const apiResponse = response.data[0][0];
-      apiResponse.push(...inc);
+      // Process all arrays within response.data[0]
+      const processedData = response.data[0].map(apiResponse => {
+        apiResponse.push(...inc); 
 
-      console.log('AdvAdjapiResponse valueApi advAdj:', apiResponse);
-      // Process the API response
-      const row = apiResponse; // Get the first row, as it's a 2D array
+        console.log('Processing each row:', apiResponse);
 
-      // Step 1: Filter the row based on excludedIndexes
-      const filteredRow = row.filter(
-        (_, index) => !excludedIndexes.includes(index),
-      );
+        // Step 1: Filter based on excludedIndexes
+        const filteredRow = apiResponse.filter(
+          (_, index) => !excludedIndexes.includes(index)
+        );
 
-      // Step 2: Map the filtered row to the headers
-      const result = headers.reduce((acc, header, index) => {
-        if (filteredRow[index] !== undefined) {
-          acc[header] = filteredRow[index]; // Map header to value
-        } else {
-          acc[header] = 0.0; // Default to 0.0 if undefined
-        }
-        return acc;
-      }, {});
+        // Step 2: Map filtered row to headers
+        const result = headers.reduce((acc, header, index) => {
+          acc[header] = filteredRow[index] !== undefined ? filteredRow[index] : 0.0;
+          return acc;
+        }, {});
 
-      console.log('Processed Table Data: adj1', result);
-      setData([result]);
+        return result;
+      });
+
+      console.log('Final Processed Data:', processedData);
+      setData(processedData);
     } else {
-      // console.error(`Invalid response data:`, apiUrl, response.data);
-
       const emptyResult = [{}];
       headers.forEach(header => {
         emptyResult[0][header] = '';
@@ -83,12 +77,14 @@ const AdvanceAdjApi = async (
       setData(emptyResult);
     }
   } catch (error) {
+    console.error('API Fetch Error:', error);
+
     const emptyResult = [{}];
     headers.forEach(header => {
       emptyResult[0][header] = '';
     });
 
-    // setData(emptyResult);
+    setData(emptyResult);
   }
 };
 

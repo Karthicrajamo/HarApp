@@ -32,6 +32,7 @@ import CustomAlert from '../common-utils/CustomAlert';
 import {ActivityIndicator} from 'react-native-paper';
 
 const IssueGroups = () => {
+  console.log('5982358329458248');
   const fontScale = PixelRatio.getFontScale();
 
   useEffect(() => {
@@ -129,9 +130,11 @@ const IssueGroups = () => {
   const isAdvancePayment = MainType === 'advance payment';
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const [mainLoading, setMainLoading] = useState(false);
 
   const isAnyFilterSelected = selectedFilters.length > 0;
+  const [subTableLoading, setSubTableLoading] = useState(false);
+
+  const tempLoad=useRef(0)
 
   useEffect(() => {
     console.log('selectedModelData::', selectedModelData);
@@ -1714,50 +1717,63 @@ ORDER BY
       console.log(
         'data params >>>>>' + JSON.stringify({items: selectedPayments}),
       );
+      // const params = {
+      //   status: 'Issued',
+      //   payment_id: selectedPayments,
+      //   reason: '',
+      //   slabTaxData: [],
+      //   payDetails: ['', 'Advance Payment', 'AddPayment', sharedData.userName],
+      //   oldChqStatus: ['Issued', 'admin'],
+      // };
+      // console.log('data params params >>>>>' + JSON.stringify(params));
+      const response = await fetch(
+        // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
+        // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
+        `${API_URL}/api/issueGroup/issueButton?`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify({items: selectedPayments}),
+        },
+      );
 
-      // const response = await fetch(
-      //   // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
-      //   // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
-      //   `${API_URL}/api/issueGroup/issueButton?`,
-      //   {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //       Authorization: `${token}`,
-      //     },
-      //     body: JSON.stringify({items: selectedPayments}),
-      //   },
-      // );
+      console.log(
+        'response for response data : ===============>>>>>>>>>> ',
+        response,
+      );
+      console.log(
+        'response for response data : ===============>>>>>>>>>> ',
+        JSON.stringify(response.json),
+      );
+      if (!response.ok) {
+        // setIsLoading(true);
+        // showErrorModal('DRMI004', true);
+        Alert.alert(
+          'Server unreachable',
+          `Error code : DRMI004\nPlease contact admin.`,
+        );
+        showNotIssuedMessage();
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      if (response.ok) {
+        // setIsLoading(true);
+        // showNotIssuedMessage();
+        // setIsAlertVisible(true);
+        showIssuedMessage();
 
-      // console.log(
-      //   'response for response data : ===============>>>>>>>>>> ',
-      //   response,
-      // );
-      // console.log(
-      //   'response for response data : ===============>>>>>>>>>> ',
-      //   JSON.stringify(response.json),
-      // );
-      // if (!response.ok) {
-      //   // setIsLoading(true);
-      //   Alert.alert(
-      //     'Server unreachable',
-      //     `Error code : DRMI004\nPlease contact admin.`,
-      //   );
-      //   showNotIssuedMessage();
-      //   throw new Error(`HTTP error! Status: ${response.status}`);
-      // }
-      // if (response.ok) {
-      //   // setIsLoading(true);
-      //   // showNotIssuedMessage();
-      //   // setIsAlertVisible(true);
-      //   showIssuedMessage();
-
-      //   // throw new Error(`HTTP error! Status: ${response.status}`);
-      // }
-      // const data = await response.json();
-      // console.log('response for issue data : ===============>>>>>>>>>> ', data);
-      // setTimeout(() => handleRefresh(), 1000);
+        // throw new Error(`HTTP error! Status: ${response.status}`);
+        const data = await response.json();
+        console.log(
+          'response for issue data : ===============>>>>>>>>>> ',
+          data,
+        );
+        setTimeout(() => handleRefresh(), 1000);
+      }
     } catch (error) {
+      // showErrorModal('GENCOO1', true);
       // console.error('Error fetching table data:', error);
       throw new Error(`HTTP error! Status: ${error}`);
     } finally {
@@ -2324,6 +2340,7 @@ ORDER BY
             <View style={{flexShrink: 1, marginTop: 0}}>
               {filteredMainData.length > 0 ? (
                 <TableComponent
+                tempLoad={tempLoad}
                   key={filteredMainData.length}
                   initialData={filteredMainData}
                   onRowIndexSelectDataLoad={value => {
@@ -2460,6 +2477,7 @@ ORDER BY
               {/* Second SubTableComponent */}
               {selectedSubData.length > 0 && (
                 <SubTableComponent
+                  setSubTableLoading={setSubTableLoading}
                   initialData={selectedSubData}
                   showCheckBox={true}
                   noModel={false}
@@ -2970,6 +2988,7 @@ ORDER BY
           </View>
         </View>
       </Modal>
+
       {isModelButton && (
         <TouchableOpacity onPress={() => isModel(true)}>
           <View
@@ -3103,12 +3122,73 @@ ORDER BY
           </View>
         </View>
       )} */}
+      {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
+
       {mainTableSelectedIndex.length !==
       Object.keys(selectedPayments).length ? (
         <LoadingIndicator message="Please wait..." />
       ) : (
         <></>
       )}
+      {isLoading &&
+        mainTableSelectedIndex.length ===
+          Object.keys(selectedPayments).length && (
+          // <View
+          //   style={{
+          //     flex: 1,
+          //     // height: 100,
+          //     alignItems: 'center',
+          //     justifyContent: 'center',
+          //     backgroundColor: '#f9f9f9', // Light background color
+          //     borderRadius: 10, // Rounded corners
+          //     padding: 10,
+          //     margin: 10,
+          //   }}>
+          //   <ActivityIndicator size="small" color="#e63946" />
+          //   {/* Modern loading indicator */}
+          //   <Text
+          //     style={{
+          //       marginTop: 10,
+          //       fontSize: 16,
+          //       fontWeight: '500',
+          //       color: '#e63946',
+          //     }}>
+          //     Loading, please wait..
+          //   </Text>
+          // </View>
+          <View style={{flex: 1}}>
+            <View
+              style={{
+                height: 100,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#ffffff', // White background for contrast
+                borderRadius: 12, // Rounded corners for a modern look
+                padding: 20, // Increased padding for better spacing
+                margin: 10,
+                // position: 'absolute',
+                // top: '30%',
+                // left: '40%',
+                shadowColor: '#000', // Shadow color for iOS
+                shadowOffset: {width: 0, height: 4}, // Shadow offset for iOS
+                shadowOpacity: 0.25, // Shadow opacity for iOS
+                shadowRadius: 4, // Shadow blur for iOS
+                elevation: 8, // Elevation for Android shadow
+              }}>
+              <ActivityIndicator size="small" color="#e63946" />
+              {/* Modern loading indicator */}
+              <Text
+                style={{
+                  marginTop: 12, // Space between the indicator and text
+                  fontSize: 10,
+                  fontWeight: '600',
+                  color: '#e63946',
+                }}>
+                Loading, please wait...
+              </Text>
+            </View>
+          </View>
+        )}
     </View>
   );
 };

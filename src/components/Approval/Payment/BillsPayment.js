@@ -154,7 +154,7 @@ export const BillsPayment = ({route}) => {
         };
 
         return {
-          type: 'PO',
+          type: orderTyp,
           adjustmentMethod: 'Payment Adjustment',
           orderSelectedMat: selectedMat,
           orderMat: mainData[3], // Assuming this is a fixed value
@@ -185,6 +185,7 @@ export const BillsPayment = ({route}) => {
             ]
           : orderTyp === 'PO'
           ? [
+              'id',
               'P Order No',
               'PO Status',
               'PO Value',
@@ -214,7 +215,7 @@ export const BillsPayment = ({route}) => {
             ];
       const advAdjExcluse =
         orderTyp === 'PO'
-          ? [0, 3, 4, 5, 6, 7, 14, 18, 19]
+          ? [3, 4, 5, 6, 7, 14, 18, 19]
           : [2, 3, 4, 5, 6, 13, 17, 19];
 
       const adjAdvUrl =
@@ -312,10 +313,44 @@ export const BillsPayment = ({route}) => {
 
   useEffect(() => console.log('advAdjSub::', advAdjSub), [advAdjSub]);
 
-  useEffect(
-    () => console.log('advanceAdjustmentModal::', advanceAdjustmentModal),
-    [advanceAdjustmentModal],
-  );
+  useEffect(() => {
+    console.log('advanceAdjustmentModal::', advanceAdjustmentModal);
+
+    if (orderTyp === 'PO') {
+      const filteredData = advanceAdjustmentModal.filter(item =>
+        item['P Order No'].startsWith('TN'),
+      );
+      console.log('transValue[13]::' + JSON.stringify(transValue[13]));
+      for (let i = 0; transValue[13].length > i; i++) {
+        // transValue[13][i]['FROM_ORDER']
+        console.log(
+          'transfilter::' +
+            filteredData.includes(transValue[13][i]['FROM_ORDER']),
+        );
+        if (
+          transValue[13][i]['MAT_CHARGE'] != 'MAT_TAX' &&
+          filteredData.includes(transValue[13][i]['FROM_ORDER'])
+        ) {
+          console.log(
+            'transvalueS::[' + i + ']' + transValue[13][i]['FROM_ORDER'],
+          );
+        }
+      }
+      // Only update the state if data is actually different to avoid unnecessary renders
+      if (
+        JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
+      ) {
+        setAdvanceAdjustmentModal(filteredData);
+      }
+      // setAdvanceAdjustmentModal(prevData => {
+      //   const isDataSame =
+      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
+      //   return isDataSame ? prevData : filteredData;
+      // });
+
+      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
+    }
+  }, [advanceAdjustmentModal]); // Only re-run when orderTyp changes
 
   useEffect(() => {
     console.log('paidAdjustment::', paidAdjustment);
@@ -326,7 +361,7 @@ export const BillsPayment = ({route}) => {
       actual += parseFloat(billsPay[i]['Actual Amt']);
     }
     console.log('actualAmt0::', actual);
-    setActual(actual)
+    setActual(actual);
     actual += Math.abs(
       parseFloat(
         transValue[1]?.['TAX_ADJUSTED'] ? transValue[1]['TAX_ADJUSTED'] : 0,

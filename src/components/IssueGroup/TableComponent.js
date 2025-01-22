@@ -67,8 +67,7 @@ const TableComponent = ({
   onRowIndexSelectDataLoad,
   mainTableSelectedIndex,
   setMainTableSelectedIndex,
-  setMainTableSelectAll,
-  // setMainLoading
+  setMainTableSelectAll,tempLoad
 }) => {
   const navigation = useNavigation();
   const {width: screenWidth} = Dimensions.get('window');
@@ -201,38 +200,33 @@ const TableComponent = ({
   }
 
   const handleSelectAllCheckbox = () => {
-    // setMainLoading(true)
-    // if (isLoading) return; // Prevent multiple clicks while loading
+    
     setIsLoading(true);
-
-    // Prevent the checkbox from toggling immediately
+    setMainTableSelectAll(isChecked);
     const newIsChecked = !isChecked;
+    setIsChecked(newIsChecked);
 
-    // Do not update isChecked yet, process selection first
+    // Update selectedRows based on the newIsChecked state
     const updatedSelection = newIsChecked
-      ? new Array(data.length).fill(true) // Select all
-      : new Array(data.length).fill(false); // Deselect all
+      ? new Array(data.length).fill(true) // Select all if checked
+      : new Array(data.length).fill(false); // Deselect all if unchecked
 
     setSelectedRows(updatedSelection);
-    console.log('SelectAllCheckBox::', data);
+    console.log('SelectAllCheckBox::123', data);
 
-    // Update parent component state
+    // Pass the selected indices to the parent function if required
     if (newIsChecked) {
       setMainTableSelectedIndex([]);
       data.forEach((_, index) => {
-        setTimeout(() => {
+        setImmediate(() => {
           onRowIndexSelect(index);
         });
       });
+      // onPressCheckBoxHandle(true)
     } else {
-      onRowIndexSelect([]);
+      onRowIndexSelect([]); // Pass empty array if none are selected
     }
-
-    // Now safely update isChecked **after processing is complete**
-    setTimeout(() => {
-      setIsChecked(newIsChecked);
-      setIsLoading(false);
-    }, 300); // Optional delay to ensure smooth UI updates
+    setIsLoading(false);
   };
 
   const columns = Object.keys(data[0]);
