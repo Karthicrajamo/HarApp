@@ -92,28 +92,32 @@ export const AdvancePayment = ({route}) => {
 
   useEffect(() => {
     console.log('additionalCharges:::', additionalCharges);
-    if (additionalCharges) {
-      const total =
-        parseFloat(additionalCharges[0]['Remaining Balance']) +
-        parseFloat(additionalCharges[0]['Advance Amount']) +
-        parseFloat(additionalCharges[0]['Advance Paid']) +
-        parseFloat(additionalCharges[0]['TDS Amount']);
-      console.log('totaladditionalCharges:::', Math.round(total));
-      additionalCharges[0][`Total Amount(${currency})`] = Math.round(total);
+    for (let i = 0; additionalCharges.length > i; i++) {
+      if (additionalCharges) {
+        const total =
+          parseFloat(additionalCharges[i]['Remaining Balance']) +
+          parseFloat(additionalCharges[i]['Advance Amount']) +
+          parseFloat(additionalCharges[i]['Advance Paid']) +
+          parseFloat(additionalCharges[i]['TDS Amount']);
+        console.log('totaladditionalCharges:::', Math.round(total));
+        additionalCharges[i][`Total Amount(${currency})`] = Math.round(total);
+      }
     }
   }, [additionalCharges]);
 
   useEffect(() => {
     console.log('materialAdPayment:::', materialAdPayment);
-    if (materialAdPayment) {
-      const total =
-        parseFloat(materialAdPayment[0]['Remaining Balance']) +
-        parseFloat(materialAdPayment[0]['Advance Amt']) +
-        parseFloat(materialAdPayment[0]['Advance Paid']) +
-        parseFloat(materialAdPayment[0]['TDS Amount']);
-      console.log('totalmaterialAdPayment:::', Math.round(total));
-      materialAdPayment[0][`Total Amount(${currency})`] =
-        parseFloat(total).toFixed(4);
+    for (let i = 0; materialAdPayment.length > i; i++) {
+      if (materialAdPayment) {
+        const total =
+          parseFloat(materialAdPayment[i]['Remaining Balance']) +
+          parseFloat(materialAdPayment[i]['Advance Amt']) +
+          parseFloat(materialAdPayment[i]['Advance Paid']) +
+          parseFloat(materialAdPayment[i]['TDS Amount']);
+        console.log('totalmaterialAdPayment:::', Math.round(total));
+        materialAdPayment[i][`Total Amount(${currency})`] =
+          parseFloat(total).toFixed(4);
+      }
     }
   }, [materialAdPayment]);
 
@@ -521,7 +525,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const adChargeExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
-          ? [0, 12, 14, 17, 21, 22, 24]
+          ? [0, 12, 14, 18, 21, 22, 24]
           : [13, 15, 20, 21, 23];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
