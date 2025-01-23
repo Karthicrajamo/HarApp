@@ -212,14 +212,14 @@ export const updateModRejectPayStatus = async (
     // const parsedParams = JSON.parse(sanitizedParams);
     console.log('appRejParams::', appRejParams);
     console.log('appRejParams::', JSON.stringify(appRejParams));
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', // Set the content type to JSON
-      },
-      body: JSON.stringify(appRejParams), // Convert the body to a JSON string
-    });
-    console.log('response ApRejCom::', response);
+    // const response = await fetch(url, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json', // Set the content type to JSON
+    //   },
+    //   body: JSON.stringify(appRejParams), // Convert the body to a JSON string
+    // });
+    // console.log('response ApRejCom::', response);
 
     if (response.ok) {
       const data = await response.json();

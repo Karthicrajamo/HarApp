@@ -30,9 +30,9 @@ import {ToastAndroid} from 'react-native';
 import CustomModal from '../common-utils/modal';
 import CustomAlert from '../common-utils/CustomAlert';
 import {ActivityIndicator} from 'react-native-paper';
+import {setActive} from 'react-native-sound';
 
 const IssueGroups = () => {
-  console.log('5982358329458248');
   const fontScale = PixelRatio.getFontScale();
 
   useEffect(() => {
@@ -124,6 +124,7 @@ const IssueGroups = () => {
   const [selectedPayments, setSelectedPayments] = useState({});
   const [selectedPaymentType, setSelectedPaymentType] = useState('');
   const [MainType, setMainType] = useState('');
+  const [tempPayments, setTempPayments] = useState([]);
   const [allSelected, setAllSelected] = useState(false);
   const [selectedArray, setSelectedArray] = useState([]);
   const [activeGroupId, SetActiveGroupId] = useState('');
@@ -134,7 +135,7 @@ const IssueGroups = () => {
   const isAnyFilterSelected = selectedFilters.length > 0;
   const [subTableLoading, setSubTableLoading] = useState(false);
 
-  const tempLoad=useRef(0)
+  const tempLoad = useRef(0);
 
   useEffect(() => {
     console.log('selectedModelData::', selectedModelData);
@@ -143,6 +144,20 @@ const IssueGroups = () => {
       setIsLoading(false);
     }
   }, [selectedModelData]);
+  useEffect(() => {
+    console.log('tempPayments::', tempPayments);
+    const filterPayments = payments => {
+      return Object.fromEntries(
+        Object.entries(payments).filter(([key]) => !key.startsWith('groupId')),
+      );
+    };
+
+    // Get the filtered result
+    const filteredPayments = filterPayments(tempPayments);
+
+    console.log('#$%##%#$%#%' + JSON.stringify(filteredPayments));
+    setSelectedPayments(filteredPayments);
+  }, [tempPayments]);
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
@@ -150,6 +165,27 @@ const IssueGroups = () => {
       'selectedPayments.length::',
       Object.keys(selectedPayments).length,
     );
+    const filterSelectedPayments = (
+      selectedPayments,
+      mainTableselectedIndex,
+    ) => {
+      return Object.fromEntries(
+        Object.entries(selectedPayments).filter(([key]) =>
+          mainTableselectedIndex.includes(parseInt(key.split(':')[1])),
+        ),
+      );
+    };
+
+    // Get the filtered result
+    const filteredPayments = filterSelectedPayments(
+      selectedPayments,
+      mainTableSelectedIndex,
+    );
+
+    console.log('------------sdfd' + JSON.stringify(filteredPayments));
+    if (JSON.stringify(selectedPayments) != JSON.stringify(filteredPayments)) {
+      setSelectedPayments(filteredPayments);
+    }
   }, [selectedPayments]);
   useEffect(() => {
     console.log('mainTableSelectAll::', mainTableSelectAll);
@@ -211,6 +247,7 @@ const IssueGroups = () => {
 
   useEffect(() => {
     console.log('selectedCheckBoxData:::', selectedCheckBoxData);
+
     // setSelectedPayments(prev=>
     // {}
     // )
@@ -2280,787 +2317,781 @@ ORDER BY
 
   return (
     <View style={{flex: 1}}>
-      <TitleBar
-        text="Payment Issue Group"
-        showMenuBar={true}
-        onMenuPress={() => navigation.openDrawer()}
-        showRefreshIcon={true}
-        onRefreshPress={handleRefresh}
-        showCloseIcon={true}
-        onClose={handleHomeScreen}
-        showFileIcon={true}
-        onFilePress={() => setPDFModalVisible(true)}
-        showFilterIcon={true}
-        onFilterPress={() => setFilterModalVisible(true)}
-      />
-      <View
-        style={{
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: 0,
-        }}>
-        {/* {mainTableSelectedIndex.length ===
-          Object.keys(selectedPayments).length && ( */}
-        <TouchableOpacity
-          onPress={() => {
-            // setTimeout(() => {
-            //   setIsLoading(true);
-            // }, 10000);
-            // setIsLoading(false);
-            mainTableSelectedIndex.length ===
-              Object.keys(selectedPayments).length &&
-            mainTableSelectedIndex.length !== 0
-              ? handleIssue()
-              : null;
-          }}>
-          <Text
-            style={{
-              backgroundColor:
-                mainTableSelectedIndex.length ===
-                  Object.keys(selectedPayments).length &&
-                mainTableSelectedIndex.length !== 0
-                  ? CustomThemeColors.primary
-                  : CustomThemeColors.fadedPrimary,
-              color: 'white',
-              paddingHorizontal: 20,
-              paddingVertical: 5,
-              borderRadius: 10,
-            }}>
-            Issue
-          </Text>
-        </TouchableOpacity>
-        {/* )} */}
-      </View>
-
-      {/* </View> */}
       <View style={{flex: 1}}>
-        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-          <View style={{flexGrow: 1, paddingVertical: 0, marginTop: -10}}>
-            {/* First TableComponent */}
-            <View style={{flexShrink: 1, marginTop: 0}}>
-              {filteredMainData.length > 0 ? (
-                <TableComponent
-                tempLoad={tempLoad}
-                  key={filteredMainData.length}
-                  initialData={filteredMainData}
-                  onRowIndexSelectDataLoad={value => {
-                    setSelectedRow(value);
-                    console.log('selectedRow_____', tableData[value]);
-                    console.log('selectedRow_____array', value);
-                    // GroupTransformObject(tableData[value])
-                    setMainType(tableData[value].type);
-                    SetActiveGroupId(tableData[value].groupId);
-                    setModelButton(false);
+        <TitleBar
+          text="Payment Issue Group"
+          showMenuBar={true}
+          onMenuPress={() => navigation.openDrawer()}
+          showRefreshIcon={true}
+          onRefreshPress={handleRefresh}
+          showCloseIcon={true}
+          onClose={handleHomeScreen}
+          showFileIcon={true}
+          onFilePress={() => setPDFModalVisible(true)}
+          showFilterIcon={true}
+          onFilterPress={() => setFilterModalVisible(true)}
+        />
+        <View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 0,
+          }}>
+          {/* {mainTableSelectedIndex.length ===
+          Object.keys(selectedPayments).length && ( */}
+          <TouchableOpacity
+            onPress={() => {
+              // setTimeout(() => {
+              //   setIsLoading(true);
+              // }, 10000);
+              // setIsLoading(false);
+              mainTableSelectedIndex.length ===
+                Object.keys(selectedPayments).length &&
+              mainTableSelectedIndex.length !== 0
+                ? handleIssue()
+                : null;
+            }}>
+            <Text
+              style={{
+                backgroundColor:
+                  mainTableSelectedIndex.length ===
+                    Object.keys(selectedPayments).length &&
+                  mainTableSelectedIndex.length !== 0
+                    ? CustomThemeColors.primary
+                    : CustomThemeColors.fadedPrimary,
+                color: 'white',
+                paddingHorizontal: 20,
+                paddingVertical: 5,
+                borderRadius: 10,
+              }}>
+              Issue
+            </Text>
+          </TouchableOpacity>
+          {/* )} */}
+        </View>
 
-                    setActiveDataPdf([]);
-                  }}
-                  onRowIndexSelect={value => {
-                    if (value.length < 1) {
-                      console.log('empty data::::');
-                      setMainTableSelectedIndex([]);
-                      setSelectedCheckBoxData([]);
-                      setSelectedPayments({});
-                      setTimeout(() => setOnPressCheckBoxHandle(false), 0);
-                      setActiveDataPdf([]);
-                    } else {
-                      setActiveDataPdf([]);
+        {/* </View> */}
+        <View style={{flex: 1}}>
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            <View style={{flexGrow: 1, paddingVertical: 0, marginTop: -10}}>
+              {/* First TableComponent */}
+              <View style={{flexShrink: 1, marginTop: 0}}>
+                {filteredMainData.length > 0 ? (
+                  <TableComponent
+                    tempLoad={tempLoad}
+                    key={filteredMainData.length}
+                    initialData={filteredMainData}
+                    onRowIndexSelectDataLoad={value => {
                       setSelectedRow(value);
-                      setMainType(tableData[value]?.type);
-                      const groupId = tableData[value]?.groupId;
-                      GroupTransformObject(tableData[value]);
+                      console.log('selectedRow_____', tableData[value]);
+                      console.log('selectedRow_____array', value);
+                      // GroupTransformObject(tableData[value])
+                      setMainType(tableData[value].type);
                       SetActiveGroupId(tableData[value].groupId);
-                      console.log('rowdataaa::', value);
-                      setMainTableSelectedIndex(prev => {
-                        if (prev.includes(groupId)) {
-                          const groupKey = `groupId:${groupId}`;
-                          console.log(
-                            'selectedCheckBoxData before filtering:',
-                            selectedCheckBoxData,
-                          );
-                          console.log('groupKey:', groupKey);
-                          console.log('groupId:', groupId);
+                      setModelButton(false);
 
-                          // const filteredData = Object?.keys(
-                          //   selectedCheckBoxData,
-                          // ).reduce((acc, key) => {
-                          //   // Check if the groupId in the key matches the groupId we want to remove
-                          //   if (!key.includes(`groupId:${groupId}`)) {
-                          //     // Add the entry to the accumulator if the condition is met
-                          //     acc[key] = selectedCheckBoxData[key];
-                          //   }
-                          //   return acc;
-                          // }, {});
+                      setActiveDataPdf([]);
+                    }}
+                    onRowIndexSelect={value => {
+                      if (value.length < 1) {
+                        console.log('empty data::::');
+                        setMainTableSelectedIndex([]);
+                        setSelectedCheckBoxData([]);
+                        setSelectedPayments({});
+                        setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                        setActiveDataPdf([]);
+                      } else {
+                        setActiveDataPdf([]);
+                        setSelectedRow(value);
+                        setMainType(tableData[value]?.type);
+                        const groupId = tableData[value]?.groupId;
+                        GroupTransformObject(tableData[value]);
+                        SetActiveGroupId(tableData[value].groupId);
+                        console.log('rowdataaa::', value);
+                        setMainTableSelectedIndex(prev => {
+                          if (prev.includes(groupId)) {
+                            const groupKey = `groupId:${groupId}`;
+                            console.log(
+                              'selectedCheckBoxData before filtering:',
+                              selectedCheckBoxData,
+                            );
+                            console.log('groupKey:', groupKey);
+                            console.log('groupId:', groupId);
 
-                          const filteredData = Object.keys(
-                            selectedCheckBoxData || {},
-                          ).reduce((acc, key) => {
-                            // Check if the groupId in the key matches the groupId we want to remove
-                            if (!key.includes(`groupId:${groupId}`)) {
-                              // Add the entry to the accumulator if the condition is met
-                              acc[key] = selectedCheckBoxData[key];
-                            }
-                            return acc;
-                          }, {});
+                            // const filteredData = Object?.keys(
+                            //   selectedCheckBoxData,
+                            // ).reduce((acc, key) => {
+                            //   // Check if the groupId in the key matches the groupId we want to remove
+                            //   if (!key.includes(`groupId:${groupId}`)) {
+                            //     // Add the entry to the accumulator if the condition is met
+                            //     acc[key] = selectedCheckBoxData[key];
+                            //   }
+                            //   return acc;
+                            // }, {});
 
-                          console.log('filteredData::', filteredData);
-                          setSelectedCheckBoxData(filterMainData);
-                          // Log the entire object after filtering
+                            const filteredData = Object.keys(
+                              selectedCheckBoxData || {},
+                            ).reduce((acc, key) => {
+                              // Check if the groupId in the key matches the groupId we want to remove
+                              if (!key.includes(`bills:${groupId}`)) {
+                                // Add the entry to the accumulator if the condition is met
+                                acc[key] = selectedCheckBoxData[key];
+                              }
+                              return acc;
+                            }, {});
 
-                          console.log(
-                            'selectedCheckBoxData after filtering:',
-                            filteredData,
-                          );
-                          setTimeout(() => setOnPressCheckBoxHandle(false), 0);
-                          return prev.filter(id => id !== groupId);
-                        } else {
-                          setTimeout(() => setOnPressCheckBoxHandle(true), 0);
-                          return [...prev, groupId];
-                        }
-                      });
-                      // const dataObject = {...tableData[value], Select: true};
-                      // setSelectedGroupData(dataObject);
-                    }
-                    setModelButton(false);
-                  }}
-                  onPressCheckBoxHandle={setOnPressCheckBoxHandle}
-                  mainTableSelectedIndex={mainTableSelectedIndex}
-                  setMainTableSelectedIndex={setMainTableSelectedIndex}
-                  noModel={false}
-                  showCheckBox={true}
-                  onlyFetchData={true}
-                  setMainTableSelectAll={setMainTableSelectAll}
-                  style={{marginTop: 20}}
-                />
-              ) : (
-                <View style={styles.container}>
-                  {/* Table Header */}
-                  <View style={styles.headerRow}>
-                    {headers.map((header, index) => (
-                      <Text
-                        key={index}
-                        style={[
-                          styles.headerText,
-                          {
-                            fontSize: DeviceInfo.isTablet()
-                              ? fontScale >= 1.2999999523162842
-                                ? 10
-                                : fontScale == 0.8500000238418579
-                                ? 14
-                                : 12
-                              : 14,
-                          },
-                        ]}>
-                        {header}
-                      </Text>
-                    ))}
-                  </View>
-                  {firstTableLoadingRef.current === true && (
-                    <View style={styles.dataRow}>
-                      <Text style={styles.dataText}>Please wait...</Text>
+                            console.log('filteredData::', filteredData);
+                            setSelectedCheckBoxData(filterMainData);
+                            // Log the entire object after filtering
+
+                            console.log(
+                              'selectedCheckBoxData after filtering:',
+                              filteredData,
+                            );
+                            setTimeout(
+                              () => setOnPressCheckBoxHandle(false),
+                              0,
+                            );
+                            return prev.filter(id => id !== groupId);
+                          } else {
+                            setTimeout(() => setOnPressCheckBoxHandle(true), 0);
+                            return [...prev, groupId];
+                          }
+                        });
+                        // const dataObject = {...tableData[value], Select: true};
+                        // setSelectedGroupData(dataObject);
+                      }
+                      setModelButton(false);
+                    }}
+                    onPressCheckBoxHandle={setOnPressCheckBoxHandle}
+                    mainTableSelectedIndex={mainTableSelectedIndex}
+                    setMainTableSelectedIndex={setMainTableSelectedIndex}
+                    noModel={false}
+                    showCheckBox={true}
+                    onlyFetchData={true}
+                    setMainTableSelectAll={setMainTableSelectAll}
+                    style={{marginTop: 20}}
+                  />
+                ) : (
+                  <View style={styles.container}>
+                    {/* Table Header */}
+                    <View style={styles.headerRow}>
+                      {headers.map((header, index) => (
+                        <Text
+                          key={index}
+                          style={[
+                            styles.headerText,
+                            {
+                              fontSize: DeviceInfo.isTablet()
+                                ? fontScale >= 1.2999999523162842
+                                  ? 10
+                                  : fontScale == 0.8500000238418579
+                                  ? 14
+                                  : 12
+                                : 14,
+                            },
+                          ]}>
+                          {header}
+                        </Text>
+                      ))}
                     </View>
-                  )}
-                  {firstTableLoadingRef.current === false &&
-                    filteredMainData.length === 0 && (
+                    {firstTableLoadingRef.current === true && (
                       <View style={styles.dataRow}>
-                        <Text style={styles.dataText}>No data to display.</Text>
+                        <Text style={styles.dataText}>Please wait...</Text>
                       </View>
                     )}
-                </View>
-              )}
-            </View>
+                    {firstTableLoadingRef.current === false &&
+                      filteredMainData.length === 0 && (
+                        <View style={styles.dataRow}>
+                          <Text style={styles.dataText}>
+                            No data to display.
+                          </Text>
+                        </View>
+                      )}
+                  </View>
+                )}
+              </View>
 
-            <View
-              style={{
-                flexShrink: 1,
-                // marginTop: -20,
-              }}>
-              {/* Second SubTableComponent */}
-              {selectedSubData.length > 0 && (
-                <SubTableComponent
-                  setSubTableLoading={setSubTableLoading}
-                  initialData={selectedSubData}
-                  showCheckBox={true}
-                  noModel={false}
-                  selectAllIsChecked={onPressCheckBoxHandle}
-                  setSelectAllIsChecked={setOnPressCheckBoxHandle}
-                  onRowIndexSelect={data => {
-                    setIsLoading(true);
+              <View
+                style={{
+                  flexShrink: 1,
+                  // marginTop: -20,
+                }}>
+                {/* Second SubTableComponent */}
+                {selectedSubData.length > 0 && (
+                  <SubTableComponent
+                    setSubTableLoading={setSubTableLoading}
+                    initialData={selectedSubData}
+                    showCheckBox={true}
+                    noModel={false}
+                    selectAllIsChecked={onPressCheckBoxHandle}
+                    setSelectAllIsChecked={setOnPressCheckBoxHandle}
+                    MainType={MainType}
+                    setTempPayments={setTempPayments}
+                    onRowIndexSelect={data => {
+                      setIsLoading(true);
 
-                    if (data.length == 0) {
-                      const ids = selectedSubData
-                        .map(item => item.paymentId || item.transferId)
-                        .filter(Boolean);
-                      console.log('IDs:', ids);
-                      // setSelectedPayments([]);
-                      setSelectedPayments(prev => {
-                        // Create a new object to avoid mutating the previous state directly
-                        const updatedPayments = {...prev};
+                      if (data.length == 0) {
+                        const ids = selectedSubData
+                          .map(item => item.paymentId || item.transferId)
+                          .filter(Boolean);
+                        console.log('IDs:', ids);
+                        // setSelectedPayments([]);
+                        setSelectedPayments(prev => {
+                          // Create a new object to avoid mutating the previous state directly
+                          const updatedPayments = {...prev};
 
-                        // Construct the key to filter out
-                        const keyToRemove = `${MainType}:${activeGroupId}`;
+                          // Construct the key to filter out
+                          const keyToRemove = `${MainType}:${activeGroupId}`;
 
-                        // Delete the key from the updated object
-                        delete updatedPayments[keyToRemove];
+                          // Delete the key from the updated object
+                          delete updatedPayments[keyToRemove];
 
-                        // Return the updated state
-                        return updatedPayments;
-                      });
-                      // Remove the activeGroupId from the mainTableSelectedIndex
-                      // setMainTableSelectedIndex(prev => {
-                      //   console.log(
-                      //     'Active group ID being removed:',
-                      //     activeGroupId,
-                      //   );
-                      //   const filtered = prev.filter(
-                      //     item => item !== activeGroupId,
-                      //   );
-                      //   console.log('New filtered indexes:', filtered);
-                      //   return filtered;
-                      // });
-                      setMainTableSelectedIndex(prev => {
-                        if (prev.includes(activeGroupId)) {
-                          const groupKey = `activeGroupId:${activeGroupId}`;
-                          console.log(
-                            'selectedCheckBoxData before filtering:',
-                            selectedCheckBoxData,
-                          );
-                          console.log('groupKey:', groupKey);
-                          console.log('activeGroupId:', activeGroupId);
-
-                          // const filteredData = Object?.keys(
-                          //   selectedCheckBoxData,
-                          // ).reduce((acc, key) => {
-                          //   // Check if the groupId in the key matches the groupId we want to remove
-                          //   if (!key.includes(`groupId:${groupId}`)) {
-                          //     // Add the entry to the accumulator if the condition is met
-                          //     acc[key] = selectedCheckBoxData[key];
-                          //   }
-                          //   return acc;
-                          // }, {});
-
-                          const filteredData = Object.keys(
-                            selectedCheckBoxData || {},
-                          ).reduce((acc, key) => {
-                            // Check if the groupId in the key matches the groupId we want to remove
-                            if (
-                              !key.includes(`activeGroupId:${activeGroupId}`)
-                            ) {
-                              // Add the entry to the accumulator if the condition is met
-                              acc[key] = selectedCheckBoxData[key];
-                            }
-                            return acc;
-                          }, {});
-
-                          console.log('filteredData::', filteredData);
-                          setSelectedCheckBoxData(filterMainData);
-                          // Log the entire object after filtering
-
-                          console.log(
-                            'selectedCheckBoxData after filtering:',
-                            filteredData,
-                          );
-                          setTimeout(() => setOnPressCheckBoxHandle(false), 0);
-                          return prev.filter(id => id !== activeGroupId);
-                        } else {
-                          setTimeout(() => setOnPressCheckBoxHandle(true), 0);
-                          return [...prev, activeGroupId];
-                        }
-                      });
-
-                      // Prepare the updated selectedArray
-                      setSelectedArray(prevArray => {
-                        // Start with the current selectedArray state
-                        let updatedArray = [...prevArray];
-
-                        ids.forEach(id => {
-                          const exists = updatedArray.includes(id);
-
-                          // If id exists, remove it; if it doesn’t, add it
-                          if (exists) {
-                            updatedArray = updatedArray.filter(
-                              item => item !== id,
+                          // Return the updated state
+                          return updatedPayments;
+                        });
+                        // Remove the activeGroupId from the mainTableSelectedIndex
+                        // setMainTableSelectedIndex(prev => {
+                        //   console.log(
+                        //     'Active group ID being removed:',
+                        //     activeGroupId,
+                        //   );
+                        //   const filtered = prev.filter(
+                        //     item => item !== activeGroupId,
+                        //   );
+                        //   console.log('New filtered indexes:', filtered);
+                        //   return filtered;
+                        // });
+                        setMainTableSelectedIndex(prev => {
+                          if (prev.includes(activeGroupId)) {
+                            const groupKey = `activeGroupId:${activeGroupId}`;
+                            console.log(
+                              'selectedCheckBoxData before filtering:',
+                              selectedCheckBoxData,
                             );
+                            console.log('groupKey:', groupKey);
+                            console.log('activeGroupId:', activeGroupId);
+
+                            // const filteredData = Object?.keys(
+                            //   selectedCheckBoxData,
+                            // ).reduce((acc, key) => {
+                            //   // Check if the groupId in the key matches the groupId we want to remove
+                            //   if (!key.includes(`groupId:${groupId}`)) {
+                            //     // Add the entry to the accumulator if the condition is met
+                            //     acc[key] = selectedCheckBoxData[key];
+                            //   }
+                            //   return acc;
+                            // }, {});
+
+                            const filteredData = Object.keys(
+                              selectedCheckBoxData || {},
+                            ).reduce((acc, key) => {
+                              // Check if the groupId in the key matches the groupId we want to remove
+                              if (
+                                !key.includes(`activeGroupId:${activeGroupId}`)
+                              ) {
+                                // Add the entry to the accumulator if the condition is met
+                                acc[key] = selectedCheckBoxData[key];
+                              }
+                              return acc;
+                            }, {});
+
+                            console.log('filteredData::', filteredData);
+                            setSelectedCheckBoxData(filterMainData);
+                            // Log the entire object after filtering
+
+                            console.log(
+                              'selectedCheckBoxData after filtering:',
+                              filteredData,
+                            );
+                            setTimeout(
+                              () => setOnPressCheckBoxHandle(false),
+                              0,
+                            );
+                            return prev.filter(id => id !== activeGroupId);
+                          } else {
+                            setTimeout(() => setOnPressCheckBoxHandle(true), 0);
+                            return [...prev, activeGroupId];
                           }
                         });
 
-                        return updatedArray;
-                      });
-                      setIsLoading(false);
+                        // Prepare the updated selectedArray
+                        setSelectedArray(prevArray => {
+                          // Start with the current selectedArray state
+                          let updatedArray = [...prevArray];
 
-                      // }
-                    } else {
+                          ids.forEach(id => {
+                            const exists = updatedArray.includes(id);
+
+                            // If id exists, remove it; if it doesn’t, add it
+                            if (exists) {
+                              updatedArray = updatedArray.filter(
+                                item => item !== id,
+                              );
+                            }
+                          });
+
+                          return updatedArray;
+                        });
+                        setIsLoading(false);
+
+                        // }
+                      } else {
+                        setIsLoading(true);
+
+                        const {transferId, paymentId} = data;
+                        // const type = tableData[selectedRow].type;
+                        const groupId = data.groupId;
+                        const type =
+                          tableData.find(item => item.groupId === groupId)
+                            ?.type || 'No data to display';
+
+                        console.log('matchingType--', type);
+                        const selectedId = transferId || paymentId; // Use either transferId or paymentId
+                        // const issuedStus =
+                        //   data.paymentStatus === 'Issued' ? data : null;
+
+                        console.log('dataaaaaa:', data);
+
+                        console.log('Updated selectedArray:', selectedArray);
+
+                        setpartyNames(data.partyName);
+                        setSelectedGroupId(prev => ({
+                          ...prev,
+                          groupId: groupId,
+                        }));
+
+                        setSelectedPayments(prevPayments => {
+                          console.log('selectedPayments---::::', selectedId);
+                          const key = `${type}:${groupId}`;
+                          console.log('key---::::', key);
+                          const currentIds = prevPayments[key] || [];
+                          const updatedIds = currentIds.includes(selectedId)
+                            ? currentIds.filter(id => id == selectedId) // Corrected condition to remove selectedId
+                            : [...currentIds, selectedId];
+
+                          const updatedState = {...prevPayments};
+                          console.log('updatedState::', updatedState);
+                          console.log('updatedIds::', updatedIds);
+                          console.log('key::', key);
+                          if (updatedIds.length > 0) {
+                            updatedState[key] = updatedIds;
+                            console.log('updatedState4::', updatedState);
+                          } else {
+                            delete updatedState[key];
+                          }
+                          // setSelectedPayments(updatedState);
+                          return updatedState;
+                        });
+                        setIsLoading(false);
+
+                        // if (MainType !== 'Fund Transfer') {
+                        //   setModelButton(true);
+                        // }
+                      }
+                    }}
+                    setSelectedCheckBoxData={setSelectedCheckBoxData}
+                    selectedCheckBoxData={selectedCheckBoxData}
+                    mainTableSelectedIndex={mainTableSelectedIndex}
+                    setMainTableSelectedIndex={setMainTableSelectedIndex}
+                    activeIndex={index => {
+                      const data = selectedSubData[index];
+                      const {transferId, paymentId} = data;
+
+                      setSubTabPaymentId(paymentId?.toString());
+                      setpartyNames(data.partyName);
+                      setCurrency(data.currency);
+                      setActiveDataPdf(data);
+                    }}
+                    selectedPaymentType={MainType}
+                    excludeColumns={['groupId']}
+                    toggleData={index => {
                       setIsLoading(true);
 
-                      const {transferId, paymentId} = data;
-                      // const type = tableData[selectedRow].type;
-                      const groupId = data.groupId;
-                      const type =
-                        tableData.find(item => item.groupId === groupId)
-                          ?.type || 'No data to display';
-
-                      console.log('matchingType--', type);
-                      const selectedId = transferId || paymentId; // Use either transferId or paymentId
-                      // const issuedStus =
-                      //   data.paymentStatus === 'Issued' ? data : null;
-
-                      console.log('dataaaaaa:', data);
-
-                      console.log('Updated selectedArray:', selectedArray);
-
-                      setpartyNames(data.partyName);
-                      setSelectedGroupId(prev => ({...prev, groupId: groupId}));
-
-                      setSelectedPayments(prevPayments => {
-                        console.log('selectedPayments---::::', selectedId);
-                        const key = `${type}:${groupId}`;
-                        console.log('key---::::', key);
-                        const currentIds = prevPayments[key] || [];
-                        const updatedIds = currentIds.includes(selectedId)
-                          ? currentIds.filter(id => id == selectedId) // Corrected condition to remove selectedId
-                          : [...currentIds, selectedId];
-
-                        const updatedState = {...prevPayments};
-                        console.log('updatedState::', updatedState);
-                        console.log('updatedIds::', updatedIds);
-                        console.log('key::', key);
-                        if (updatedIds.length > 0) {
-                          updatedState[key] = updatedIds;
-                          console.log('updatedState4::', updatedState);
-                        } else {
-                          delete updatedState[key];
-                        }
-                        setSelectedPayments(updatedState);
-                        return updatedState;
-                      });
-                      setIsLoading(false);
-
+                      const dataa = selectedSubData[index];
+                      setSelectedSubRow(index);
+                      console.log('toggledata::', index);
+                      setActiveDataPdf(dataa);
                       // if (MainType !== 'Fund Transfer') {
                       //   setModelButton(true);
                       // }
-                    }
-                  }}
-                  setSelectedCheckBoxData={setSelectedCheckBoxData}
-                  selectedCheckBoxData={selectedCheckBoxData}
-                  mainTableSelectedIndex={mainTableSelectedIndex}
-                  setMainTableSelectedIndex={setMainTableSelectedIndex}
-                  activeIndex={index => {
-                    const data = selectedSubData[index];
-                    const {transferId, paymentId} = data;
+                      setIsLoading(false);
+                    }}
+                    RowDataForIssue={data => {
+                      setIsLoading(true);
+                      const {transferId, paymentId} = data;
+                      // const type = data.type;
+                      // const groupId = data.groupId;
+                      const selectedId = transferId || paymentId;
+                      console.log('issued status', data);
+                      if (data.paymentStatus === 'Issued') {
+                        setSelectedArray(prevArray => {
+                          const exists = prevArray.includes(selectedId);
 
-                    setSubTabPaymentId(paymentId?.toString());
-                    setpartyNames(data.partyName);
-                    setCurrency(data.currency);
-                    setActiveDataPdf(data);
-                  }}
-                  selectedPaymentType={MainType}
-                  excludeColumns={['groupId']}
-                  toggleData={index => {
-                    setIsLoading(true);
+                          console.log('Selection Toggle:', {
+                            currentArray: prevArray,
+                            selectedId: selectedId,
+                            exists: exists,
+                            result: exists
+                              ? prevArray.filter(item => item !== selectedId)
+                              : [...prevArray, selectedId],
+                          });
 
-                    const dataa = selectedSubData[index];
-                    setSelectedSubRow(index);
-                    console.log('toggledata::', index);
-                    setActiveDataPdf(dataa);
-                    // if (MainType !== 'Fund Transfer') {
-                    //   setModelButton(true);
-                    // }
-                    setIsLoading(false);
-                  }}
-                  RowDataForIssue={data => {
-                    setIsLoading(true);
-                    const {transferId, paymentId} = data;
-                    // const type = data.type;
-                    // const groupId = data.groupId;
-                    const selectedId = transferId || paymentId;
-                    console.log('issued status', data);
-                    if (data.paymentStatus === 'Issued') {
-                      setSelectedArray(prevArray => {
-                        const exists = prevArray.includes(selectedId);
+                          // Or for more detailed debugging:
+                          console.log('Previous Array:', prevArray);
+                          console.log('Selected ID:', selectedId);
+                          console.log('ID exists in array?:', exists);
+                          console.log(
+                            'New Array:',
+                            exists
+                              ? prevArray.filter(item => item !== selectedId)
+                              : [...prevArray, selectedId],
+                          );
 
-                        console.log('Selection Toggle:', {
-                          currentArray: prevArray,
-                          selectedId: selectedId,
-                          exists: exists,
-                          result: exists
+                          return exists
                             ? prevArray.filter(item => item !== selectedId)
-                            : [...prevArray, selectedId],
+                            : [...prevArray, selectedId];
                         });
+                      }
+                      setIsLoading(false);
+                    }}
+                    mainTableSelectAll={mainTableSelectAll}
+                    setIsLoading={setIsLoading}
+                  />
+                )}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
 
-                        // Or for more detailed debugging:
-                        console.log('Previous Array:', prevArray);
-                        console.log('Selected ID:', selectedId);
-                        console.log('ID exists in array?:', exists);
-                        console.log(
-                          'New Array:',
-                          exists
-                            ? prevArray.filter(item => item !== selectedId)
-                            : [...prevArray, selectedId],
-                        );
-
-                        return exists
-                          ? prevArray.filter(item => item !== selectedId)
-                          : [...prevArray, selectedId];
-                      });
-                    }
-                    setIsLoading(false);
-                  }}
-                  mainTableSelectAll={mainTableSelectAll}
-                  setIsLoading={setIsLoading}
+        <Modal
+          visible={isFilterModalVisible}
+          onRequestClose={() => setFilterModalVisible(false)}
+          transparent={true}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View
+                style={{
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginVertical: 10,
+                }}>
+                <DateFilter
+                  formattedStartDate={formattedStartDate}
+                  formattedEndDate={formattedEndDate}
+                  setFormattedStartDate={setTempFormattedStartDate}
+                  setFormattedEndDate={setTempFormattedEndDate}
                 />
+              </View>
+              <Text>Select Payment Filter</Text>
+
+              {/* Select All / Deselect All Button */}
+              <TouchableOpacity
+                onPress={handleSelectAllToggle}
+                style={[
+                  styles.selectAllButton,
+                  {
+                    borderColor: allSelected
+                      ? CustomThemeColors.primary
+                      : 'black',
+                    borderWidth: allSelected ? 1 : 0,
+                  },
+                ]}>
+                <Text
+                  style={{
+                    color: allSelected ? CustomThemeColors.primary : 'black',
+                  }}>
+                  {allSelected ? 'Deselect All' : 'Select All'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* List of Filter Options */}
+              {filterOptions.map(filter => (
+                <TouchableOpacity
+                  key={filter}
+                  onPress={() => handleFilterSelect(filter)}
+                  style={
+                    isFilterSelected(filter)
+                      ? styles.selectedOption
+                      : styles.option
+                  }>
+                  <Text style={{color: 'black'}}>{filter}</Text>
+                </TouchableOpacity>
+              ))}
+
+              {/* Conditionally render the Filter button if any filters are selected */}
+              {isAnyFilterSelected ? (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    marginVertical: 10,
+                  }}>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#2196F3',
+                      paddingHorizontal: 30,
+                      paddingVertical: 10,
+                      borderRadius: 5,
+                      alignItems: 'center',
+                    }}
+                    onPress={() => {
+                      // Close Modal and Apply Filters
+                      // if (tempFormattedEndDate < tempFormattedStartDate) {
+                      //   // setFormattedStartDate(tempFormattedStartDate);
+                      //   // setFormattedEndDate(tempFormattedEndDate);
+                      //   Alert.alert(
+                      //     'Note',
+                      //     'Start Date cannot be greater than End Date',
+                      //   );
+                      // }
+                      //  else
+                      if (
+                        formattedStartDate !== tempFormattedStartDate ||
+                        formattedEndDate !== tempFormattedEndDate
+                      ) {
+                        setFormattedStartDate(tempFormattedStartDate);
+                        setFormattedEndDate(tempFormattedEndDate);
+                      }
+                      setFilterModalVisible(false);
+                      setMainTableSelectedIndex([]);
+                      setSelectedCheckBoxData([]);
+                      SetActiveGroupId('');
+                      setSelectedSubData([]);
+                      setTempPayments([]);
+                      setModelButton(false);
+                      applySelectedFilters();
+                      setSelectedRow(null);
+                    }}>
+                    <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#2196F3',
+                      paddingHorizontal: 30,
+                      paddingVertical: 10,
+                      borderRadius: 5,
+                      alignItems: 'center',
+                      marginLeft: 10,
+                    }}
+                    onPress={() => setFilterModalVisible(false)}>
+                    <Text style={{color: 'white', fontSize: 16}}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    marginVertical: 10,
+                  }}>
+                  <View
+                    style={{
+                      backgroundColor: 'grey',
+                      paddingHorizontal: 30,
+                      paddingVertical: 10,
+                      borderRadius: 5,
+                      alignItems: 'center',
+                    }}>
+                    <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#2196F3',
+                      paddingHorizontal: 30,
+                      paddingVertical: 10,
+                      borderRadius: 5,
+                      alignItems: 'center',
+                      marginLeft: 10,
+                    }}
+                    onPress={() => setFilterModalVisible(false)}>
+                    <Text style={{color: 'white', fontSize: 16}}>Close</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           </View>
-        </ScrollView>
-      </View>
+        </Modal>
 
-      <Modal
-        visible={isFilterModalVisible}
-        onRequestClose={() => setFilterModalVisible(false)}
-        transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View
-              style={{
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginVertical: 10,
-              }}>
-              <DateFilter
-                formattedStartDate={formattedStartDate}
-                formattedEndDate={formattedEndDate}
-                setFormattedStartDate={setTempFormattedStartDate}
-                setFormattedEndDate={setTempFormattedEndDate}
-              />
-            </View>
-            <Text>Select Payment Filter</Text>
-
-            {/* Select All / Deselect All Button */}
-            <TouchableOpacity
-              onPress={handleSelectAllToggle}
-              style={[
-                styles.selectAllButton,
-                {
-                  borderColor: allSelected
-                    ? CustomThemeColors.primary
-                    : 'black',
-                  borderWidth: allSelected ? 1 : 0,
-                },
-              ]}>
-              <Text
-                style={{
-                  color: allSelected ? CustomThemeColors.primary : 'black',
-                }}>
-                {allSelected ? 'Deselect All' : 'Select All'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* List of Filter Options */}
-            {filterOptions.map(filter => (
-              <TouchableOpacity
-                key={filter}
-                onPress={() => handleFilterSelect(filter)}
-                style={
-                  isFilterSelected(filter)
-                    ? styles.selectedOption
-                    : styles.option
-                }>
-                <Text style={{color: 'black'}}>{filter}</Text>
-              </TouchableOpacity>
-            ))}
-
-            {/* Conditionally render the Filter button if any filters are selected */}
-            {isAnyFilterSelected ? (
+        <Modal
+          visible={PDFModalVisible}
+          onRequestClose={() => setPDFModalVisible(false)}
+          transparent={true}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              {/* <Text>Select Filter</Text> */}
               <View
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  marginVertical: 10,
+                  borderWidth: 1,
+                  borderColor: '#ccc',
+                  padding: 5,
+                  borderRadius: 15,
+                  marginBottom: 10,
+                  // backgroundColor: '#9BC3F2',
                 }}>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#2196F3',
-                    paddingHorizontal: 30,
-                    paddingVertical: 10,
-                    borderRadius: 5,
-                    alignItems: 'center',
-                  }}
-                  onPress={() => {
-                    // Close Modal and Apply Filters
-                    // if (tempFormattedEndDate < tempFormattedStartDate) {
-                    //   // setFormattedStartDate(tempFormattedStartDate);
-                    //   // setFormattedEndDate(tempFormattedEndDate);
-                    //   Alert.alert(
-                    //     'Note',
-                    //     'Start Date cannot be greater than End Date',
-                    //   );
-                    // }
-                    //  else
-                    if (
-                      formattedStartDate !== tempFormattedStartDate ||
-                      formattedEndDate !== tempFormattedEndDate
-                    ) {
-                      setFormattedStartDate(tempFormattedStartDate);
-                      setFormattedEndDate(tempFormattedEndDate);
-                    }
-                    setFilterModalVisible(false);
-                    setMainTableSelectedIndex([]);
-                    setSelectedSubData([]);
-                    setModelButton(false);
-                    applySelectedFilters();
-                  }}>
-                  <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#2196F3',
-                    paddingHorizontal: 30,
-                    paddingVertical: 10,
-                    borderRadius: 5,
-                    alignItems: 'center',
-                    marginLeft: 10,
-                  }}
-                  onPress={() => setFilterModalVisible(false)}>
-                  <Text style={{color: 'white', fontSize: 16}}>Close</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'center',
-                  marginVertical: 10,
-                }}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    {marginBottom: 4, fontSize: 16, padding: 5},
+                  ]}>
+                  Print Payment Group PDF
+                </Text>
+                <Text style={[{marginBottom: 4, fontSize: 14, padding: 5}]}>
+                  Report Order By
+                </Text>
                 <View
                   style={{
-                    backgroundColor: 'grey',
-                    paddingHorizontal: 30,
-                    paddingVertical: 10,
-                    borderRadius: 5,
-                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
                   }}>
-                  <Text style={{color: 'white', fontSize: 16}}>Filter</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      // setIsPaymentGroupModal(true);
+                      if (mainTableSelectedIndex.length < 1) {
+                        setPDFModalVisible(false);
+                        Alert.alert(
+                          'Note',
+                          'Please select atleast one payment to print PDF',
+                        );
+                      } else {
+                        setIsLoading(true);
+                        setPDFModalVisible(false);
+
+                        // setSelectedPaymentType('');
+                        setSelectedPaymentType('Payment Id');
+                        // setSelectedPaymentType('');
+                        PrintGroupPdf();
+                      }
+                    }}
+                    // onPress={() => PrintGroupPdf()}
+                    style={styles.pdfSubOption}>
+                    <Text style={styles.subOptionText}>Payment Id</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      // setIsPaymentGroupModal(true);
+                      if (mainTableSelectedIndex.length < 1) {
+                        setPDFModalVisible(false);
+                        Alert.alert(
+                          'Note',
+                          'Please select atleast one payment to print PDF',
+                        );
+                      } else {
+                        setIsLoading(true);
+
+                        setPDFModalVisible(false);
+
+                        setSelectedPaymentType('Payment Mode');
+                        PrintGroupPdf();
+                      }
+                    }}
+                    // onPress={() => PrintGroupPdf()}
+                    style={styles.pdfSubOption}>
+                    <Text style={styles.subOptionText}>Payment Mode</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#2196F3',
-                    paddingHorizontal: 30,
-                    paddingVertical: 10,
-                    borderRadius: 5,
-                    alignItems: 'center',
-                    marginLeft: 10,
-                  }}
-                  onPress={() => setFilterModalVisible(false)}>
-                  <Text style={{color: 'white', fontSize: 16}}>Close</Text>
-                </TouchableOpacity>
               </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={PDFModalVisible}
-        onRequestClose={() => setPDFModalVisible(false)}
-        transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            {/* <Text>Select Filter</Text> */}
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: '#ccc',
-                padding: 5,
-                borderRadius: 15,
-                marginBottom: 10,
-                // backgroundColor: '#9BC3F2',
-              }}>
-              <Text
-                style={[
-                  styles.optionText,
-                  {marginBottom: 4, fontSize: 16, padding: 5},
-                ]}>
-                Print Payment Group PDF
-              </Text>
-              <Text style={[{marginBottom: 4, fontSize: 14, padding: 5}]}>
-                Report Order By
-              </Text>
-              <View
-                style={{flexDirection: 'row', justifyContent: 'space-around'}}>
+              {(MainType == 'Advance Payment' ||
+                MainType === 'Bills Payment' ||
+                MainType === 'Tax Payment' ||
+                MainType === 'Paysheet Payment') && (
                 <TouchableOpacity
                   onPress={() => {
-                    // setIsPaymentGroupModal(true);
-                    if (mainTableSelectedIndex.length < 1) {
+                    if (activeDataPdf.length < 1) {
                       setPDFModalVisible(false);
                       Alert.alert(
                         'Note',
                         'Please select atleast one payment to print PDF',
                       );
                     } else {
-                      setIsLoading(true);
+                      PrintPaymentPdf();
                       setPDFModalVisible(false);
-
-                      // setSelectedPaymentType('');
-                      setSelectedPaymentType('Payment Id');
-                      // setSelectedPaymentType('');
-                      PrintGroupPdf();
                     }
                   }}
-                  // onPress={() => PrintGroupPdf()}
-                  style={styles.pdfSubOption}>
-                  <Text style={styles.subOptionText}>Payment Id</Text>
+                  style={styles.option}>
+                  <Text style={styles.optionText}>Print Payment PDF</Text>
                 </TouchableOpacity>
+              )}
+              {(MainType === 'Bills Payment' ||
+                MainType === 'Tax Payment' ||
+                MainType === 'Paysheet Payment') && (
                 <TouchableOpacity
                   onPress={() => {
-                    // setIsPaymentGroupModal(true);
-                    if (mainTableSelectedIndex.length < 1) {
+                    if (activeDataPdf.length < 1) {
                       setPDFModalVisible(false);
                       Alert.alert(
                         'Note',
                         'Please select atleast one payment to print PDF',
                       );
                     } else {
-                      setIsLoading(true);
-
+                      PrintDetailedPdf();
                       setPDFModalVisible(false);
-
-                      setSelectedPaymentType('Payment Mode');
-                      PrintGroupPdf();
                     }
                   }}
-                  // onPress={() => PrintGroupPdf()}
-                  style={styles.pdfSubOption}>
-                  <Text style={styles.subOptionText}>Payment Mode</Text>
+                  style={styles.option}>
+                  <Text style={styles.optionText}>
+                    Print Detailed Payment PDF
+                  </Text>
                 </TouchableOpacity>
-              </View>
+              )}
+              <TouchableOpacity
+                onPress={() => {
+                  setPDFModalVisible(false);
+                  setIsLoading(false);
+                }}>
+                <View style={{alignContent: 'center', alignItems: 'center'}}>
+                  <CustomButton>Close</CustomButton>
+                </View>
+              </TouchableOpacity>
             </View>
-            {(MainType == 'Advance Payment' ||
-              MainType === 'Bills Payment' ||
-              MainType === 'Tax Payment' ||
-              MainType === 'Paysheet Payment') && (
-              <TouchableOpacity
-                onPress={() => {
-                  if (activeDataPdf.length < 1) {
-                    setPDFModalVisible(false);
-                    Alert.alert(
-                      'Note',
-                      'Please select atleast one payment to print PDF',
-                    );
-                  } else {
-                    PrintPaymentPdf();
-                    setPDFModalVisible(false);
-                  }
-                }}
-                style={styles.option}>
-                <Text style={styles.optionText}>Print Payment PDF</Text>
-              </TouchableOpacity>
-            )}
-            {(MainType === 'Bills Payment' ||
-              MainType === 'Tax Payment' ||
-              MainType === 'Paysheet Payment') && (
-              <TouchableOpacity
-                onPress={() => {
-                  if (activeDataPdf.length < 1) {
-                    setPDFModalVisible(false);
-                    Alert.alert(
-                      'Note',
-                      'Please select atleast one payment to print PDF',
-                    );
-                  } else {
-                    PrintDetailedPdf();
-                    setPDFModalVisible(false);
-                  }
-                }}
-                style={styles.option}>
-                <Text style={styles.optionText}>
-                  Print Detailed Payment PDF
-                </Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              onPress={() => {
-                setPDFModalVisible(false);
-                setIsLoading(false);
-              }}>
-              <View style={{alignContent: 'center', alignItems: 'center'}}>
-                <CustomButton>Close</CustomButton>
-              </View>
-            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      {isModelButton && (
-        <TouchableOpacity onPress={() => isModel(true)}>
-          <View
-            style={{
-              marginTop: 0,
-              top: 0,
-              marginBottom: DeviceInfo.isTablet() ? 20 : 5,
-              marginLeft: 10,
-              alignSelf: 'center', // Center the button
-            }}>
-            <CustomButton>
-              {MainType === 'Paysheet Payment'
-                ? 'Employee Paysheet Details'
-                : MainType === 'Bills Payment'
-                ? 'Paid Bill Details'
-                : MainType === 'Tax Payment'
-                ? 'Paid Tax Details'
-                : activeDataPdf.orderType === 'PO'
-                ? 'PO Material-Wise Details'
-                : activeDataPdf.orderType === 'JO'
-                ? 'JO Job-Wise Details'
-                : activeDataPdf.orderType === 'SO' && 'SO Service-Wise Details'}
-            </CustomButton>
-          </View>
-        </TouchableOpacity>
-      )}
-
-      <CustomModal isVisible={model} onClose={() => isModel(false)} title="">
-        {/* <View style={styles.modalTableContainer}>
+        <CustomModal isVisible={model} onClose={() => isModel(false)} title="">
+          {/* <View style={styles.modalTableContainer}>
         <View style={styles.modalTableContent}> */}
-        <Text style={[styles.modalTableTitle, {color: 'black'}]}>
-          {MainType === 'Paysheet Payment'
-            ? 'Employee Paysheet Details'
-            : MainType === 'Bills Payment'
-            ? 'Paid Bill Details'
-            : MainType === 'Tax Payment'
-            ? 'Paid Tax Details'
-            : activeDataPdf.orderType === 'PO'
-            ? 'PO Material-Wise Details'
-            : activeDataPdf.orderType === 'JO'
-            ? 'JO Job-Wise Details'
-            : activeDataPdf.orderType === 'SO' && 'SO Service-Wise Details'}
-        </Text>
+          <Text style={[styles.modalTableTitle, {color: 'black'}]}>
+            {MainType === 'Paysheet Payment'
+              ? 'Employee Paysheet Details'
+              : MainType === 'Bills Payment'
+              ? 'Paid Bill Details'
+              : MainType === 'Tax Payment'
+              ? 'Paid Tax Details'
+              : activeDataPdf.orderType === 'PO'
+              ? 'PO Material-Wise Details'
+              : activeDataPdf.orderType === 'JO'
+              ? 'JO Job-Wise Details'
+              : activeDataPdf.orderType === 'SO' && 'SO Service-Wise Details'}
+          </Text>
 
-        {selectedModelData && (
-          <ModalTableComponent
-            key={selectedModelData}
-            initialData={selectedModelData}
-            onRowIndexSelect={index => {
-              console.log('Row selected:', index);
-            }}
-            noModel={false}
-            showCheckBox={false}
-            excludeColumns={[
-              'Payment Id',
-              'partyName',
-              'serviceName',
-              'ID',
-              'ExtraField',
-              'PO No',
-            ]}
-          />
-        )}
-      </CustomModal>
+          {selectedModelData && (
+            <ModalTableComponent
+              key={selectedModelData}
+              initialData={selectedModelData}
+              onRowIndexSelect={index => {
+                console.log('Row selected:', index);
+              }}
+              noModel={false}
+              showCheckBox={false}
+              excludeColumns={[
+                'Payment Id',
+                'partyName',
+                'serviceName',
+                'ID',
+                'ExtraField',
+                'PO No',
+              ]}
+            />
+          )}
+        </CustomModal>
 
-      <CustomAlert
-        visible={isAlertVisible}
-        title={'Alert'}
-        message={'Server Unreachable Relogin again'}
-        onClose={() => setIsAlertVisible(false)}
-      />
-      {/* {model && (
+        <CustomAlert
+          visible={isAlertVisible}
+          title={'Alert'}
+          message={'Server Unreachable Relogin again'}
+          onClose={() => setIsAlertVisible(false)}
+        />
+        {/* {model && (
         // <IssueGroupTableThree selectedModelData={selectedModelData} MainType={MainType} activeDataPdf={activeDataPdf.orderType}/>
 
         <View style={styles.modalTableContainer}>
@@ -3122,14 +3153,15 @@ ORDER BY
           </View>
         </View>
       )} */}
-      {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
+        {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
 
-      {mainTableSelectedIndex.length !==
-      Object.keys(selectedPayments).length ? (
-        <LoadingIndicator message="Please wait..." />
-      ) : (
-        <></>
-      )}
+        {mainTableSelectedIndex.length !==
+        Object.keys(selectedPayments).length ? (
+          <LoadingIndicator message="Please wait..." />
+        ) : (
+          <></>
+        )}
+      </View>
       {isLoading &&
         mainTableSelectedIndex.length ===
           Object.keys(selectedPayments).length && (
@@ -3189,6 +3221,32 @@ ORDER BY
             </View>
           </View>
         )}
+      {isModelButton && (
+        <TouchableOpacity onPress={() => isModel(true)}>
+          <View
+            style={{
+              marginTop: 0,
+              top: 0,
+              marginBottom: DeviceInfo.isTablet() ? 20 : 5,
+              marginLeft: 10,
+              alignSelf: 'center', // Center the button
+            }}>
+            <CustomButton>
+              {MainType === 'Paysheet Payment'
+                ? 'Employee Paysheet Details'
+                : MainType === 'Bills Payment'
+                ? 'Paid Bill Details'
+                : MainType === 'Tax Payment'
+                ? 'Paid Tax Details'
+                : activeDataPdf.orderType === 'PO'
+                ? 'PO Material-Wise Details'
+                : activeDataPdf.orderType === 'JO'
+                ? 'JO Job-Wise Details'
+                : activeDataPdf.orderType === 'SO' && 'SO Service-Wise Details'}
+            </CustomButton>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Button,
@@ -34,7 +34,12 @@ const ApproveRejectComponent = ({
   const [value, setValue] = useState('');
   const [rejectParams, setRejectParams] = useState([]);
   const [warn, setWarn] = useState('');
+  const actionAR = useRef('');
+  // const [actionAR, setActionAR] = useState('');
 
+  useEffect(() => {
+    console.log('setActionAR' + actionAR.current);
+  }, [actionAR]);
   useEffect(() => {
     console.log('reject update', Array.isArray(rejectParams));
     if (Array.isArray(rejectParams) == false) {
@@ -74,12 +79,16 @@ const ApproveRejectComponent = ({
           text: 'Yes',
           onPress: () => {
             if (
-              (transName == 'ModPayment' && action === 'reject'
+              (transName == 'ModPayment' && actionAR.current === 'reject'
                 ? true
                 : currentLevel == totalNoOfLevels - 1) ||
-              (transName == 'AddPayment' && action === 'reject') ||
-              (transName == 'CancelPayment' && action === 'reject'
-                ? false
+              (transName == 'AddPayment' &&
+                actionAR.current === 'reject' &&
+                paymentMode == 'cheque') ||
+              (transName == 'CancelPayment' &&
+              actionAR.current !== 'reject' &&
+              paymentMode == 'cheque'
+                ? true
                 : currentLevel == totalNoOfLevels - 1)
             ) {
               setRejectPop(true);
@@ -93,6 +102,7 @@ const ApproveRejectComponent = ({
   };
 
   const handleAction = async action => {
+    // setActionAR(action);
     console.log('params ApRejComp::', params);
     const url = action === 'approve' ? approveUrl : rejectUrl;
     const successMessage =
@@ -102,6 +112,8 @@ const ApproveRejectComponent = ({
     console.log('rejUrl::', JSON.stringify(rejectParams));
     // console.log('rejUrl type::', rejectParams['trans_type']);
     console.log('transName type::', transName);
+
+    // _________________________karthic 23 Jan 25 ----------------------
     if (
       (transName == 'ModPayment' && action === 'reject'
         ? true
@@ -117,13 +129,13 @@ const ApproveRejectComponent = ({
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
     } else {
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json', // Set the content type to JSON
-          },
-          body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
-        });
+        // const response = await fetch(url, {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json', // Set the content type to JSON
+        //   },
+        //   body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
+        // });
         console.log('response ApRejCom::', response);
 
         if (response.ok) {
@@ -146,27 +158,39 @@ const ApproveRejectComponent = ({
     <View style={styles.container}>
       <TouchableOpacity
         style={[styles.button, styles.approveButton]}
-        onPress={() => confirmApproval('approve')}>
+        onPress={() => {
+          confirmApproval('approve');
+          // setActionAR('approve');
+          actionAR.current = 'approve';
+        }}>
         <Text style={[styles.buttonText, {color: 'white'}]}>Approve</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.rejectButton]}
         onPress={() => {
-          if (
-            (transName == 'ModPayment' && action === 'reject'
-              ? true
-              : currentLevel == totalNoOfLevels - 1) ||
-            (transName == 'AddPayment' && action === 'reject') ||
-            (transName == 'CancelPayment' && action === 'reject'
-              ? false
-              : currentLevel == totalNoOfLevels - 1)
-          ) {
-            setRejectPop(true);
-          }
+          actionAR.current = 'reject';
+          // if (
+          //   (transName == 'ModPayment' && actionAR === 'reject'
+          //     ? true
+          //     : currentLevel == totalNoOfLevels - 1) ||
+          //   (transName == 'AddPayment' && actionAR === 'reject') ||
+          //   (transName == 'CancelPayment' && actionAR === 'reject'
+          //     ? false
+          //     : currentLevel == totalNoOfLevels - 1)
+          // ) {
+          setRejectPop(true);
+          // }
           // setRejectPop(true);
           console.log('pressed;;;');
         }}>
-        <Text style={[styles.buttonText, {color: 'white'}]}>Reject</Text>
+        <Text
+          style={[styles.buttonText, {color: 'white'}]}
+          onPress={() => {
+            // setActionAR('reject');
+            actionAR.current = 'reject';
+          }}>
+          Reject
+        </Text>
       </TouchableOpacity>
       {/* <Button
         title="Approve"

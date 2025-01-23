@@ -67,7 +67,8 @@ const TableComponent = ({
   onRowIndexSelectDataLoad,
   mainTableSelectedIndex,
   setMainTableSelectedIndex,
-  setMainTableSelectAll,tempLoad
+  setMainTableSelectAll,
+  tempLoad,
 }) => {
   const navigation = useNavigation();
   const {width: screenWidth} = Dimensions.get('window');
@@ -200,7 +201,6 @@ const TableComponent = ({
   }
 
   const handleSelectAllCheckbox = () => {
-    
     setIsLoading(true);
     setMainTableSelectAll(isChecked);
     const newIsChecked = !isChecked;
@@ -213,14 +213,17 @@ const TableComponent = ({
 
     setSelectedRows(updatedSelection);
     console.log('SelectAllCheckBox::123', data);
+    
 
     // Pass the selected indices to the parent function if required
     if (newIsChecked) {
       setMainTableSelectedIndex([]);
       data.forEach((_, index) => {
-        setImmediate(() => {
+        setTimeout(() => {
           onRowIndexSelect(index);
-        });
+        }, 0);
+        // setImmediate(() => {
+        // });
       });
       // onPressCheckBoxHandle(true)
     } else {

@@ -75,7 +75,7 @@ const SubTableComponent = ({
   RowDataForIssue,
   mainTableSelectAll,
   setIsLoading,
-  setSubTableLoading,
+  MainType,setTempPayments
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -101,7 +101,6 @@ const SubTableComponent = ({
   const [detailViewModalVisible, setDetailViewModalVisible] = useState(false);
   const [longPressData, setLongPressData] = useState([]);
   const [loading, setLoading] = useState(true);
-  setSubTableLoading(true);
   const fontScale = PixelRatio.getFontScale();
 
   const toggleModalDetail = () => {
@@ -113,7 +112,6 @@ const SubTableComponent = ({
       if (loading) {
         await new Promise(resolve => setTimeout(resolve, 1000));
         setLoading(false);
-        setSubTableLoading(false);
       }
     };
 
@@ -145,7 +143,6 @@ const SubTableComponent = ({
 
   useEffect(() => {
     console.log('onPressCheckBoxHandle787 status::', selectAllIsChecked);
-    setSubTableLoading(true);
     setIsLoading(true);
     if (!selectAllIsChecked) {
       console.log('sdfsionnn');
@@ -205,9 +202,39 @@ const SubTableComponent = ({
         // setIsChecked(!isChecked);
         setSelectedCheckBoxData(updatedCheckBoxData); // Update state
 
+        data.forEach((item, index) => {
+          setIsLoading(true);
+console.log("selectediddddd:::"+JSON.stringify(item))
+          const groupKey = `${MainType}:${item.groupId}`;
+          const absoluteIndex = page * rowsPerPage + index; // Adjust for pagination
+
+          // Initialize the groupKey array if it doesn't exist
+          if (!updatedCheckBoxData[groupKey]) {
+            updatedCheckBoxData[groupKey] = [];
+          }
+
+          // Add the absolute index to the groupKey if it's not already included
+          if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
+            updatedCheckBoxData[groupKey].push(initialData[absoluteIndex]["paymentId"]||initialData[absoluteIndex]["transferId"]);
+          }
+        });
+
+        Object.keys(updatedCheckBoxData).forEach(groupKey => {
+          const groupId = parseInt(groupKey.split(':')[1]); // Extract the numeric groupId
+
+          // Check if the groupId is in mainTableSelectedIndex
+          if (!mainTableSelectedIndex.includes(groupId)) {
+            // setIsChecked(false);
+            delete updatedCheckBoxData[groupKey]; // Remove the groupId if not in mainTableSelectedIndex
+          }
+        });
+        console.log('*&(*^&**^*(^^()&()&()&()&(&(&(');
+
+        // setIsChecked(!isChecked);
+        setTempPayments(updatedCheckBoxData); 
+
         data.forEach(dataItem => onRowIndexSelect(dataItem)); // Pass all indices
         data.forEach(dataItem => RowDataForIssue(dataItem)); // Pass all indices
-        setSubTableLoading(false);
         setIsLoading(false);
       }
 
@@ -220,7 +247,6 @@ const SubTableComponent = ({
       // // onRowIndexSelect([]); // Pass empty array if none are selected
       // }
     }
-    setSubTableLoading(false);
 
     setIsLoading(false);
   }, [selectAllIsChecked]);
