@@ -128,15 +128,21 @@ const IssueGroups = () => {
   const [allSelected, setAllSelected] = useState(false);
   const [selectedArray, setSelectedArray] = useState([]);
   const [activeGroupId, SetActiveGroupId] = useState('');
-  const isAdvancePayment = MainType === 'advance payment';
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
 
   const isAnyFilterSelected = selectedFilters.length > 0;
   const [subTableLoading, setSubTableLoading] = useState(false);
+  const [hideSubTab, setHideSubTab] = useState(false);
 
   const tempLoad = useRef(0);
 
+  useEffect(() => {
+    console.log('dastasaaa::'+Object.keys(selectedSubData).length )
+    console.log('dastasaaas::'+JSON.stringify(selectedData))
+    // if (!mainTableSelectAll && Object.keys(selectedSubData).length !== 0)
+    //   setSelectedSubData([]);
+  }, [selectedSubData,selectedRow]);
   useEffect(() => {
     console.log('selectedModelData::', selectedModelData);
     if (selectedModelData.length > 0) {
@@ -144,6 +150,7 @@ const IssueGroups = () => {
       setIsLoading(false);
     }
   }, [selectedModelData]);
+
   useEffect(() => {
     console.log('tempPayments::', tempPayments);
     const filterPayments = payments => {
@@ -156,15 +163,24 @@ const IssueGroups = () => {
     const filteredPayments = filterPayments(tempPayments);
 
     console.log('#$%##%#$%#%' + JSON.stringify(filteredPayments));
-    setSelectedPayments(filteredPayments);
+    console.log('#$%##%#$%#%.length' + Object.keys(filteredPayments).length);
+    console.log(
+      '#$%##%#$%#%selectedPayments' + JSON.stringify(selectedPayments),
+    );
+    console.log(
+      '#$%##%#$%#%selectedPayments.length' +
+        Object.keys(selectedPayments).length,
+    );
+    if (Object.keys(selectedPayments).length != mainTableSelectedIndex.length)
+      setSelectedPayments(filteredPayments);
   }, [tempPayments]);
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
-    console.log(
-      'selectedPayments.length::',
-      Object.keys(selectedPayments).length,
-    );
+    // console.log(
+    //   'selectedPayments.length::',
+    //   Object.keys(selectedRow).length,
+    // );
     const filterSelectedPayments = (
       selectedPayments,
       mainTableselectedIndex,
@@ -1980,10 +1996,13 @@ ORDER BY
       //   'selectdsfsfsfedData __________' + tableData[selectedRow].groupId,
       // );
       setSelectedextRmiData1(tableData[selectedRow].groupId.toString());
-      console.log('kasjdfhasfhioashfioh:::', typeof grpId);
+      console.log('kasjdfhasfhioashfioh:::', Object.keys(selectedRow).length);
+
       fetchSubTableData();
     }
-  }, [selectedRow]);
+  }, [selectedRow, tableData]);
+
+  // useEffect(()=>{if(selectedRow.length!=0)fetchSubTableData();},[selectedRow])
 
   const [currentModalPage, setCurrentModalPage] = useState(0);
 
@@ -2389,18 +2408,25 @@ ORDER BY
                       setMainType(tableData[value].type);
                       SetActiveGroupId(tableData[value].groupId);
                       setModelButton(false);
+                      setHideSubTab(false)
 
                       setActiveDataPdf([]);
                     }}
                     onRowIndexSelect={value => {
                       if (value.length < 1) {
                         console.log('empty data::::');
+                        fetchTableData();
                         setMainTableSelectedIndex([]);
                         setSelectedCheckBoxData([]);
                         setSelectedPayments({});
-                        setTimeout(() => setOnPressCheckBoxHandle(false), 0);
+                        setOnPressCheckBoxHandle(false);
                         setActiveDataPdf([]);
+                        setSelectedSubData([]);
+                        SetActiveGroupId('');
+
+                        setHideSubTab(true)
                       } else {
+                        setHideSubTab(false)
                         setActiveDataPdf([]);
                         setSelectedRow(value);
                         setMainType(tableData[value]?.type);
@@ -2518,7 +2544,7 @@ ORDER BY
                   // marginTop: -20,
                 }}>
                 {/* Second SubTableComponent */}
-                {selectedSubData.length > 0 && (
+                {!hideSubTab&&selectedSubData.length > 0 && (
                   <SubTableComponent
                     setSubTableLoading={setSubTableLoading}
                     initialData={selectedSubData}
@@ -3188,7 +3214,7 @@ ORDER BY
           //     Loading, please wait..
           //   </Text>
           // </View>
-          <View style={{flex: 1}}>
+          <View style={{flex: 0.5}}>
             <View
               style={{
                 height: 100,

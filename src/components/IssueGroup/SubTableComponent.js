@@ -75,7 +75,8 @@ const SubTableComponent = ({
   RowDataForIssue,
   mainTableSelectAll,
   setIsLoading,
-  MainType,setTempPayments
+  MainType,
+  setTempPayments,
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -197,14 +198,15 @@ const SubTableComponent = ({
             delete updatedCheckBoxData[groupKey]; // Remove the groupId if not in mainTableSelectedIndex
           }
         });
-        console.log('*&(*^&**^*(^^()&()&()&()&(&(&(');
+        console.log('*&(*^&**^*(^^()&()&()&()&(&(&('+JSON.stringify(updatedCheckBoxData));
+        console.log('*&(*^&**^*(^^()&()&()&()&(&(&(selectedCheckBoxData'+selectedCheckBoxData);
 
         // setIsChecked(!isChecked);
-        setSelectedCheckBoxData(updatedCheckBoxData); // Update state
+          setSelectedCheckBoxData(updatedCheckBoxData); // Update state
 
         data.forEach((item, index) => {
           setIsLoading(true);
-console.log("selectediddddd:::"+JSON.stringify(item))
+          console.log('selectediddddd:::' + JSON.stringify(item));
           const groupKey = `${MainType}:${item.groupId}`;
           const absoluteIndex = page * rowsPerPage + index; // Adjust for pagination
 
@@ -215,7 +217,10 @@ console.log("selectediddddd:::"+JSON.stringify(item))
 
           // Add the absolute index to the groupKey if it's not already included
           if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
-            updatedCheckBoxData[groupKey].push(initialData[absoluteIndex]["paymentId"]||initialData[absoluteIndex]["transferId"]);
+            updatedCheckBoxData[groupKey].push(
+              initialData[absoluteIndex]['paymentId'] ||
+                initialData[absoluteIndex]['transferId'],
+            );
           }
         });
 
@@ -228,10 +233,18 @@ console.log("selectediddddd:::"+JSON.stringify(item))
             delete updatedCheckBoxData[groupKey]; // Remove the groupId if not in mainTableSelectedIndex
           }
         });
-        console.log('*&(*^&**^*(^^()&()&()&()&(&(&(');
+       console.log(
+          '*&(*^&**^*(^^()&()&()&()&(&(&(' +
+            JSON.stringify(updatedCheckBoxData),
+        );
+        console.log(
+          '*&(*^&**^*(^^()&()&()&()&(&(&(selectedCheckBoxData' +
+            selectedCheckBoxData,
+        );
 
         // setIsChecked(!isChecked);
-        setTempPayments(updatedCheckBoxData); 
+        // if (selectedCheckBoxData.length < updatedCheckBoxData.length)
+        setTempPayments(updatedCheckBoxData);
 
         data.forEach(dataItem => onRowIndexSelect(dataItem)); // Pass all indices
         data.forEach(dataItem => RowDataForIssue(dataItem)); // Pass all indices

@@ -103,7 +103,12 @@ const TableComponent = ({
 
   useEffect(() => {
     console.log('fontScale::' + fontScale);
-  }, []);
+  }, []); 
+  useEffect(() => {
+    console.log('selectedRowtablecomp::' + JSON.stringify(selectedRow).length);
+    // if(selectedRow)
+    // setActionSubTable()
+  }, [selectedRow]);
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
@@ -213,7 +218,6 @@ const TableComponent = ({
 
     setSelectedRows(updatedSelection);
     console.log('SelectAllCheckBox::123', data);
-    
 
     // Pass the selected indices to the parent function if required
     if (newIsChecked) {
@@ -227,6 +231,8 @@ const TableComponent = ({
       });
       // onPressCheckBoxHandle(true)
     } else {
+      setSelectedRow([]);
+      setSelectedRows([]);
       onRowIndexSelect([]); // Pass empty array if none are selected
     }
     setIsLoading(false);
@@ -525,10 +531,25 @@ const TableComponent = ({
                             !updatedSelection[actualIndex];
                           setSelectedRows(updatedSelection);
                           toggleRowSelectionCheckBox(actualIndex);
-
-                          if (selectedRows.length < 1) {
+                          console.log(
+                            'updatedSelectionSS' + updatedSelection.length,
+                          );
+                          let trueCount = 0;
+                          if (updatedSelection.length != 0) {
+                            updatedSelection.forEach(value => {
+                              if (value) trueCount++;
+                            });
+                          }
+                          console.log('---sele---' + trueCount);
+                          if (trueCount < 1) {
                             setIsChecked(false);
                           }
+                          // if (trueCount == data.length) {
+                          if (trueCount >0) {
+                            setIsChecked(true);
+                          }
+                          // if (mainTableSelectedIndex.length==0)
+                          //   setIsChecked(false);
                           setMainTableSelectAll(true);
                         }}
                         checked={mainTableSelectedIndex.includes(
