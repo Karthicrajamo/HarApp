@@ -138,11 +138,11 @@ const IssueGroups = () => {
   const tempLoad = useRef(0);
 
   useEffect(() => {
-    console.log('dastasaaa::'+Object.keys(selectedSubData).length )
-    console.log('dastasaaas::'+JSON.stringify(selectedData))
+    console.log('dastasaaa::' + Object.keys(selectedSubData).length);
+    console.log('dastasaaas::' + JSON.stringify(selectedData));
     // if (!mainTableSelectAll && Object.keys(selectedSubData).length !== 0)
     //   setSelectedSubData([]);
-  }, [selectedSubData,selectedRow]);
+  }, [selectedSubData, selectedRow]);
   useEffect(() => {
     console.log('selectedModelData::', selectedModelData);
     if (selectedModelData.length > 0) {
@@ -150,6 +150,10 @@ const IssueGroups = () => {
       setIsLoading(false);
     }
   }, [selectedModelData]);
+  useEffect(() => {
+    console.log('filteredMainData::', filteredMainData);
+    console.log('mainTableSelectedIndex::', mainTableSelectedIndex);
+  }, [filteredMainData, mainTableSelectedIndex]);
 
   useEffect(() => {
     console.log('tempPayments::', tempPayments);
@@ -2184,7 +2188,7 @@ ORDER BY
     if (selectedArray.length !== totalLength) {
       issueData(preparedItemsForIssue);
 
-      setTimeout(() => handleRefresh(), 1500);
+      // setTimeout(() => handleRefresh(), 1500);
     } else {
       // console.log('itsd not issued');
       Alert.alert('Note', 'Already Issued');
@@ -2408,7 +2412,7 @@ ORDER BY
                       setMainType(tableData[value].type);
                       SetActiveGroupId(tableData[value].groupId);
                       setModelButton(false);
-                      setHideSubTab(false)
+                      setHideSubTab(false);
 
                       setActiveDataPdf([]);
                     }}
@@ -2424,9 +2428,9 @@ ORDER BY
                         setSelectedSubData([]);
                         SetActiveGroupId('');
 
-                        setHideSubTab(true)
+                        setHideSubTab(true);
                       } else {
-                        setHideSubTab(false)
+                        setHideSubTab(false);
                         setActiveDataPdf([]);
                         setSelectedRow(value);
                         setMainType(tableData[value]?.type);
@@ -2544,7 +2548,7 @@ ORDER BY
                   // marginTop: -20,
                 }}>
                 {/* Second SubTableComponent */}
-                {!hideSubTab&&selectedSubData.length > 0 && (
+                {!hideSubTab && selectedSubData.length > 0 && (
                   <SubTableComponent
                     setSubTableLoading={setSubTableLoading}
                     initialData={selectedSubData}
@@ -2706,7 +2710,7 @@ ORDER BY
                           } else {
                             delete updatedState[key];
                           }
-                          // setSelectedPayments(updatedState);
+                          setSelectedPayments(updatedState);
                           return updatedState;
                         });
                         setIsLoading(false);

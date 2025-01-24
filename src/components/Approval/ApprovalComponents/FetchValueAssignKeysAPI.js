@@ -44,7 +44,7 @@ const FetchValueAssignKeysAPI = async (
     ) {
       const apiResponse = response.data;
 
-      console.log('apiResponse valueApi:', apiResponse);
+      console.log('apiResponse valueApi:', apiUrl + '-----', apiResponse);
       // Process the API response
       const result = apiResponse.map(innerArray => {
         const filteredRow = innerArray.filter(
@@ -72,7 +72,6 @@ const FetchValueAssignKeysAPI = async (
       setData(emptyResult);
     }
   } catch (error) {
-
     const emptyResult = [{}];
     headers.forEach(header => {
       emptyResult[0][header] = '';

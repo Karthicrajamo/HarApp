@@ -103,7 +103,15 @@ const TableComponent = ({
 
   useEffect(() => {
     console.log('fontScale::' + fontScale);
-  }, []); 
+  }, []);
+  useEffect(() => {
+    console.log('mainTableSelectedIndextablecom::' + mainTableSelectedIndex);
+    if (mainTableSelectedIndex.length > 0) {
+      setIsChecked(true);
+    } else {
+      setIsChecked(false);
+    }
+  }, [mainTableSelectedIndex]);
   useEffect(() => {
     console.log('selectedRowtablecomp::' + JSON.stringify(selectedRow).length);
     // if(selectedRow)
@@ -209,7 +217,7 @@ const TableComponent = ({
     setIsLoading(true);
     setMainTableSelectAll(isChecked);
     const newIsChecked = !isChecked;
-    setIsChecked(newIsChecked);
+    // setIsChecked(newIsChecked);
 
     // Update selectedRows based on the newIsChecked state
     const updatedSelection = newIsChecked
@@ -517,9 +525,9 @@ const TableComponent = ({
                         setSelectedRows(updatedSelection);
                         toggleRowSelectionCheckBox(actualIndex);
 
-                        if (selectedRows.length < 1) {
-                          setIsChecked(false);
-                        }
+                        // if (selectedRows.length < 1) {
+                        //   setIsChecked(false);
+                        // }
                         setMainTableSelectAll(true);
                       }}>
                       {/* CheckBox */}
@@ -541,13 +549,13 @@ const TableComponent = ({
                             });
                           }
                           console.log('---sele---' + trueCount);
-                          if (trueCount < 1) {
-                            setIsChecked(false);
-                          }
-                          // if (trueCount == data.length) {
-                          if (trueCount >0) {
-                            setIsChecked(true);
-                          }
+                          // if (trueCount < 1) {
+                          //   setIsChecked(false);
+                          // }
+                          // // if (trueCount == data.length) {
+                          // if (trueCount > 0) {
+                          //   setIsChecked(true);
+                          // }
                           // if (mainTableSelectedIndex.length==0)
                           //   setIsChecked(false);
                           setMainTableSelectAll(true);

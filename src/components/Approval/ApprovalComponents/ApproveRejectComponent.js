@@ -129,19 +129,20 @@ const ApproveRejectComponent = ({
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
     } else {
       try {
-        // const response = await fetch(url, {
-        //   method: 'POST',
-        //   headers: {
-        //     'Content-Type': 'application/json', // Set the content type to JSON
-        //   },
-        //   body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
-        // });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json', // Set the content type to JSON
+          },
+          body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
+        });
         console.log('response ApRejCom::', response);
 
         if (response.ok) {
           const data = await response.json();
           ToastAndroid.show(successMessage, ToastAndroid.SHORT);
           console.log('Response:', data);
+          navigation.navigate('ApprovalMainScreen');
         } else {
           ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
         }

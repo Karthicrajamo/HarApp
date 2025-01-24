@@ -115,6 +115,10 @@ export const BillsPayment = ({route}) => {
   // }, [paidAdjustment]);
 
   useEffect(() => {
+    'supplierBankMain::' + supplierBankMain;
+  }, [supplierBankMain]);
+
+  useEffect(() => {
     console.log('billsPay::', billsPay);
     if (Array.isArray(billsPay)) {
       totalActualAmtRef.current = billsPay
@@ -317,25 +321,44 @@ export const BillsPayment = ({route}) => {
     console.log('advanceAdjustmentModal::', advanceAdjustmentModal);
 
     if (orderTyp === 'PO') {
-      const filteredData = advanceAdjustmentModal.filter(item =>
-        item['P Order No'].startsWith('TN'),
-      );
+      const filteredData = advanceAdjustmentModal
+        .filter(item => item['P Order No'].startsWith('TN'))
+        .sort((a, b) => a['P Order No'].localeCompare(b['P Order No']));
+      console.log('filteredData::' + JSON.stringify(filteredData));
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
-      for (let i = 0; transValue[13].length > i; i++) {
-        // transValue[13][i]['FROM_ORDER']
-        console.log(
-          'transfilter::' +
-            filteredData.includes(transValue[13][i]['FROM_ORDER']),
-        );
-        if (
-          transValue[13][i]['MAT_CHARGE'] != 'MAT_TAX' &&
-          filteredData.includes(transValue[13][i]['FROM_ORDER'])
-        ) {
-          console.log(
-            'transvalueS::[' + i + ']' + transValue[13][i]['FROM_ORDER'],
-          );
+
+      // Extract all "id" values from filteredData into an array for quick lookup
+      const filteredIds = filteredData.map(item => item.id);
+
+      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
+      const updatedRecords = [];
+
+      for (let i = 0; i < transValue[13].length; i++) {
+        const fromOrder = transValue[13][i]['FROM_ORDER'];
+        const toAmount = transValue[13][i]['TO_AMOUNT'];
+
+        // Check if FROM_ORDER is in filteredIds
+        const isMatched = filteredIds.includes(fromOrder.toString());
+
+        console.log('transfilter::' + isMatched);
+
+        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
+          console.log(`transvalueS::[${i}] ${fromOrder}`);
+          console.log(`toAmount::[${i}] ${toAmount}`);
+          if (toAmount != 0) {
+            updatedRecords.push(toAmount);
+          }
+          console.log('updatedRecords::' + updatedRecords);
+          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
         }
       }
+      for (let i = 0; i < updatedRecords.length; i++) {
+        if (filteredData[i]) {
+          // Ensure filteredData[i] exists before assignment
+          filteredData[i]['Adjust Advance(USD)'] = updatedRecords[i];
+        }
+      }
+
       // Only update the state if data is actually different to avoid unnecessary renders
       if (
         JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
@@ -647,7 +670,7 @@ export const BillsPayment = ({route}) => {
         'Inclusive Tax',
         'Apply TDS',
       ],
-      [0, 8, 9, 10],
+      [0, 8, 9, 11],
       setExcluseTblTwo,
     );
 
@@ -730,6 +753,27 @@ export const BillsPayment = ({route}) => {
       },
       'POST',
     );
+
+    // FetchValueAssignKeysAPI(
+    //   `http://192.168.0.169:8100/rest/approval/getOrderTaxProfileAdvPay`,
+    //   [
+    //     'Bank A/C No',
+    //     'Party Name',
+    //     'Account Holder Name',
+    //     'Bank Name',
+    //     'Branch Name',
+    //     'Country',
+    //     'Currency',
+    //     'Swift No',
+    //   ],
+    //   [],
+    //   setSupplierBankMain,
+    //   {
+    //     Query:
+    //       "select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='789:::14:::A2Z Travels' or bad.account_no='789:::14:::A2Z Travels' ) and bad.account_category='Party' ",
+    //   },
+    //   'POST',
+    // );
     // const chkSts = getUpdateCheckStatus(
     //   transName,
     //   paymentId,
@@ -1242,7 +1286,7 @@ export const BillsPayment = ({route}) => {
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={''}
             />
-            {refNO !== 'Cheque' && (
+            {mainData[7].toLowerCase() !== 'cheque' && (
               <ApprovalTableComponent
                 tableData={supplierBankMain}
                 highlightVal={['lastMessageSentBy', 'userName']}

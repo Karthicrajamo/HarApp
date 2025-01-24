@@ -66,7 +66,8 @@ export const AdvancePayment = ({route}) => {
   const [slabTaxes, setSlabTaxes] = useState('');
   const [adjWithoutTax, setAdjWithoutTax] = useState('');
   const [noHeadRemarksblw, setNoHeadRemarksblw] = useState('');
-  const [approvalRejParams, setApprovalRejParams] = useState([]);
+  const [supplierBankMain, setSupplierBankMain] = useState([]);
+
   const [approvalParams, setApprovalParams] = useState([]);
   const [rejParams, setRejParams] = useState([]);
   const [appRejParams, setAppRejParams] = useState([]);
@@ -89,6 +90,10 @@ export const AdvancePayment = ({route}) => {
   useEffect(() => {
     console.log('isLoading:::', isLoading);
   }, [isLoading]);
+
+  useEffect(() => {
+    'supplierBankMain::' + supplierBankMain;
+  }, [supplierBankMain]);
 
   useEffect(() => {
     console.log('additionalCharges:::', additionalCharges);
@@ -593,7 +598,7 @@ export const AdvancePayment = ({route}) => {
         {
           payment_id: paymentId,
           type: transValue[4][0].ORDER_TYPE,
-          orders: [transValue[4][0].PO_SO_JO_NO],
+          orders: uniquePoSoJoNos,
           datafor: 'Approval',
         },
         'POST',
@@ -682,6 +687,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const outExclude =
         transValue[4][0]?.ORDER_TYPE === 'PO' ? [0, 3, 4] : [2, 3];
+
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayAdjustmentsDetails`,
         otherTaxArr,
@@ -690,7 +696,29 @@ export const AdvancePayment = ({route}) => {
         {
           payment_id: paymentId,
           type: transValue[4][0].ORDER_TYPE,
-          orders: [transValue[4][0].PO_SO_JO_NO],
+          orders: uniquePoSoJoNos,
+          datafor: 'Approval',
+        },
+        'POST',
+      );
+      FetchValueAssignKeysAPI(
+        `http://192.168.0.169:8100/rest/approval/getOrderTaxProfileAdvPay`,
+        [
+          'Bank A/C No',
+          'Party Name',
+          'Account Holder Name',
+          'Bank Name',
+          'Branch Name',
+          'Country',
+          'Currency',
+          'Swift No',
+        ],
+        [],
+        setSupplierBankMain,
+        {
+          payment_id: paymentId,
+          type: transValue[4][0].ORDER_TYPE,
+          orders: uniquePoSoJoNos,
           datafor: 'Approval',
         },
         'POST',
@@ -714,6 +742,15 @@ export const AdvancePayment = ({route}) => {
         {
           accountNo: mainData[8],
         },
+      );
+      console.log(
+        'setSupplierBankMain::' +
+          JSON.stringify({
+            payment_id: paymentId,
+            type: transValue[4][0].ORDER_TYPE,
+            orders: uniquePoSoJoNos,
+            datafor: 'Approval',
+          }),
       );
     }
     // const chkSts = getUpdateCheckStatus(
