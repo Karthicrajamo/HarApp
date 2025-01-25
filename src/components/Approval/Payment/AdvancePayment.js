@@ -603,6 +603,25 @@ export const AdvancePayment = ({route}) => {
         },
         'POST',
       );
+      FetchValueAssignKeysAPI(
+        `http://192.168.0.169:8100/rest/approval/finLoadVectorwithContentsjson/`,
+        [
+          'Bank A/C No',
+          'Party Name',
+          'Account Holder Name',
+          'Bank Name',
+          'Branch Name',
+          'Country',
+          'Currency',
+          'Swift No',
+        ],
+        [],
+        setSupplierBankMain,
+        {
+          Query: `select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='${transValue[3]?.['PARTY_ACCOUNT_NO']}' or bad.account_no='${transValue[3]?.['PARTY_ACCOUNT_NO']}' ) and bad.account_category='Party' `,
+        },
+        'POST',
+      );
 
       // Slab Tax
       // FetchValueAssignKeysAPIString(
@@ -701,28 +720,7 @@ export const AdvancePayment = ({route}) => {
         },
         'POST',
       );
-      FetchValueAssignKeysAPI(
-        `http://192.168.0.169:8100/rest/approval/getOrderTaxProfileAdvPay`,
-        [
-          'Bank A/C No',
-          'Party Name',
-          'Account Holder Name',
-          'Bank Name',
-          'Branch Name',
-          'Country',
-          'Currency',
-          'Swift No',
-        ],
-        [],
-        setSupplierBankMain,
-        {
-          payment_id: paymentId,
-          type: transValue[4][0].ORDER_TYPE,
-          orders: uniquePoSoJoNos,
-          datafor: 'Approval',
-        },
-        'POST',
-      );
+
       FetchValueAssignKeysAPI(
         `${API_URL}/api/approval/payment/getBillsBankDetailsadv`,
         [
@@ -1063,7 +1061,6 @@ export const AdvancePayment = ({route}) => {
                 {DateFormatComma(mainData[1])}
               </Text>
             </View>
-
             <ApprovalTableComponent
               tableData={orderDetails}
               highlightVal={['Payable Amt']}
@@ -1095,7 +1092,6 @@ export const AdvancePayment = ({route}) => {
               highlightVal={['']}
               heading={`Applicable Slab Taxes (${tDSCurrency} Currency)`}
             />
-
             <ApprovalTableComponent
               tableData={adjWithoutTax}
               highlightVal={['Amount', 'Remarks']}
@@ -1115,7 +1111,6 @@ export const AdvancePayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
-
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
                 Actual Amount - Slab Tax Amount ({transValue[1].PARTY_CURRENCY})
@@ -1194,6 +1189,11 @@ export const AdvancePayment = ({route}) => {
               tableData={noHeadRemarksblw}
               highlightVal={['']}
               heading={''}
+            />
+            <ApprovalTableComponent
+              tableData={supplierBankMain}
+              highlightVal={['']}
+              heading={'Select Supplier Bank'}
             />
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Fx Rate</Text>

@@ -321,21 +321,27 @@ export const BillsPayment = ({route}) => {
     console.log('advanceAdjustmentModal::', advanceAdjustmentModal);
 
     if (orderTyp === 'PO') {
-      const filteredData = advanceAdjustmentModal
+      let filteredData = advanceAdjustmentModal
         .filter(item => item['P Order No'].startsWith('TN'))
         .sort((a, b) => a['P Order No'].localeCompare(b['P Order No']));
       console.log('filteredData::' + JSON.stringify(filteredData));
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
-
       // Extract all "id" values from filteredData into an array for quick lookup
       const filteredIds = filteredData.map(item => item.id);
+      const uniqueFromOrders = [
+        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
+      ];
+      console.log('uniqueFromOrders', uniqueFromOrders);
+      filteredData = filteredData.filter(
+        data => data['id'] == uniqueFromOrders,
+      );
 
       // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
       const updatedRecords = [];
 
       for (let i = 0; i < transValue[13].length; i++) {
         const fromOrder = transValue[13][i]['FROM_ORDER'];
-        const toAmount = transValue[13][i]['TO_AMOUNT'];
+        const toAmount = transValue[13][i];
 
         // Check if FROM_ORDER is in filteredIds
         const isMatched = filteredIds.includes(fromOrder.toString());
@@ -345,17 +351,168 @@ export const BillsPayment = ({route}) => {
         if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
           console.log(`transvalueS::[${i}] ${fromOrder}`);
           console.log(`toAmount::[${i}] ${toAmount}`);
-          if (toAmount != 0) {
+          if (toAmount['TO_AMOUNT'] != 0) {
             updatedRecords.push(toAmount);
           }
-          console.log('updatedRecords::' + updatedRecords);
+          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
+          console.log('updatedRecords.length::' + updatedRecords.length);
           // filteredData[j++]["Adjust Advance(USD)"]=toAmount
         }
       }
-      for (let i = 0; i < updatedRecords.length; i++) {
-        if (filteredData[i]) {
-          // Ensure filteredData[i] exists before assignment
-          filteredData[i]['Adjust Advance(USD)'] = updatedRecords[i];
+      // if (updatedRecords.length !== 0) {
+        for (let i = 0; i < filteredData.length; i++) {
+          for (let j = 0; j < updatedRecords.length; j++) {
+            console.log(
+              `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
+            );
+
+            // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
+            if (
+              filteredData[i]['id'] ===
+              updatedRecords[j]['FROM_ORDER'].toString()
+            ) {
+              filteredData[i][`Adjust Advance(${currency})`] =
+                updatedRecords[j]['TO_AMOUNT'];
+              console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
+            }
+          }
+        }
+      // }
+console.log("filtereddatafinal::"+JSON.stringify(filteredData))
+      // Only update the state if data is actually different to avoid unnecessary renders
+      if (
+        JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
+      ) {
+        setAdvanceAdjustmentModal(filteredData);
+      }
+      // setAdvanceAdjustmentModal(prevData => {
+      //   const isDataSame =
+      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
+      //   return isDataSame ? prevData : filteredData;
+      // });
+
+      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
+    } else if (orderTyp === 'SO') {
+      const filteredData = advanceAdjustmentModal
+        .filter(item => item['SO No'])
+        .sort((a, b) => a['SO No'].localeCompare(b['SO No']));
+      filteredData = filteredData.slice(0, billsPay.length);
+      console.log('filteredData::' + JSON.stringify(filteredData));
+      console.log('transValue[13]::' + JSON.stringify(transValue[13]));
+
+      // Extract all "id" values from filteredData into an array for quick lookup
+      const filteredIds = filteredData.map(item => item.id);
+      const uniqueFromOrders = [
+        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
+      ];
+      console.log('uniqueFromOrders', uniqueFromOrders);
+      filteredData = filteredData.filter(
+        data => data['id'] == uniqueFromOrders,
+      );
+      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
+      const updatedRecords = [];
+
+      for (let i = 0; i < transValue[13].length; i++) {
+        const fromOrder = transValue[13][i]['FROM_ORDER'];
+        const toAmount = transValue[13][i];
+
+        // Check if FROM_ORDER is in filteredIds
+        const isMatched = filteredIds.includes(fromOrder.toString());
+
+        console.log('transfilter::' + isMatched);
+
+        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
+          console.log(`transvalueS::[${i}] ${fromOrder}`);
+          console.log(`toAmount::[${i}] ${toAmount}`);
+          if (toAmount['TO_AMOUNT'] != 0) {
+            updatedRecords.push(toAmount);
+          }
+          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
+          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
+        }
+      }
+      for (let i = 0; i < filteredData.length; i++) {
+        for (let j = 0; j < updatedRecords.length; j++) {
+          console.log(
+            `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
+          );
+
+          // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
+          if (
+            filteredData[i]['id'] === updatedRecords[j]['FROM_ORDER'].toString()
+          ) {
+            filteredData[i][`Adjust Advance(${currency})`] =
+              updatedRecords[j]['TO_AMOUNT'];
+            console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
+          }
+        }
+      }
+
+      // Only update the state if data is actually different to avoid unnecessary renders
+      if (
+        JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
+      ) {
+        setAdvanceAdjustmentModal(filteredData);
+      }
+      // setAdvanceAdjustmentModal(prevData => {
+      //   const isDataSame =
+      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
+      //   return isDataSame ? prevData : filteredData;
+      // });
+
+      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
+    } else if (orderTyp === 'JO') {
+      const filteredData = advanceAdjustmentModal
+        .filter(item => item['JO No'])
+        .sort((a, b) => a['JO No'].localeCompare(b['JO No']));
+      console.log('filteredData::' + JSON.stringify(filteredData));
+      console.log('transValue[13]::' + JSON.stringify(transValue[13]));
+
+      // Extract all "id" values from filteredData into an array for quick lookup
+      const filteredIds = filteredData.map(item => item.id);
+      const uniqueFromOrders = [
+        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
+      ];
+      console.log('uniqueFromOrders', uniqueFromOrders);
+      filteredData = filteredData.filter(
+        data => data['id'] == uniqueFromOrders,
+      );
+      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
+      const updatedRecords = [];
+
+      for (let i = 0; i < transValue[13].length; i++) {
+        const fromOrder = transValue[13][i]['FROM_ORDER'];
+        const toAmount = transValue[13][i];
+
+        // Check if FROM_ORDER is in filteredIds
+        const isMatched = filteredIds.includes(fromOrder.toString());
+
+        console.log('transfilter::' + isMatched);
+
+        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
+          console.log(`transvalueS::[${i}] ${fromOrder}`);
+          console.log(`toAmount::[${i}] ${toAmount}`);
+          if (toAmount['TO_AMOUNT'] != 0) {
+            updatedRecords.push(toAmount);
+          }
+          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
+          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
+        }
+      }
+      for (let i = 0; i < filteredData.length; i++) {
+        for (let j = 0; j < updatedRecords.length; j++) {
+          console.log(
+            `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
+          );
+
+          // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
+          if (
+            filteredData[i]['id'] === updatedRecords[j]['FROM_ORDER'].toString()
+          ) {
+            filteredData[i][`Adjust Advance(${currency})`] =
+              updatedRecords[j]['TO_AMOUNT'];
+            console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
+          }
         }
       }
 
@@ -576,6 +733,31 @@ export const BillsPayment = ({route}) => {
         // console.log('advance Adj:', advPayParams);
       }
     }
+    console.log(
+      'transValue[3][PARTY_ACCOUNT_NO' + transValue[3]?.['PARTY_ACCOUNT_NO'],
+    );
+    // if()
+    // Select Supplier Bank
+    FetchValueAssignKeysAPI(
+      `http://192.168.0.169:8100/rest/approval/loadVectorwithContentsjson/`,
+      [
+        'Bank A/C No',
+        'Party Name',
+        'Account Holder Name',
+        'Bank Name',
+        'Branch Name',
+        'Country',
+        'Currency',
+        'Swift N',
+      ],
+      [],
+      setSupplierBankMain,
+      {
+        Query: `select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='${transValue[3]?.['PARTY_ACCOUNT_NO']}' or bad.account_no='${transValue[3]?.['PARTY_ACCOUNT_NO']}' ) and bad.account_category='Party'  `,
+      },
+      'POST',
+    );
+
     // getUpdateCheckStatus(
     //   transName,
     //   paymentId,
@@ -730,28 +912,6 @@ export const BillsPayment = ({route}) => {
       ],
       [],
       setPaidAdjustment,
-    );
-
-    // Select Supplier Bank
-    FetchValueAssignKeysAPI(
-      `http://192.168.0.169:8100/rest/approval/loadVectorwithContentsjson/`,
-      [
-        'Bank A/C No',
-        'Party Name',
-        'Account Holder Name',
-        'Bank Name',
-        'Branch Name',
-        'Country',
-        'Currency',
-        'Swift No',
-      ],
-      [],
-      setSupplierBankMain,
-      {
-        Query:
-          "select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='789:::14:::A2Z Travels' or bad.account_no='789:::14:::A2Z Travels' ) and bad.account_category='Party' ",
-      },
-      'POST',
     );
 
     // FetchValueAssignKeysAPI(
@@ -1494,6 +1654,7 @@ export const BillsPayment = ({route}) => {
           <ApprovalTableComponent
             tableData={advanceAdjustmentModal}
             heading={'Advance Details'}
+            exclude={'id'}
           />
         </View>
       </CustomModal>

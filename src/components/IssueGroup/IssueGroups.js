@@ -331,7 +331,7 @@ const IssueGroups = () => {
         // fetchModelTableTaxData();
       } // fetchModelTableSubData();
     }
-  }, [selectedSubRow]);
+  }, [selectedSubRow,activeDataPdf]);
 
   useEffect(() => {
     console.log('selectedModelSubData pridn__________________' + subData);

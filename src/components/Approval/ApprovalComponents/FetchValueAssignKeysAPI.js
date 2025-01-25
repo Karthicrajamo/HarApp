@@ -58,17 +58,17 @@ const FetchValueAssignKeysAPI = async (
         }, {});
       });
 
-      console.log('Processed Table Data:', result);
+      console.log('Processed Table Data:', apiUrl + '-----', result);
       setData(result);
     } else {
-      // console.error(`Invalid response data:`, apiUrl, response.data);
+      // console.error(`Invalid response data:`, apiUrl);
 
       const emptyResult = [{}];
       headers.forEach(header => {
         emptyResult[0][header] = '';
       });
 
-      // console.log('Returning empty data due to invalid response:', emptyResult);
+      console.log('Returning empty data due to invalid response:', apiUrl);
       setData(emptyResult);
     }
   } catch (error) {
@@ -76,6 +76,7 @@ const FetchValueAssignKeysAPI = async (
     headers.forEach(header => {
       emptyResult[0][header] = '';
     });
+    // console.error(`Invalid response data:`, apiUrl);
 
     setData(emptyResult);
   }

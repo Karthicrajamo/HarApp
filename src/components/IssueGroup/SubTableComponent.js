@@ -278,7 +278,7 @@ const SubTableComponent = ({
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
 
-    console.log('slide values:>>>', sliderValue);
+    console.log('slide values:>>>sub', sliderValue);
 
     setColumnWidths(calculatedWidths);
     setIsModel(noModel);
@@ -290,7 +290,7 @@ const SubTableComponent = ({
     selectedRows,
     isChecked,
     onRowIndexSelect,
-    toggleRowSelection,
+    toggleRowSelection,noModel
   ]); // Update when data or sliderValue changes
 
   useEffect(() => {
