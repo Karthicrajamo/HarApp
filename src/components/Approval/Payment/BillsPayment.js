@@ -115,7 +115,7 @@ export const BillsPayment = ({route}) => {
   // }, [paidAdjustment]);
 
   useEffect(() => {
-    'supplierBankMain::' + supplierBankMain;
+    'supplierBankMain:::' + supplierBankMain;
   }, [supplierBankMain]);
 
   useEffect(() => {
@@ -324,74 +324,55 @@ export const BillsPayment = ({route}) => {
       let filteredData = advanceAdjustmentModal
         .filter(item => item['P Order No'].startsWith('TN'))
         .sort((a, b) => a['P Order No'].localeCompare(b['P Order No']));
-      console.log('filteredData::' + JSON.stringify(filteredData));
-      console.log('transValue[13]::' + JSON.stringify(transValue[13]));
-      // Extract all "id" values from filteredData into an array for quick lookup
-      const filteredIds = filteredData.map(item => item.id);
-      const uniqueFromOrders = [
-        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
-      ];
-      console.log('uniqueFromOrders', uniqueFromOrders);
-      filteredData = filteredData.filter(
-        data => data['id'] == uniqueFromOrders,
+
+      console.log('Filtered Data:', JSON.stringify(filteredData));
+      console.log('Transaction Values:', JSON.stringify(transValue[13]));
+
+      // Extract all "id" values from filteredData for quick lookup
+      const filteredIds = new Set(filteredData.map(item => item.id.toString()));
+
+      // Get unique FROM_ORDER values from transValue[13]
+      const uniqueFromOrders = new Set(
+        transValue[13].map(item => item.FROM_ORDER.toString()),
+      );
+      console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
+
+      // FilteredData should contain only entries where 'id' is in uniqueFromOrders
+      filteredData = filteredData.filter(data =>
+        uniqueFromOrders.has(data.id.toString()),
       );
 
-      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
-      const updatedRecords = [];
+      const updatedRecords = transValue[13].filter(
+        item =>
+          filteredIds.has(item.FROM_ORDER.toString()) &&
+          item['MAT_CHARGE'] !== 'MAT_TAX' &&
+          item['TO_AMOUNT'] !== 0,
+      );
 
-      for (let i = 0; i < transValue[13].length; i++) {
-        const fromOrder = transValue[13][i]['FROM_ORDER'];
-        const toAmount = transValue[13][i];
+      console.log('Updated Records:', JSON.stringify(updatedRecords));
 
-        // Check if FROM_ORDER is in filteredIds
-        const isMatched = filteredIds.includes(fromOrder.toString());
-
-        console.log('transfilter::' + isMatched);
-
-        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
-          console.log(`transvalueS::[${i}] ${fromOrder}`);
-          console.log(`toAmount::[${i}] ${toAmount}`);
-          if (toAmount['TO_AMOUNT'] != 0) {
-            updatedRecords.push(toAmount);
-          }
-          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
-          console.log('updatedRecords.length::' + updatedRecords.length);
-          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
+      // Update filteredData with matching TO_AMOUNT
+      filteredData.forEach(dataItem => {
+        const matchingRecord = updatedRecords.find(
+          record => record.FROM_ORDER.toString() === dataItem.id.toString(),
+        );
+        if (matchingRecord) {
+          dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
+          console.log(`✅. Updated:`, dataItem);
+        } else {
+          dataItem[`Adjust Advance(${currency})`] =
+            dataItem[`Remaining Adv(${currency})`];
         }
-      }
-      // if (updatedRecords.length !== 0) {
-        for (let i = 0; i < filteredData.length; i++) {
-          for (let j = 0; j < updatedRecords.length; j++) {
-            console.log(
-              `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
-            );
+      });
 
-            // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
-            if (
-              filteredData[i]['id'] ===
-              updatedRecords[j]['FROM_ORDER'].toString()
-            ) {
-              filteredData[i][`Adjust Advance(${currency})`] =
-                updatedRecords[j]['TO_AMOUNT'];
-              console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
-            }
-          }
-        }
-      // }
-console.log("filtereddatafinal::"+JSON.stringify(filteredData))
-      // Only update the state if data is actually different to avoid unnecessary renders
+      console.log('Final Filtered Data:', JSON.stringify(filteredData));
+
+      // Only update the state if data has changed
       if (
         JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
       ) {
         setAdvanceAdjustmentModal(filteredData);
       }
-      // setAdvanceAdjustmentModal(prevData => {
-      //   const isDataSame =
-      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
-      //   return isDataSame ? prevData : filteredData;
-      // });
-
-      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
     } else if (orderTyp === 'SO') {
       const filteredData = advanceAdjustmentModal
         .filter(item => item['SO No'])
@@ -400,67 +381,51 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
       console.log('filteredData::' + JSON.stringify(filteredData));
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
 
-      // Extract all "id" values from filteredData into an array for quick lookup
-      const filteredIds = filteredData.map(item => item.id);
-      const uniqueFromOrders = [
-        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
-      ];
-      console.log('uniqueFromOrders', uniqueFromOrders);
-      filteredData = filteredData.filter(
-        data => data['id'] == uniqueFromOrders,
+      // Extract all "id" values from filteredData for quick lookup
+      const filteredIds = new Set(filteredData.map(item => item.id.toString()));
+
+      // Get unique FROM_ORDER values from transValue[13]
+      const uniqueFromOrders = new Set(
+        transValue[13].map(item => item.FROM_ORDER.toString()),
       );
-      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
-      const updatedRecords = [];
+      console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
 
-      for (let i = 0; i < transValue[13].length; i++) {
-        const fromOrder = transValue[13][i]['FROM_ORDER'];
-        const toAmount = transValue[13][i];
+      // FilteredData should contain only entries where 'id' is in uniqueFromOrders
+      filteredData = filteredData.filter(data =>
+        uniqueFromOrders.has(data.id.toString()),
+      );
 
-        // Check if FROM_ORDER is in filteredIds
-        const isMatched = filteredIds.includes(fromOrder.toString());
+      const updatedRecords = transValue[13].filter(
+        item =>
+          filteredIds.has(item.FROM_ORDER.toString()) &&
+          item['MAT_CHARGE'] !== 'MAT_TAX' &&
+          item['TO_AMOUNT'] !== 0,
+      );
 
-        console.log('transfilter::' + isMatched);
+      console.log('Updated Records:', JSON.stringify(updatedRecords));
 
-        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
-          console.log(`transvalueS::[${i}] ${fromOrder}`);
-          console.log(`toAmount::[${i}] ${toAmount}`);
-          if (toAmount['TO_AMOUNT'] != 0) {
-            updatedRecords.push(toAmount);
-          }
-          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
-          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
+      // Update filteredData with matching TO_AMOUNT
+      filteredData.forEach(dataItem => {
+        const matchingRecord = updatedRecords.find(
+          record => record.FROM_ORDER.toString() === dataItem.id.toString(),
+        );
+        if (matchingRecord) {
+          dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
+          console.log(`✅. Updated:`, dataItem);
+        } else {
+          dataItem[`Adjust Advance(${currency})`] =
+            dataItem[`Remaining Adv(${currency})`];
         }
-      }
-      for (let i = 0; i < filteredData.length; i++) {
-        for (let j = 0; j < updatedRecords.length; j++) {
-          console.log(
-            `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
-          );
+      });
 
-          // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
-          if (
-            filteredData[i]['id'] === updatedRecords[j]['FROM_ORDER'].toString()
-          ) {
-            filteredData[i][`Adjust Advance(${currency})`] =
-              updatedRecords[j]['TO_AMOUNT'];
-            console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
-          }
-        }
-      }
+      console.log('Final Filtered Data:', JSON.stringify(filteredData));
 
-      // Only update the state if data is actually different to avoid unnecessary renders
+      // Only update the state if data has changed
       if (
         JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
       ) {
         setAdvanceAdjustmentModal(filteredData);
       }
-      // setAdvanceAdjustmentModal(prevData => {
-      //   const isDataSame =
-      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
-      //   return isDataSame ? prevData : filteredData;
-      // });
-
-      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
     } else if (orderTyp === 'JO') {
       const filteredData = advanceAdjustmentModal
         .filter(item => item['JO No'])
@@ -468,67 +433,51 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
       console.log('filteredData::' + JSON.stringify(filteredData));
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
 
-      // Extract all "id" values from filteredData into an array for quick lookup
-      const filteredIds = filteredData.map(item => item.id);
-      const uniqueFromOrders = [
-        ...new Set(transValue[13].map(item => item.FROM_ORDER)),
-      ];
-      console.log('uniqueFromOrders', uniqueFromOrders);
-      filteredData = filteredData.filter(
-        data => data['id'] == uniqueFromOrders,
+      // Extract all "id" values from filteredData for quick lookup
+      const filteredIds = new Set(filteredData.map(item => item.id.toString()));
+
+      // Get unique FROM_ORDER values from transValue[13]
+      const uniqueFromOrders = new Set(
+        transValue[13].map(item => item.FROM_ORDER.toString()),
       );
-      // Loop through transValue[13] and check if FROM_ORDER exists in filteredIds
-      const updatedRecords = [];
+      console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
 
-      for (let i = 0; i < transValue[13].length; i++) {
-        const fromOrder = transValue[13][i]['FROM_ORDER'];
-        const toAmount = transValue[13][i];
+      // FilteredData should contain only entries where 'id' is in uniqueFromOrders
+      filteredData = filteredData.filter(data =>
+        uniqueFromOrders.has(data.id.toString()),
+      );
 
-        // Check if FROM_ORDER is in filteredIds
-        const isMatched = filteredIds.includes(fromOrder.toString());
+      const updatedRecords = transValue[13].filter(
+        item =>
+          filteredIds.has(item.FROM_ORDER.toString()) &&
+          item['MAT_CHARGE'] !== 'MAT_TAX' &&
+          item['TO_AMOUNT'] !== 0,
+      );
 
-        console.log('transfilter::' + isMatched);
+      console.log('Updated Records:', JSON.stringify(updatedRecords));
 
-        if (isMatched && transValue[13][i]['MAT_CHARGE'] !== 'MAT_TAX') {
-          console.log(`transvalueS::[${i}] ${fromOrder}`);
-          console.log(`toAmount::[${i}] ${toAmount}`);
-          if (toAmount['TO_AMOUNT'] != 0) {
-            updatedRecords.push(toAmount);
-          }
-          console.log('updatedRecords::' + JSON.stringify(updatedRecords));
-          // filteredData[j++]["Adjust Advance(USD)"]=toAmount
+      // Update filteredData with matching TO_AMOUNT
+      filteredData.forEach(dataItem => {
+        const matchingRecord = updatedRecords.find(
+          record => record.FROM_ORDER.toString() === dataItem.id.toString(),
+        );
+        if (matchingRecord) {
+          dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
+          console.log(`✅. Updated:`, dataItem);
+        } else {
+          dataItem[`Adjust Advance(${currency})`] =
+            dataItem[`Remaining Adv(${currency})`];
         }
-      }
-      for (let i = 0; i < filteredData.length; i++) {
-        for (let j = 0; j < updatedRecords.length; j++) {
-          console.log(
-            `filteredData[${i}]['id']: ${filteredData[i]['id']} | updatedRecords[${j}]['FROM_ORDER']: ${updatedRecords[j]['FROM_ORDER']}`,
-          );
+      });
 
-          // Check if `id` in filteredData matches `FROM_ORDER` in updatedRecords
-          if (
-            filteredData[i]['id'] === updatedRecords[j]['FROM_ORDER'].toString()
-          ) {
-            filteredData[i][`Adjust Advance(${currency})`] =
-              updatedRecords[j]['TO_AMOUNT'];
-            console.log(`✅ Updated filteredData[${i}]:`, filteredData[i]);
-          }
-        }
-      }
+      console.log('Final Filtered Data:', JSON.stringify(filteredData));
 
-      // Only update the state if data is actually different to avoid unnecessary renders
+      // Only update the state if data has changed
       if (
         JSON.stringify(advanceAdjustmentModal) !== JSON.stringify(filteredData)
       ) {
         setAdvanceAdjustmentModal(filteredData);
       }
-      // setAdvanceAdjustmentModal(prevData => {
-      //   const isDataSame =
-      //     JSON.stringify(prevData) === JSON.stringify(filteredData);
-      //   return isDataSame ? prevData : filteredData;
-      // });
-
-      console.log('Filtered Data: advanceAdjustmentModal', filteredData);
     }
   }, [advanceAdjustmentModal]); // Only re-run when orderTyp changes
 
@@ -739,7 +688,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
     // if()
     // Select Supplier Bank
     FetchValueAssignKeysAPI(
-      `http://192.168.0.169:8100/rest/approval/loadVectorwithContentsjson/`,
+      `${API_URL}/api/common/loadVectorwithContentsjson/`,
       [
         'Bank A/C No',
         'Party Name',
@@ -1102,7 +1051,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                 ? 'RTGS/NEFT Ref '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB Ref '
@@ -1116,7 +1065,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                 ? 'LL '
                 : 'Ref '
             }No`]: transactionDetails[3],
-            ...(['Demand', 'Debit Card', 'Cheque'].includes(Main[7]) && {
+            ...(['Demand Draft', 'Debit Card', 'Cheque'].includes(Main[7]) && {
               'Favour of': transactionDetails[5],
             }),
             [`${
@@ -1124,7 +1073,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                 ? 'RTGS/NEFT '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
@@ -1144,7 +1093,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                 ? 'RTGS/NEFT '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
@@ -1446,7 +1395,9 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={''}
             />
-            {mainData[7].toLowerCase() !== 'cheque' && (
+            {['rtgs/neft', 'debit card', 'bank transfer'].includes(
+              mainData[7].toLowerCase(),
+            ) && (
               <ApprovalTableComponent
                 tableData={supplierBankMain}
                 highlightVal={['lastMessageSentBy', 'userName']}
@@ -1491,7 +1442,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                     : mainData[7].toLowerCase() ===
                       'Bank Transfer'.toLowerCase()
                     ? 'TT '
-                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                    : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                     ? 'DD '
                     : mainData[7].toLowerCase() ===
                       'MOBILE BANKING'.toLowerCase()
@@ -1512,7 +1463,9 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                   editable={true} // Disables input
                 />
               </View>
-              {['Demand', 'Debit Card', 'Cheque'].includes(mainData[7]) && (
+              {['Demand Draft', 'Debit Card', 'Cheque'].includes(
+                mainData[7],
+              ) && (
                 <View style={commonStyles.flexRow}>
                   <Text style={commonStyles.oneLineKey}>
                     Favour of <Text style={commonStyles.redAsterisk}>*</Text>
@@ -1529,7 +1482,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                     : mainData[7].toLowerCase() ===
                       'Bank Transfer'.toLowerCase()
                     ? 'TT '
-                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                    : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                     ? 'DD '
                     : mainData[7].toLowerCase() ===
                       'MOBILE BANKING'.toLowerCase()
@@ -1557,7 +1510,7 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
                     : mainData[7].toLowerCase() ===
                       'Bank Transfer'.toLowerCase()
                     ? 'TT '
-                    : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                    : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                     ? 'DD '
                     : mainData[7].toLowerCase() ===
                       'MOBILE BANKING'.toLowerCase()
@@ -1726,9 +1679,14 @@ console.log("filtereddatafinal::"+JSON.stringify(filteredData))
 
       <CustomModal
         isVisible={reUseCancel}
+        // isVisible={true}
         onClose={toggleModalReUse}
-        title=""
-        isVisibleClose={false}>
+        title=''
+        isVisibleClose={false}
+        isVisibleCloseIcon={true}>
+          <Text style={{color:'black',paddingBottom:10}}>{`Select Re-Use or Cancel Cheque No: ${String(
+          transDetails[3],
+        )}`}</Text>
         {/* Children Content */}
         <TouchableOpacity
           onPress={() => {

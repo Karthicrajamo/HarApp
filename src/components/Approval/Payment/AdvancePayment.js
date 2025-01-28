@@ -212,6 +212,7 @@ export const AdvancePayment = ({route}) => {
     const bodyRejStringified = JSON.stringify(rejBody);
     console.log('rejBodyJson::', JSON.stringify(rejBody));
     console.log('rejBody::', rejBody);
+    console.log('ApproveBody::', bodyStringified);
     setRejParams(bodyRejStringified);
     setApprovalParams(bodyStringified);
     console.log('body req::', bodyStringified); // Log immediately before updating the state
@@ -530,7 +531,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const adChargeExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
-          ? [0, 12, 14, 18, 21, 22, 24]
+          ? [0, 12, 14, 18, 21, 22]
           : [13, 15, 20, 21, 23];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
@@ -604,7 +605,7 @@ export const AdvancePayment = ({route}) => {
         'POST',
       );
       FetchValueAssignKeysAPI(
-        `http://192.168.0.169:8100/rest/approval/finLoadVectorwithContentsjson/`,
+        `${API_URL}/api/common/finLoadVectorwithContentsjson/`,
         [
           'Bank A/C No',
           'Party Name',
@@ -881,7 +882,7 @@ export const AdvancePayment = ({route}) => {
                 ? 'RTGS/NEFT Ref '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB Ref '
@@ -895,7 +896,7 @@ export const AdvancePayment = ({route}) => {
                 ? 'LL '
                 : 'Ref '
             }No`]: transactionDetails[3],
-            [['Demand', 'Debit Card', 'Cheque'].includes(Main[7])
+            [['Demand Draft', 'Debit Card', 'Cheque'].includes(Main[7])
               ? 'Favour of'
               : 'Party Name']: transactionDetails[5],
             [`${
@@ -903,7 +904,7 @@ export const AdvancePayment = ({route}) => {
                 ? 'RTGS/NEFT '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
@@ -922,7 +923,7 @@ export const AdvancePayment = ({route}) => {
                 ? 'RTGS/NEFT '
                 : Main[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                 ? 'TT '
-                : Main[7].toLowerCase() === 'Demand'.toLowerCase()
+                : Main[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                 ? 'DD '
                 : Main[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                 ? 'MB '
@@ -1190,11 +1191,15 @@ export const AdvancePayment = ({route}) => {
               highlightVal={['']}
               heading={''}
             />
-            <ApprovalTableComponent
-              tableData={supplierBankMain}
-              highlightVal={['']}
-              heading={'Select Supplier Bank'}
-            />
+            {['rtgs/neft', 'debit card', 'bank transfer'].includes(
+              mainData[7].toLowerCase(),
+            ) && (
+              <ApprovalTableComponent
+                tableData={supplierBankMain}
+                highlightVal={['']}
+                heading={'Select Supplier Bank'}
+              />
+            )}
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Fx Rate</Text>
             </View>
@@ -1222,7 +1227,7 @@ export const AdvancePayment = ({route}) => {
             <View style={commonStyles.disableButtonTextContainer}>
               <Text style={commonStyles.disableButtonText}>Calculate</Text>
             </View>
-            {mainData[7] === 'Demand' && (
+            {mainData[7] === 'Demand Draft' && (
               <View style={commonStyles.padTop}>
                 <Text style={commonStyles.oneLineKey}>
                   Demand Draft Details{' '}
@@ -1240,7 +1245,7 @@ export const AdvancePayment = ({route}) => {
                   ? 'RTGS/NEFT '
                   : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                  : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                   ? 'DD '
                   : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
@@ -1263,7 +1268,7 @@ export const AdvancePayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
-            {['Demand', 'Debit Card', 'Cheque'].includes(mainData[7]) && (
+            {['Demand Draft', 'Debit Card', 'Cheque'].includes(mainData[7]) && (
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
                   Favour of <Text style={commonStyles.redAsterisk}>*</Text>
@@ -1277,7 +1282,7 @@ export const AdvancePayment = ({route}) => {
                   ? 'RTGS/NEFT '
                   : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                  : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                   ? 'DD '
                   : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
@@ -1303,7 +1308,7 @@ export const AdvancePayment = ({route}) => {
                   ? 'RTGS/NEFT '
                   : mainData[7].toLowerCase() === 'Bank Transfer'.toLowerCase()
                   ? 'TT '
-                  : mainData[7].toLowerCase() === 'Demand'.toLowerCase()
+                  : mainData[7].toLowerCase() === 'Demand Draft'.toLowerCase()
                   ? 'DD '
                   : mainData[7].toLowerCase() === 'MOBILE BANKING'.toLowerCase()
                   ? 'MB '
@@ -1385,7 +1390,11 @@ export const AdvancePayment = ({route}) => {
         isVisible={reUseCancel}
         onClose={toggleModalReUse}
         title=""
-        isVisibleClose={false}>
+        isVisibleClose={false}
+        isVisibleCloseIcon={true}>
+          <Text style={{color:'black',paddingBottom:10}}>{`Select Re-Use or Cancel Cheque No: ${String(
+          transDetails[3],
+        )}`}</Text>
         {/* Children Content */}
         <TouchableOpacity
           onPress={() => {

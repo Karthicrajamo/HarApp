@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
-import { Checkbox } from 'react-native-paper';
+import React, {useState} from 'react';
+import {View, Text, ScrollView, StyleSheet, Dimensions} from 'react-native';
+import {Checkbox} from 'react-native-paper';
 import commonStyles from './../ApprovalCommonStyles';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 const ApprovalTableComponent = ({
@@ -15,7 +15,9 @@ const ApprovalTableComponent = ({
   const [data, setData] = useState(tableData);
 
   // Filter headers based on the exclude array
-  const headers = Object.keys(tableData[0]).filter(header => !exclude.includes(header));
+  const headers = Object.keys(tableData[0]).filter(
+    header => !exclude.includes(header),
+  );
 
   // Calculate column widths based on header text length for alignment
   const columnWidths = headers.map(header => Math.max(header.length * 10, 120)); // Minimum width of 120px
@@ -46,19 +48,10 @@ const ApprovalTableComponent = ({
                   alignItems: 'center',
                   width: columnWidths[index],
                 }}>
-                <Text style={[styles.headerCell, { width: columnWidths[index] }]}>
+                <Text style={[styles.headerCell, {width: columnWidths[index]}]}>
                   {header}
                 </Text>
-                {/* Render a disabled checkbox in the header if any value is true */}
-               {header === Object.keys(tableData[0]).slice(-1)[0] && // Check if it's the last column
-  tableData.some(row => row[header] === true || row[header] === "Y") && (
-    <Checkbox
-      status="checked"
-      disabled={true}
-      style={{ marginLeft: 5 }}
-    />
-)}
-
+                {/* {header} */}
               </View>
             ))}
           </View>
@@ -68,61 +61,62 @@ const ApprovalTableComponent = ({
             showsVerticalScrollIndicator={true} // Always show vertical scroll indicator
             persistentScrollbar={true} // Make sure it always persists
           >
-           {tableData.map((row, rowIndex) => {
-  // Get the last column dynamically
-  const lastColumnHeader = Object.keys(row).slice(-1)[0];
+            {tableData.map((row, rowIndex) => {
+              // Get the last column dynamically
+              const lastColumnHeader = Object.keys(row).slice(-1)[0];
 
-  return (
-    <View key={rowIndex} style={styles.dataRow}>
-      {headers.map((header, colIndex) => (
-        <View
-          key={colIndex}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center", // Center the checkbox
-            width: columnWidths[colIndex], // Set the width dynamically
-          }}
-        >
-          {/* Check if this is the last column */}
-          {header === lastColumnHeader ? (
-            row[header] === true || row[header] === false || row[header] === "Y" ? (
-              <Checkbox
-                status={
-                  row[header] === true || row[header] === "true" || row[header] === "Y"
-                    ? "checked"
-                    : "unchecked"
-                }
-                disabled={true}
-                style={{ alignItems: "center" }} // Adjust styling as needed
-              />
-            ) : (
-              <Text
-                style={[
-                  getCellStyle(header),
-                  { width: columnWidths[colIndex] },
-                ]}
-              >
-                {row[header]}
-              </Text>
-            )
-          ) : (
-            // Render normal text for non-checkbox columns
-            <Text
-              style={[
-                getCellStyle(header),
-                { width: columnWidths[colIndex] },
-              ]}
-            >
-              {row[header]}
-            </Text>
-          )}
-        </View>
-      ))}
-    </View>
-  );
-})}
-
+              return (
+                <View key={rowIndex} style={styles.dataRow}>
+                  {headers.map((header, colIndex) => (
+                    <View
+                      key={colIndex}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center', // Center the checkbox
+                        width: columnWidths[colIndex], // Set the width dynamically
+                      }}>
+                      {/* Check if this is the last column */}
+                      {header === lastColumnHeader ? (
+                        row[header] === true ||
+                        row[header] === false ||
+                        row[header] === 'Y' ||
+                        row[header] === 'N' ? (
+                          <Checkbox
+                            status={
+                              row[header] === true ||
+                              row[header] === 'true' ||
+                              row[header] === 'Y'
+                                ? 'checked'
+                                : 'unchecked'
+                            }
+                            disabled={true}
+                            style={{alignItems: 'center'}} // Adjust styling as needed
+                          />
+                        ) : (
+                          <Text
+                            style={[
+                              getCellStyle(header),
+                              {width: columnWidths[colIndex]},
+                            ]}>
+                            {row[header]}
+                          </Text>
+                        )
+                      ) : (
+                        // Render normal text for non-checkbox columns
+                        <Text
+                          style={[
+                            getCellStyle(header),
+                            {width: columnWidths[colIndex]},
+                          ]}>
+                          {row[header]}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              );
+            })}
           </ScrollView>
         </View>
       </ScrollView>

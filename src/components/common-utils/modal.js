@@ -7,9 +7,11 @@ import {
   Text,
   Dimensions,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import commonStyles from '../Approval/ApprovalCommonStyles';
+import { CustomThemeColors } from '../CustomThemeColors';
 
-const {width} = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
 const CustomModal = ({
   isVisible,
@@ -19,9 +21,8 @@ const CustomModal = ({
   subBtn = '',
   subBtnAction,
   isVisibleClose = true,
+  isVisibleCloseIcon=false
 }) => {
-  // const [isVisible, setIsVisible] = useState(true);
-
   return (
     <Modal
       animationType="slide"
@@ -31,12 +32,13 @@ const CustomModal = ({
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           {/* Modal Title */}
-          {title && <Text style={styles.modalTitle}>{title}</Text>}
+          <View style={styles.titleContainer}>
+            {title && <Text style={styles.modalTitle}>{title}</Text>}
+          </View>
 
           {/* Children Content */}
           <View style={styles.childrenContainer}>{children}</View>
 
-          {/* Close Button */}
           {subBtn ? (
             <View style={[commonStyles.flexRow]}>
               <TouchableOpacity
@@ -58,6 +60,13 @@ const CustomModal = ({
             )
           )}
         </View>
+        
+        {/* Absolute Close Icon */}
+        {isVisibleCloseIcon && (
+              <TouchableOpacity onPress={onClose} style={styles.absoluteCloseButton}>
+                <Icon name="close" size={24} color={CustomThemeColors.primary} />
+              </TouchableOpacity>
+            )}
       </View>
     </Modal>
   );
@@ -78,11 +87,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 10,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 15,
+  },
+  absoluteCloseButton: {
+    position: 'absolute',
+    bottom: height / 4.5,
+    alignSelf: 'center',
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 50,
   },
   childrenContainer: {
     width: '100%',
@@ -101,16 +124,3 @@ const styles = StyleSheet.create({
 });
 
 export default CustomModal;
-
-{
-  /* <CustomModal
-  isVisible={isModalVisible}
-  onClose={toggleModal}
-  title="Advance Adjustments">
-  <Text style={styles.modalBody}>Party Name: accessories</Text>
-  <Text style={styles.modalBody}>Payment Amount: 1500 INR</Text>
-  <View style={{height: 200}}>
-    <ApprovalTableComponent tableData={tableData} heading={'Advance Details'} />
-  </View>
-</CustomModal>; */
-}

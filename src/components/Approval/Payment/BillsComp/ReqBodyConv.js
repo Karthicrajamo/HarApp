@@ -8,7 +8,7 @@ export const ReqBodyConv = async (inputJson,transId,currentLevel,transName) => {
             inputJson.transobj[7],           // Empty array
             inputJson.transobj[8],           // Keyed object
             ...inputJson.transobj.slice(9, 15) // Remaining elements from index 9 to 14
-            ,null
+            // ,null
         ],
         message: "Approved",
         data_vec: [

@@ -78,21 +78,21 @@ const ApproveRejectComponent = ({
         {
           text: 'Yes',
           onPress: () => {
-            if (
-              (transName == 'ModPayment' && actionAR.current === 'reject'
-                ? true
-                : currentLevel == totalNoOfLevels - 1) ||
-              (transName == 'AddPayment' &&
-                actionAR.current === 'reject' &&
-                paymentMode == 'cheque') ||
-              (transName == 'CancelPayment' &&
-              actionAR.current !== 'reject' &&
-              paymentMode == 'cheque'
-                ? true
-                : currentLevel == totalNoOfLevels - 1)
-            ) {
-              setRejectPop(true);
-            }
+            // if (
+            //   (transName == 'ModPayment' && actionAR.current === 'reject'
+            //     ? true
+            //     : currentLevel == totalNoOfLevels - 1) ||
+            //   (transName == 'AddPayment' &&
+            //     actionAR.current === 'reject' &&
+            //     paymentMode == 'cheque') ||
+            //   (transName == 'CancelPayment' &&
+            //   actionAR.current !== 'reject' &&
+            //   paymentMode == 'cheque'
+            //     ? true
+            //     : currentLevel == totalNoOfLevels - 1)
+            // ) {
+            //   setRejectPop(true);
+            // }
             handleAction(action);
           },
         },
@@ -111,24 +111,33 @@ const ApproveRejectComponent = ({
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
     // console.log('rejUrl type::', rejectParams['trans_type']);
-    console.log('transName type::', transName);
+    console.log('transName type::', totalNoOfLevels + '____' + currentLevel);
 
     // _________________________karthic 23 Jan 25 ----------------------
     if (
-      (transName == 'ModPayment' && action === 'reject'
+      transName == 'ModPayment' && action === 'reject'
         ? true
-        : currentLevel == totalNoOfLevels - 1) ||
-      (transName == 'AddPayment' && action === 'reject') ||
-      (transName == 'CancelPayment' && action === 'reject'
-        ? false
-        : currentLevel == totalNoOfLevels - 1)
+        : transName == 'ModPayment' &&
+          action === 'approve' &&
+          totalNoOfLevels - 1 == currentLevel
+        ? true
+        : transName == 'AddPayment' && action === 'reject'
+        ? true
+        : // ||
+        transName == 'CancelPayment' &&
+          action === 'approve' &&
+          totalNoOfLevels - 1 == currentLevel
+        ? true
+        : false
     ) {
+      console.log('response ApRejCom::1', action);
       action === 'approve'
         ? setAppRejParams(params)
         : setAppRejParams(rejectParams);
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
     } else {
       try {
+        console.log('response ApRejCom::2', action);
         const response = await fetch(url, {
           method: 'POST',
           headers: {
