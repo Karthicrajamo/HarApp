@@ -15,6 +15,7 @@ import {TextInput} from 'react-native';
 import {Checkbox} from 'react-native-paper';
 import {Modal} from 'react-native';
 import CustomModal from '../../common-utils/modal';
+import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon'
 import TitleBar from '../../common-utils/TitleBar';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
@@ -1677,7 +1678,7 @@ export const BillsPayment = ({route}) => {
         </TouchableOpacity>
       </CustomModal>
 
-      <CustomModal
+      <CustomModalWithCloseIcon
         isVisible={reUseCancel}
         // isVisible={true}
         onClose={toggleModalReUse}
@@ -1732,7 +1733,7 @@ export const BillsPayment = ({route}) => {
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Cancelled</Text>
         </TouchableOpacity>
-      </CustomModal>
+      </CustomModalWithCloseIcon>
 
       {!isRefreshing && (
         <>
@@ -1759,6 +1760,7 @@ export const BillsPayment = ({route}) => {
               transName={transName}
               currentLevel={currentLevel}
               totalNoOfLevels={totalNoOfLevels}
+              transId={transId}
             />
           </View>
         </>

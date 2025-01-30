@@ -352,7 +352,7 @@ const ApprovalScreen = () => {
           }}>
           <Text style={[styles.date, {marginBottom: 10}]}>{item.ITIME}</Text>
           {(item.TRANS_NAME === 'AddPayment' ||
-            item.TRANS_NAME === 'ModPayment') && (
+            item.TRANS_NAME === 'ModPayment'|| item.TRANS_NAME === 'CancelPayment') && (
             <TouchableOpacity
               onPress={() => {
                 const firstWord = item.IDENTIFICATION.trim().split(' ')[0];

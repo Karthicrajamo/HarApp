@@ -6,12 +6,15 @@ import {
   StyleSheet,
   Text,
   Dimensions,
+  Platform,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import commonStyles from '../Approval/ApprovalCommonStyles';
+import { CustomThemeColors } from '../CustomThemeColors';
 
-const {width} = Dimensions.get('window');
+const {width, height} = Dimensions.get('window');
 
-const CustomModal = ({
+const CustomModalWithCloseIcon = ({
   isVisible,
   onClose,
   children,
@@ -19,9 +22,8 @@ const CustomModal = ({
   subBtn = '',
   subBtnAction,
   isVisibleClose = true,
+  isVisibleCloseIcon = false,
 }) => {
-  // const [isVisible, setIsVisible] = useState(true);
-
   return (
     <Modal
       animationType="slide"
@@ -31,12 +33,18 @@ const CustomModal = ({
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
           {/* Modal Title */}
-          {title && <Text style={styles.modalTitle}>{title}</Text>}
+          <View style={styles.titleContainer}>
+            {title && <Text style={styles.modalTitle}>{title}</Text>}
+            {isVisibleCloseIcon && (
+              <TouchableOpacity onPress={onClose} style={styles.topRightCloseButton}>
+                <Icon name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Children Content */}
           <View style={styles.childrenContainer}>{children}</View>
 
-          {/* Close Button */}
           {subBtn ? (
             <View style={[commonStyles.flexRow]}>
               <TouchableOpacity
@@ -71,28 +79,44 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
-    width: 'auto',
+    width: width * 0.9,
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 40,
+    padding: width * 0.05,
     alignItems: 'center',
     margin: 10,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    position: 'relative',
+  },
   modalTitle: {
-    fontSize: 18,
+    fontSize: width * 0.05,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: height * 0.02,
+  },
+  topRightCloseButton: {
+    position: 'absolute',
+    right: width * -.08,
+    top: height * -0.055,
+    backgroundColor: CustomThemeColors.primary,
+    padding: width * 0.02,
+    borderRadius: 50,
+    zIndex: 10,color:'white'
   },
   childrenContainer: {
     width: '100%',
-    marginBottom: 15,
+    marginBottom: height * 0.02,
   },
   closeButton: {
     backgroundColor: '#3788E5',
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.05,
   },
   closeButtonText: {
     color: 'white',
@@ -100,17 +124,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CustomModal;
-
-{
-  /* <CustomModal
-  isVisible={isModalVisible}
-  onClose={toggleModal}
-  title="Advance Adjustments">
-  <Text style={styles.modalBody}>Party Name: accessories</Text>
-  <Text style={styles.modalBody}>Payment Amount: 1500 INR</Text>
-  <View style={{height: 200}}>
-    <ApprovalTableComponent tableData={tableData} heading={'Advance Details'} />
-  </View>
-</CustomModal>; */
-}
+export default CustomModalWithCloseIcon;

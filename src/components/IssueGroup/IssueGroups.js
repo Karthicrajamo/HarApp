@@ -40,13 +40,12 @@ const IssueGroups = () => {
   }, []);
 
   useEffect(() => {
-    console.log('rmiData1>>>' + grpId);
-    console.log('rmiData>>>' + rmiData);
-  }, [grpId, rmiData, selectedDataPaymentType]);
+    console.log('rmiData1>>' + grpId);
+    // console.log('rmiData>>>' + rmiData);
+  }, [grpId, selectedDataPaymentType]);
 
   const [grpId, setSelectedextRmiData1] = useState([]);
 
-  const [rmiData, setSelectedextRmiData] = useState([]);
   const [activeDataPdf, setActiveDataPdf] = useState([]);
   const [partyName, setpartyNames] = useState('');
   const [currency, setCurrency] = useState('');
@@ -59,7 +58,6 @@ const IssueGroups = () => {
   const loadingRef = useRef(isLoading);
 
   //Refresh Component
-  const [refreshing, setRefreshing] = useState(false);
 
   const currentDate = new Date();
 
@@ -138,11 +136,20 @@ const IssueGroups = () => {
   const tempLoad = useRef(0);
 
   useEffect(() => {
-    console.log('dastasaaa::' + Object.keys(selectedSubData).length);
-    console.log('dastasaaas::' + JSON.stringify(selectedData));
+    console.log('selectedSubData::' + JSON.stringify(selectedSubData));
+    // console.log('dastasaaas::' + JSON.stringify(selectedData));
     // if (!mainTableSelectAll && Object.keys(selectedSubData).length !== 0)
     //   setSelectedSubData([]);
-  }, [selectedSubData, selectedRow]);
+  }, [selectedSubData]);
+
+  useEffect(() => {
+    console.log('hideSubTab::' + hideSubTab);
+    if (hideSubTab) {
+      console.log('hideSubTab::innnn' + hideSubTab);
+      setSelectedSubData([]);
+    }
+  }, [hideSubTab]);
+
   useEffect(() => {
     console.log('selectedModelData::', selectedModelData);
     if (selectedModelData.length > 0) {
@@ -331,7 +338,7 @@ const IssueGroups = () => {
         // fetchModelTableTaxData();
       } // fetchModelTableSubData();
     }
-  }, [selectedSubRow,activeDataPdf]);
+  }, [selectedSubRow, selectedData]);
 
   useEffect(() => {
     console.log('selectedModelSubData pridn__________________' + subData);
@@ -1175,7 +1182,7 @@ const IssueGroups = () => {
       //   item => item.partyName,
       // );
       // setpartyNames(partyNames);
-      setSelectedSubData([]); // Clear previous data
+      setSelectedSubData([]); // Clear previou
       setSelectedSubData(sortedData); // Set sorted data
     } catch (error) {
       console.error('Error fetching table sub data:', error);
@@ -2001,11 +2008,30 @@ ORDER BY
       // );
       setSelectedextRmiData1(tableData[selectedRow].groupId.toString());
       console.log('kasjdfhasfhioashfioh:::', Object.keys(selectedRow).length);
-
-      fetchSubTableData();
+      console.log('activeDataPdf:::', Object.keys(activeDataPdf).length);
+if(Object.keys(activeDataPdf).length==0){
+      fetchSubTableData();}
     }
-  }, [selectedRow, tableData]);
+  }, [selectedRow, tableData, activeDataPdf]);
 
+  // useEffect(() => {
+  //   console.log('ruyuewr747 Selected Row:', selectedRow);
+
+  //   if (
+  //     selectedRow !== null &&
+  //     selectedRow >= 0 &&
+  //     selectedRow < tableData.length
+  //   ) {
+  //     setSelectedDataGroupId(tableData[selectedRow]?.groupId);
+  //     setSelectedDataDataPaymentType(tableData[selectedRow]?.type);
+  //     setSelectedData([tableData[selectedRow]]);
+  //     // console.log(
+  //     //   'selectdsfsfsfedData __________' + tableData[selectedRow].groupId,
+  //     // );
+  //     setSelectedextRmiData1(tableData[selectedRow].groupId.toString());
+  //     console.log('kasjdfhasfhioashfioh:::', Object.keys(selectedRow).length);
+  //   }
+  // }, [selectedRow, activeDataPdf, tableData]);
   // useEffect(()=>{if(selectedRow.length!=0)fetchSubTableData();},[selectedRow])
 
   const [currentModalPage, setCurrentModalPage] = useState(0);
@@ -2317,7 +2343,7 @@ ORDER BY
     );
 
     // Log and set the transformed object
-    console.log('Transformed Object:', transformedObject);
+    console.log('Transformed Object::', transformedObject);
     setSelectedGroupData(prev => {
       // Check if transformedObject already exists in the selectedGroupData
       if (
@@ -2405,21 +2431,25 @@ ORDER BY
                     key={filteredMainData.length}
                     initialData={filteredMainData}
                     onRowIndexSelectDataLoad={value => {
+                      // setSelectedRow([]);
+                      setSelectedSubData([]);
                       setSelectedRow(value);
                       console.log('selectedRow_____', tableData[value]);
                       console.log('selectedRow_____array', value);
+                      // SetActiveGroupId([]);
                       // GroupTransformObject(tableData[value])
                       setMainType(tableData[value].type);
                       SetActiveGroupId(tableData[value].groupId);
                       setModelButton(false);
                       setHideSubTab(false);
-
                       setActiveDataPdf([]);
                     }}
                     onRowIndexSelect={value => {
                       if (value.length < 1) {
                         console.log('empty data::::');
                         fetchTableData();
+
+                      setSelectedSubData([])
                         setMainTableSelectedIndex([]);
                         setSelectedCheckBoxData([]);
                         setSelectedPayments({});
@@ -2500,6 +2530,7 @@ ORDER BY
                     showCheckBox={true}
                     onlyFetchData={true}
                     setMainTableSelectAll={setMainTableSelectAll}
+                    setHideSubTab={setHideSubTab}
                     style={{marginTop: 20}}
                   />
                 ) : (
@@ -3192,65 +3223,7 @@ ORDER BY
           <></>
         )}
       </View>
-      {isLoading &&
-        mainTableSelectedIndex.length ===
-          Object.keys(selectedPayments).length && (
-          // <View
-          //   style={{
-          //     flex: 1,
-          //     // height: 100,
-          //     alignItems: 'center',
-          //     justifyContent: 'center',
-          //     backgroundColor: '#f9f9f9', // Light background color
-          //     borderRadius: 10, // Rounded corners
-          //     padding: 10,
-          //     margin: 10,
-          //   }}>
-          //   <ActivityIndicator size="small" color="#e63946" />
-          //   {/* Modern loading indicator */}
-          //   <Text
-          //     style={{
-          //       marginTop: 10,
-          //       fontSize: 16,
-          //       fontWeight: '500',
-          //       color: '#e63946',
-          //     }}>
-          //     Loading, please wait..
-          //   </Text>
-          // </View>
-          <View style={{flex: 0.5}}>
-            <View
-              style={{
-                height: 100,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#ffffff', // White background for contrast
-                borderRadius: 12, // Rounded corners for a modern look
-                padding: 20, // Increased padding for better spacing
-                margin: 10,
-                // position: 'absolute',
-                // top: '30%',
-                // left: '40%',
-                shadowColor: '#000', // Shadow color for iOS
-                shadowOffset: {width: 0, height: 4}, // Shadow offset for iOS
-                shadowOpacity: 0.25, // Shadow opacity for iOS
-                shadowRadius: 4, // Shadow blur for iOS
-                elevation: 8, // Elevation for Android shadow
-              }}>
-              <ActivityIndicator size="small" color="#e63946" />
-              {/* Modern loading indicator */}
-              <Text
-                style={{
-                  marginTop: 12, // Space between the indicator and text
-                  fontSize: 10,
-                  fontWeight: '600',
-                  color: '#e63946',
-                }}>
-                Loading, please wait...
-              </Text>
-            </View>
-          </View>
-        )}
+      {/*  */}
       {isModelButton && (
         <TouchableOpacity onPress={() => isModel(true)}>
           <View

@@ -12,9 +12,12 @@ import CustomModal from '../../common-utils/modal';
 import {Text} from 'react-native';
 import {TextInput} from 'react-native';
 import CustomButton from '../../common-utils/CustomButton';
+import {getCurrentLevel} from './GetCurrentLevel';
 import commonStyles from '../ApprovalCommonStyles';
 import {isTablet} from 'react-native-device-info';
 import {useNavigation} from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
+import {Snackbar} from 'react-native-paper';
 
 const ApproveRejectComponent = ({
   approveUrl,
@@ -28,6 +31,7 @@ const ApproveRejectComponent = ({
   transName,
   currentLevel,
   totalNoOfLevels,
+  transId,
 }) => {
   const navigation = useNavigation();
   const [isRejectPop, setRejectPop] = useState(false);
@@ -78,21 +82,19 @@ const ApproveRejectComponent = ({
         {
           text: 'Yes',
           onPress: () => {
-            // if (
-            //   (transName == 'ModPayment' && actionAR.current === 'reject'
-            //     ? true
-            //     : currentLevel == totalNoOfLevels - 1) ||
-            //   (transName == 'AddPayment' &&
-            //     actionAR.current === 'reject' &&
-            //     paymentMode == 'cheque') ||
-            //   (transName == 'CancelPayment' &&
-            //   actionAR.current !== 'reject' &&
-            //   paymentMode == 'cheque'
-            //     ? true
-            //     : currentLevel == totalNoOfLevels - 1)
-            // ) {
-            //   setRejectPop(true);
-            // }
+            if (transName == 'ModPayment' &&
+              action === 'approve' &&
+              totalNoOfLevels - 1 == currentLevel
+            ? true
+            : 
+              transName == 'CancelPayment' &&
+              action === 'approve' &&
+              totalNoOfLevels - 1 == currentLevel&&paymentMode === 'Cheque'
+            ? true
+            : false
+            ) {
+              setRejectPop(true);
+            }
             handleAction(action);
           },
         },
@@ -121,12 +123,12 @@ const ApproveRejectComponent = ({
           action === 'approve' &&
           totalNoOfLevels - 1 == currentLevel
         ? true
-        : transName == 'AddPayment' && action === 'reject'
+        : transName == 'AddPayment' && action === 'reject'&&paymentMode === 'Cheque'
         ? true
         : // ||
         transName == 'CancelPayment' &&
           action === 'approve' &&
-          totalNoOfLevels - 1 == currentLevel
+          totalNoOfLevels - 1 == currentLevel&&paymentMode === 'Cheque'
         ? true
         : false
     ) {
@@ -168,8 +170,27 @@ const ApproveRejectComponent = ({
     <View style={styles.container}>
       <TouchableOpacity
         style={[styles.button, styles.approveButton]}
-        onPress={() => {
-          confirmApproval('approve');
+        onPress={async () => {
+          
+          try {Toast.show({
+            type: 'error', // Red color preset
+            text1: 'Error',
+            text2: 'Failed to fetch current level',
+            visibilityTime: 3000,
+          });<Toast />
+            const level = await getCurrentLevel(transId);
+            console.log('Current Level:', level, '==', currentLevel);
+            if (level !== currentLevel) {
+              actionAR.current = 'reject';
+              // setRejectPop(true);
+              // confirmApproval('approve');
+            } else {
+              ToastAndroid.show("Failed to fetch current level", ToastAndroid.SHORT);
+
+            }
+          } catch (error) {
+            console.error('Error retrieving current level:', error);
+          }
           // setActionAR('approve');
           actionAR.current = 'approve';
         }}>
@@ -223,10 +244,11 @@ const ApproveRejectComponent = ({
           if (value.length < 1) {
             setWarn('Please Enter a Reason');
           } else {
+            console.log('rejectParams PaymentMode:::' + paymentMode);
             updateMessage(value);
             // handleAction('reject');
-            toggleModal();
-            console.log('rejectParams PaymentMode:::' + paymentMode);
+            // toggleModal();
+            setRejectPop(true);
             if (
               // JSON.stringify(
               paymentMode === 'Cheque'

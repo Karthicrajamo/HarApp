@@ -41,6 +41,7 @@ import {
   getUpdateCheckStatus,
   updateModRejectPayStatus,
 } from './BillsComp/ReUseCancelComp';
+import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -445,6 +446,8 @@ export const AdvancePayment = ({route}) => {
       const matAdExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [0, 16, 18, 22, 24, 26]
+          : transValue[4][0]?.ORDER_TYPE === 'JO'
+          ? [15, 18, 21, 24, 25]
           : [13, 14, 18, 20, 22];
 
       FetchValueAssignKeysAPIString(
@@ -532,7 +535,9 @@ export const AdvancePayment = ({route}) => {
       const adChargeExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
           ? [0, 12, 14, 18, 21, 22]
-          : [13, 15, 20, 21, 23];
+          : transValue[4][0]?.ORDER_TYPE === 'JO'
+          ? [1, 13, 17, 20, 21]
+          : [13, 15, 16, 19, 21];
       // Additional Charges (Taxable)
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayChargesDetails`,
@@ -1386,13 +1391,17 @@ export const AdvancePayment = ({route}) => {
         </TouchableOpacity>
       </CustomModal>
 
-      <CustomModal
+      <CustomModalWithCloseIcon
         isVisible={reUseCancel}
         onClose={toggleModalReUse}
         title=""
         isVisibleClose={false}
         isVisibleCloseIcon={true}>
-          <Text style={{color:'black',paddingBottom:10}}>{`Select Re-Use or Cancel Cheque No: ${String(
+        <Text
+          style={{
+            color: 'black',
+            paddingBottom: 10,
+          }}>{`Select Re-Use or Cancel Cheque No: ${String(
           transDetails[3],
         )}`}</Text>
         {/* Children Content */}
@@ -1438,7 +1447,7 @@ export const AdvancePayment = ({route}) => {
           style={styles.pdfSubOption}>
           <Text style={styles.subOptionText}>Cancelled</Text>
         </TouchableOpacity>
-      </CustomModal>
+      </CustomModalWithCloseIcon>
 
       {/* Button to toggle visibility */}
       {!isRefreshing && (
@@ -1465,6 +1474,7 @@ export const AdvancePayment = ({route}) => {
               transName={transName}
               currentLevel={currentLevel}
               totalNoOfLevels={totalNoOfLevels}
+              transId={transId}
             />
           </View>
         </>

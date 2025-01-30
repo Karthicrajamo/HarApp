@@ -69,6 +69,7 @@ const TableComponent = ({
   setMainTableSelectedIndex,
   setMainTableSelectAll,
   tempLoad,
+  setHideSubTab,
 }) => {
   const navigation = useNavigation();
   const {width: screenWidth} = Dimensions.get('window');
@@ -102,7 +103,7 @@ const TableComponent = ({
   }, [initialData]);
 
   useEffect(() => {
-    console.log('fontScale::' + fontScale);
+    // console.log('fontScale::' + fontScale);
   }, []);
   useEffect(() => {
     console.log('mainTableSelectedIndextablecom::' + mainTableSelectedIndex);
@@ -113,10 +114,10 @@ const TableComponent = ({
     }
   }, [mainTableSelectedIndex]);
   useEffect(() => {
-    console.log('selectedRowtablecomp::' + JSON.stringify(selectedRow).length);
+    console.log('selectedRowtablecomp::' + JSON.stringify(selectedRow));
     // if(selectedRow)
     // setActionSubTable()
-  }, [selectedRow]);
+  }, [selectedRow,setSelectedRow]);
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
@@ -160,8 +161,13 @@ const TableComponent = ({
     updatedSelection[actualIndex] = !isSelected;
     setMainTableSelectAll(true);
     // Update the selected state
+    console.log('sdfsdfsfsfsdf' + JSON.stringify(data[actualIndex]));
+    console.log('sdfsdfsfsfsdfelectedRow' + JSON.stringify(selectedRow));
+    const index =data[actualIndex]
+    setTableIndex([]);
     setTableIndex(actualIndex);
-    setSelectedRow(data[actualIndex]);
+    
+    setSelectedRow(index);
     setModalVisible(true);
 
     // Trigger onRowIndexSelect only if isModel is false
@@ -234,6 +240,7 @@ const TableComponent = ({
         setTimeout(() => {
           onRowIndexSelect(index);
         }, 0);
+        setHideSubTab(true);
         // setImmediate(() => {
         // });
       });
@@ -433,6 +440,7 @@ const TableComponent = ({
               <TouchableOpacity
                 key={rowIndex}
                 onPress={() => {
+                  // setSelectedRow([]);
                   toggleRowSelection(rowIndex);
                 }}
                 // onLongPress={() => {

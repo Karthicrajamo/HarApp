@@ -272,13 +272,13 @@ const SubTableComponent = ({
         '___mainta::',
         mainTableSelectedIndex,
       ),
-    [selectedCheckBoxData],
+    [selectedCheckBoxData]
   );
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
 
-    console.log('slide values:>>>sub', sliderValue);
+    // console.log('slide values:>>>sub', sliderValue);
 
     setColumnWidths(calculatedWidths);
     setIsModel(noModel);
