@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dimensions, Text, View, StyleSheet } from 'react-native';
+import { Dimensions, Text, View, StyleSheet, TextInput } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;
@@ -7,6 +7,7 @@ const isMobile = width < 768;
 const InfoPairs = ({ data, imp = [''], valueChanger = {} }) => {
   const [keys, setKeys] = useState([]);
   const [processedData, setProcessedData] = useState([]);
+  const [inputValues, setInputValues] = useState({});
 
   useEffect(() => {
     if (data.length > 0) {
@@ -31,6 +32,10 @@ const InfoPairs = ({ data, imp = [''], valueChanger = {} }) => {
     }
   }, [data, JSON.stringify(valueChanger)]); // Avoid reference equality issues
 
+  const handleInputChange = (key, value) => {
+    setInputValues(prev => ({ ...prev, [key]: value }));
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.middleContainer}>
@@ -42,7 +47,16 @@ const InfoPairs = ({ data, imp = [''], valueChanger = {} }) => {
                   {key}
                   {imp.includes(key) && <Text style={styles.asterisk}> *</Text>}
                 </Text>
-                <Text style={styles.valueText}>{item[key]}</Text>
+                {item[key] === 'yes' ? (
+                  <TextInput
+                    style={styles.inputBox}
+                    value={inputValues[key] || ''}
+                    onChangeText={text => handleInputChange(key, text)}
+                    placeholder="Enter value..."
+                  />
+                ) : (
+                  <Text style={styles.valueText}>{item[key]}</Text>
+                )}
               </View>
             ))}
           </View>
@@ -79,6 +93,7 @@ const styles = StyleSheet.create({
   keyValueItem: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
+    alignItems: 'center',
     marginBottom: isMobile ? 5 : 14,
   },
   keyText: {
@@ -98,6 +113,15 @@ const styles = StyleSheet.create({
     color: '#3788E5',
     flex: 1,
     textAlign: 'left',
+  },
+  inputBox: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 5,
+    fontSize: isMobile ? 12 : 16,
+    flex: 1,
+    color: '#333',
   },
 });
 

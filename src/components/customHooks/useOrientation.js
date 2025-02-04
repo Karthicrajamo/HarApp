@@ -30,7 +30,8 @@ const useOrientation = () => {
         }
       } else {
         if (width > height) {
-          Orientation.lockToPortrait(); // Force portrait on phone
+          Orientation.lockToLandscape(); // Force landscape on tablet
+          // Orientation.lockToPortrait(); // Force portrait on phone
         }
       }
     });

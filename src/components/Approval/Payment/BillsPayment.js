@@ -15,7 +15,7 @@ import {TextInput} from 'react-native';
 import {Checkbox} from 'react-native-paper';
 import {Modal} from 'react-native';
 import CustomModal from '../../common-utils/modal';
-import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon'
+import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon';
 import TitleBar from '../../common-utils/TitleBar';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
@@ -95,7 +95,10 @@ export const BillsPayment = ({route}) => {
   const [query, setQuery] = useState('');
   const [finloadData, setFinloadData] = useState(null);
   const [advAdjSub, setAdvAdjSub] = useState(null);
+  const [action, setAction] = useState(null);
   const totalActualAmtRef = useRef(0);
+
+const billType=useRef()
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -121,7 +124,14 @@ export const BillsPayment = ({route}) => {
 
   useEffect(() => {
     console.log('billsPay::', billsPay);
+    
     if (Array.isArray(billsPay)) {
+      const billNo = billsPay[0]?.["Bill No"];
+      if (billNo ) {
+        billType.current = billNo.split('-')[0];
+        // const billNumber = billNo.split('-')[1];  // Safely split after checking
+        console.log(billType.current);  // Output: 193
+      }
       totalActualAmtRef.current = billsPay
         .filter(
           bill => bill['Actual Amt'] && !isNaN(parseFloat(bill['Actual Amt'])),
@@ -133,9 +143,19 @@ export const BillsPayment = ({route}) => {
     console.log('totalActualAmtRef.current::', totalActualAmtRef.current);
   }, [billsPay]);
 
+  useEffect(()=>{
+
+    console.log('ORDER_TYPE::', orderTyp);
+  },[orderTyp])
   useEffect(() => {
     console.log('advAdjSub::', advAdjSub);
-    if (advAdjSub != null) {
+    console.log(
+      'ttadvAdjSub::',
+      advAdjSub ? Object.keys(advAdjSub).length : 999,
+    );
+    console.log('transName::', transName);
+
+    if (advAdjSub != null && advAdjSub.length != 0) {
       const generatePOData = data => {
         console.log('datadata' + JSON.stringify(data, null, 2));
         const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
@@ -157,6 +177,7 @@ export const BillsPayment = ({route}) => {
           },
           TAX: {},
         };
+console.log("hmtotalOrderMap:"+hmtotalOrderMap);
 
         return {
           type: orderTyp,
@@ -375,10 +396,10 @@ export const BillsPayment = ({route}) => {
         setAdvanceAdjustmentModal(filteredData);
       }
     } else if (orderTyp === 'SO') {
-      const filteredData = advanceAdjustmentModal
+      let filteredData = advanceAdjustmentModal
         .filter(item => item['SO No'])
         .sort((a, b) => a['SO No'].localeCompare(b['SO No']));
-      filteredData = filteredData.slice(0, billsPay.length);
+      filteredData = filteredData?.slice(0, billsPay.length);
       console.log('filteredData::' + JSON.stringify(filteredData));
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
 
@@ -428,7 +449,7 @@ export const BillsPayment = ({route}) => {
         setAdvanceAdjustmentModal(filteredData);
       }
     } else if (orderTyp === 'JO') {
-      const filteredData = advanceAdjustmentModal
+      let filteredData = advanceAdjustmentModal
         .filter(item => item['JO No'])
         .sort((a, b) => a['JO No'].localeCompare(b['JO No']));
       console.log('filteredData::' + JSON.stringify(filteredData));
@@ -444,7 +465,7 @@ export const BillsPayment = ({route}) => {
       console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
 
       // FilteredData should contain only entries where 'id' is in uniqueFromOrders
-      filteredData = filteredData.filter(data =>
+      filteredData = filteredData?.filter(data =>
         uniqueFromOrders.has(data.id.toString()),
       );
 
@@ -492,12 +513,10 @@ export const BillsPayment = ({route}) => {
     }
     console.log('actualAmt0::', actual);
     setActual(actual);
-    actual += Math.abs(
-      parseFloat(
-        transValue[1]?.['TAX_ADJUSTED'] ? transValue[1]['TAX_ADJUSTED'] : 0,
-      ),
-    );
-    console.log('actualAmt1::', actual);
+    (actual -= parseFloat(
+      transValue[1]?.['TAX_ADJUSTED'] ? transValue[1]['TAX_ADJUSTED'] : 0,
+    )),
+      console.log('actualAmt1::', actual);
     actual -= parseFloat(
       transValue[1]?.['ADVANCE_ADJUSTED']
         ? transValue[1]['ADVANCE_ADJUSTED']
@@ -623,18 +642,23 @@ export const BillsPayment = ({route}) => {
       transId,
       currentLevel,
       transName,
+      'Bills Payment',
+      totalNoOfLevels,
     );
     const rejBody = ReqBodyRejConv(
       transValue,
       transId,
       currentLevel,
       transName,
+      // 'Bills Payment',
     );
     const bodyApprovalStringified = JSON.stringify(body._j);
     const bodyRejStringified = JSON.stringify(rejBody);
     console.log('rejBodyJson::', JSON.stringify(rejBody));
+    // console.log('rejBodyJson::', JSON.stringify(rejBody));
     setRejParams(bodyRejStringified);
     setApprovalParams(bodyApprovalStringified);
+    console.log('body bodyApprovalStringified::', bodyApprovalStringified); // Log immediately before updating the state
     console.log('body req::', bodyRejStringified); // Log immediately before updating the state
 
     if (transValue.length > 0) {
@@ -684,12 +708,15 @@ export const BillsPayment = ({route}) => {
       }
     }
     console.log(
-      'transValue[3][PARTY_ACCOUNT_NO' + transValue[3]?.['PARTY_ACCOUNT_NO'],
+      'transValue[3][PARTY_ACCOUNT_NO' +
+        JSON.stringify({
+          query: `select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='${transValue[3]?.['PARTY_ACCOUNT_NO']}' or bad.account_no='${transValue[3]?.['PARTY_ACCOUNT_NO']}' ) and bad.account_category='Party'  `,
+        }),
     );
     // if()
     // Select Supplier Bank
     FetchValueAssignKeysAPI(
-      `${API_URL}/api/common/loadVectorwithContentsjson/`,
+      `${API_URL}/api/common/loadVectorwithContentsjson`,
       [
         'Bank A/C No',
         'Party Name',
@@ -703,7 +730,7 @@ export const BillsPayment = ({route}) => {
       [],
       setSupplierBankMain,
       {
-        Query: `select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='${transValue[3]?.['PARTY_ACCOUNT_NO']}' or bad.account_no='${transValue[3]?.['PARTY_ACCOUNT_NO']}' ) and bad.account_category='Party'  `,
+        query: `select bad.account_no,bad.party_name, bad.account_holder_name,coalesce( bm.bank_name,'-') as bank_name,coalesce( bm.branch_name,'-') as branch_name, coalesce(bm.country,'-') as country, bad.currency, bm.swift_code from bank_account_details bad left join  bank_master bm on bm.bank_id = bad.bank_id where (bad.account_no||':::'||bad.bank_id||':::'||bad.party_name='${transValue[3]?.['PARTY_ACCOUNT_NO']}' or bad.account_no='${transValue[3]?.['PARTY_ACCOUNT_NO']}' ) and bad.account_category='Party'  `,
       },
       'POST',
     );
@@ -898,18 +925,31 @@ export const BillsPayment = ({route}) => {
   }, [paymentId]);
 
   useEffect(() => {
-    if (paymentId != null && mainData != [] && transDetails != []) {
-      const chkSts = getUpdateCheckStatus(
-        transName,
-        paymentId,
-        mainData[8],
-        transDetails[3],
-        mainData[7],
-        currentLevel,
-      );
-      setCheckStatus(chkSts);
-    }
-  }, [paymentId, mainData, transDetails]);
+    const fetchCheckStatus = async () => {
+      if (paymentId !== null && mainData.length > 0 && transDetails.length > 0) {
+        try {
+          const chkSts = await getUpdateCheckStatus(
+            transName,
+            paymentId,
+            mainData[8],
+            transDetails[3],
+            mainData[7],
+            currentLevel,
+            totalNoOfLevels,
+            action  // Approve/Reject
+          );
+  
+          console.log('checkStatuscheckStatus::', JSON.stringify(chkSts));
+  
+          setCheckStatus(chkSts);  // Set resolved data in state
+        } catch (error) {
+          console.error('Error fetching check status:', error);
+        }
+      }
+    };
+  
+    fetchCheckStatus();  // Call the async function
+  }, [paymentId, mainData, transDetails, action]);
 
   useEffect(() => {
     const getTaxCurrency = async () => {
@@ -1019,6 +1059,8 @@ export const BillsPayment = ({route}) => {
           console.log('orderType', processData(parsedTransObj[13][0]));
           setOrderTyp(parsedTransObj?.[13][0]?.['ORDER_TYPE']);
 
+          console.log('type::', parsedTransObj?.[13][0]?.['ORDER_TYPE']);
+
           console.log('Final Main::', Main);
           console.log('Final transactionDetails:', transactionDetails);
           console.log('Final poDetails:', parsedTransObj);
@@ -1064,6 +1106,10 @@ export const BillsPayment = ({route}) => {
                 ? 'Cheque '
                 : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
                 ? 'LL '
+                : Main[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                ? 'NB Ref '
+                : Main[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                ? 'GP '
                 : 'Ref '
             }No`]: transactionDetails[3],
             ...(['Demand Draft', 'Debit Card', 'Cheque'].includes(Main[7]) && {
@@ -1086,7 +1132,11 @@ export const BillsPayment = ({route}) => {
                 ? 'Cheque '
                 : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
                 ? 'LL '
-                : 'Cash '
+                : Main[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                ? 'NB '
+                : Main[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                ? 'GP '
+                : ' '
             } Date`]: DateFormatComma(Main[1]),
             // 'TT Amt (INR)': poDetails[2], // Uncomment if needed
             [`${
@@ -1106,8 +1156,17 @@ export const BillsPayment = ({route}) => {
                 ? 'Cheque '
                 : Main[7].toLowerCase() === 'Letter Of Credit'.toLowerCase()
                 ? 'LL '
-                : 'Cash '
-            } Amt (${Main[9]})`]: Main[6],
+                : Main[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                ? ''
+                : Main[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                ? 'GP '
+                : ' '
+            }Amt (${Main[9]})`]: Main[6],
+            ...(transName === 'CancelPayment' && {
+              Reason: parsedTransObj[1]?.['INSTRUCTIONS'],
+            }),
+            // ...(transName === 'CancelPayment' && {
+            //   'Approval Instruction': 'yes',
             // }),
           };
           setActualMinSlab(poDetails[2].toFixed(4));
@@ -1177,6 +1236,10 @@ export const BillsPayment = ({route}) => {
                 'MB Ref No',
                 'DC No',
                 'CC No',
+                'NB Ref No',
+                'GP No',
+                'Reason',
+                'Approval Instruction',
               ]}
               valueChanger={{
                 [`Actual Amount (${transValue[1]?.PARTY_CURRENCY})`]:
@@ -1256,7 +1319,8 @@ export const BillsPayment = ({route}) => {
                 editable={false} // Disables input
               />
             </View>
-
+            {(orderTyp === 'PO'
+              || billType.current === 'JO'|| billType.current === 'SO') &&
             <View style={commonStyles.flexColumn}>
               <TouchableOpacity
                 style={commonStyles.enableButtonTextContainer}
@@ -1275,7 +1339,7 @@ export const BillsPayment = ({route}) => {
                 // value={mainData[17].toString()}
                 editable={false} // Disables input
               />
-            </View>
+            </View>}
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
                 Balance to Pay(Actual amt-Advance Adjusted)
@@ -1302,15 +1366,13 @@ export const BillsPayment = ({route}) => {
                       transValue[1]?.['ADVANCE_ADJUSTED']
                         ? transValue[1]?.['ADVANCE_ADJUSTED']
                         : 0,
-                    ) +
-                    Math.abs(
-                      parseFloat(
-                        transValue[1]['TAX_ADJUSTED']
-                          ? transValue[1]['TAX_ADJUSTED']
-                          : 0,
-                      ),
+                    ) -
+                    parseFloat(
+                      transValue[1]['TAX_ADJUSTED']
+                        ? transValue[1]['TAX_ADJUSTED']
+                        : 0,
                     )
-                ).toString()}
+                ).toFixed(4).toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -1396,7 +1458,7 @@ export const BillsPayment = ({route}) => {
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={''}
             />
-            {['rtgs/neft', 'debit card', 'bank transfer'].includes(
+            {['rtgs/neft', 'debit card', 'bank transfer','g_pay'].includes(
               mainData[7].toLowerCase(),
             ) && (
               <ApprovalTableComponent
@@ -1436,6 +1498,23 @@ export const BillsPayment = ({route}) => {
 
             {/* ---------------------------- Varies for data --------------------- */}
             <View>
+              {mainData[7] === 'Demand Draft' && (
+                <View style={commonStyles.padTop}>
+                  <Text style={commonStyles.oneLineKey}>
+                    Demand Draft Details{' '}
+                  </Text>
+                </View>
+              )}
+              {mainData[7] === 'Cheque' ||
+                (mainData[7].toLowerCase() === 'NET BANKING'.toLowerCase() && (
+                  <View style={commonStyles.padTop}>
+                    <Text style={commonStyles.oneLineKey}>
+                      {mainData[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                        ? 'Net Banking Details '
+                        : 'Cheque Details'}{' '}
+                    </Text>
+                  </View>
+                ))}
               <View style={commonStyles.flexRow}>
                 <Text style={commonStyles.oneLineKey}>
                   {mainData[7].toLowerCase() === 'rtgs/neft'.toLowerCase()
@@ -1454,6 +1533,13 @@ export const BillsPayment = ({route}) => {
                     ? 'CC '
                     : mainData[7].toLowerCase() === 'Cheque'.toLowerCase()
                     ? 'Cheque '
+                    : mainData[7].toLowerCase() ===
+                      'Letter Of Credit'.toLowerCase()
+                    ? 'LL '
+                    : mainData[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                    ? 'NB Ref'
+                    : mainData[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                    ? 'GP '
                     : 'Ref '}
                   No <Text style={commonStyles.redAsterisk}>*</Text>
                 </Text>
@@ -1497,7 +1583,11 @@ export const BillsPayment = ({route}) => {
                     : mainData[7].toLowerCase() ===
                       'Letter Of Credit'.toLowerCase()
                     ? 'LL '
-                    : 'Cash '}{' '}
+                    : mainData[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                    ? 'NB '
+                    : mainData[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                    ? 'GP '
+                    : ' '}{' '}
                   Date
                 </Text>
                 <Text style={commonStyles.oneLineValue}>
@@ -1525,7 +1615,11 @@ export const BillsPayment = ({route}) => {
                     : mainData[7].toLowerCase() ===
                       'Letter Of Credit'.toLowerCase()
                     ? 'LL '
-                    : 'Cash '}
+                    : mainData[7].toLowerCase() === 'NET BANKING'.toLowerCase()
+                    ? ''
+                    : mainData[7].toLowerCase() === 'G_PAY'.toLowerCase()
+                    ? 'GP '
+                    : ' '}
                   Amt ({mainData[9]})
                 </Text>
                 <TextInput
@@ -1615,7 +1709,7 @@ export const BillsPayment = ({route}) => {
       <CustomModal
         isVisible={PDFModalVisible}
         onClose={toggleModalPDF}
-        title="Advance Adjustments">
+        title="Select an Option">
         {/* Children Content */}
         <TouchableOpacity
           onPress={async () => {
@@ -1682,12 +1776,16 @@ export const BillsPayment = ({route}) => {
         isVisible={reUseCancel}
         // isVisible={true}
         onClose={toggleModalReUse}
-        title=''
+        title=""
         isVisibleClose={false}
         isVisibleCloseIcon={true}>
-          <Text style={{color:'black',paddingBottom:10}}>{`Select Re-Use or Cancel Cheque No: ${String(
-          transDetails[3],
-        )}`}</Text>
+        <Text
+          style={{
+            color: 'black',
+            paddingBottom: 10,
+          }}>{`Select Re-Use or Cancel Cheque No: ${
+            checkStatus ? checkStatus[0] : 'null'
+          }`}</Text>
         {/* Children Content */}
         <TouchableOpacity
           onPress={() => {
@@ -1704,6 +1802,7 @@ export const BillsPayment = ({route}) => {
               checkStatus,
               appRejParams,
               appRejUrl,
+              action,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');
@@ -1726,6 +1825,7 @@ export const BillsPayment = ({route}) => {
               checkStatus,
               appRejParams,
               appRejUrl,
+              action,
             );
             toggleModalReUse();
             navigation.navigate('ApprovalMainScreen');
@@ -1761,6 +1861,7 @@ export const BillsPayment = ({route}) => {
               currentLevel={currentLevel}
               totalNoOfLevels={totalNoOfLevels}
               transId={transId}
+              setAction={setAction}
             />
           </View>
         </>

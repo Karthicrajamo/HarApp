@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   topRightCloseButton: {
     position: 'absolute',
     right: width * -.08,
-    top: height * -0.055,
+    top: height * -0.047,
     backgroundColor: CustomThemeColors.primary,
     padding: width * 0.02,
     borderRadius: 50,

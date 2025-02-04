@@ -158,33 +158,57 @@ const IssueGroups = () => {
     }
   }, [selectedModelData]);
   useEffect(() => {
-    console.log('filteredMainData::', filteredMainData);
+    // console.log('filteredMainData::', filteredMainData);
     console.log('mainTableSelectedIndex::', mainTableSelectedIndex);
   }, [filteredMainData, mainTableSelectedIndex]);
 
   useEffect(() => {
     console.log('tempPayments::', tempPayments);
+  
+    // Filter out entries that start with 'groupId'
     const filterPayments = payments => {
       return Object.fromEntries(
-        Object.entries(payments).filter(([key]) => !key.startsWith('groupId')),
+        Object.entries(payments).filter(([key]) => !key.startsWith('groupId'))
       );
     };
-
+  
     // Get the filtered result
     const filteredPayments = filterPayments(tempPayments);
+  
+    console.log('#$%##%#$%#% Filtered Payments:', JSON.stringify(filteredPayments));
+    console.log('#$%##%#$%#% Filtered Payments Length:', Object.keys(filteredPayments).length);
+    console.log('#$%##%#$%#% Current Selected Payments:', JSON.stringify(selectedPayments));
+    console.log('#$%##%#$%#% Current Selected Payments Length:', Object.keys(selectedPayments).length);
+  
+    let shouldUpdate = false;
+    const updatedPayments = { ...selectedPayments };
+  
+    // Compare arrays inside each key and update selectedPayments if necessary
+    Object.entries(filteredPayments).forEach(([key, tempIds]) => {
+      const selectedIds = selectedPayments[key] || [];
+  
+      // Check if tempPayments has more items than selectedPayments
+      if (tempIds.length > selectedIds.length) {
+        updatedPayments[key] = tempIds;  // Update to the larger array
+        shouldUpdate = true;
+      }
+    });
+  
+    // Prevent infinite loops by checking if updates are truly necessary
+    if (shouldUpdate && JSON.stringify(updatedPayments) !== JSON.stringify(selectedPayments)) {
+      console.log('Updating selectedPayments to:', JSON.stringify(updatedPayments));
+      setSelectedPayments(updatedPayments);
+    }
+  
+    // Update tempPayments only if it differs from filteredPayments to avoid re-triggering useEffect
+    // if (shouldUpdate && JSON.stringify(filteredPayments) !== JSON.stringify(tempPayments)) {
+    //   console.log('Updating tempPayments to:', JSON.stringify(updatedPayments));
+    //   setTempPayments(updatedPayments);
+    // }
+  
+  }, [tempPayments,mainTableSelectedIndex]);
+  
 
-    console.log('#$%##%#$%#%' + JSON.stringify(filteredPayments));
-    console.log('#$%##%#$%#%.length' + Object.keys(filteredPayments).length);
-    console.log(
-      '#$%##%#$%#%selectedPayments' + JSON.stringify(selectedPayments),
-    );
-    console.log(
-      '#$%##%#$%#%selectedPayments.length' +
-        Object.keys(selectedPayments).length,
-    );
-    if (Object.keys(selectedPayments).length != mainTableSelectedIndex.length)
-      setSelectedPayments(filteredPayments);
-  }, [tempPayments]);
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
@@ -213,7 +237,11 @@ const IssueGroups = () => {
     if (JSON.stringify(selectedPayments) != JSON.stringify(filteredPayments)) {
       setSelectedPayments(filteredPayments);
     }
-  }, [selectedPayments]);
+    // setTempPayments(selectedPayments)
+  }, [selectedPayments,selectedCheckBoxData]);
+
+
+
   useEffect(() => {
     console.log('mainTableSelectAll::', mainTableSelectAll);
   }, [mainTableSelectAll]);
@@ -273,7 +301,7 @@ const IssueGroups = () => {
   }, [taxData]);
 
   useEffect(() => {
-    console.log('selectedCheckBoxData:::', selectedCheckBoxData);
+    console.log('selectedCheckBoxData:::main', selectedCheckBoxData);
 
     // setSelectedPayments(prev=>
     // {}
@@ -1030,7 +1058,7 @@ const IssueGroups = () => {
 
       // Check if the response has any content
       const responseText = await response.text();
-      console.log('dataaaa::', responseText);
+      // console.log('dataaaa::', responseText);
 
       // If the response body is empty or invalid, handle that gracefully
       if (!responseText) {
@@ -1060,8 +1088,8 @@ const IssueGroups = () => {
       }
 
       // If data exists, process and store it
-      console.log('Response main data:', responseData);
-      console.log('selectedFilter.length main data:', selectedFilters.length);
+      // console.log('Response main data:', responseData);
+      // console.log('selectedFilter.length main data:', selectedFilters.length);
       let sortedData = [];
       if (selectedFilters.length > 0) {
         sortedData = responseData.filter(item =>
@@ -1164,7 +1192,7 @@ const IssueGroups = () => {
       }
 
       const data = await response.json();
-      console.log('response sub table adv : ===============>>>>>>>>>> ', data);
+      // console.log('response sub table adv : ===============>>>>>>>>>> ', data);
 
       // Sort the keys of each object in paymentIssueGroupSubTableData in ascending order
       const sortedData = data;
@@ -1234,7 +1262,7 @@ const IssueGroups = () => {
       setIsLoading(true);
       // isModel(true);
     } catch (error) {
-      console.error('Error fetching table subdata:', error);
+      // console.error('Error fetching table subdata:', error);
     } finally {
       setIsLoading(false);
     }
@@ -1304,7 +1332,7 @@ const IssueGroups = () => {
       //     }, {});
       // });
 
-      setSelectedModelData([]); // Clear previous data
+      // setSelectedModelData([]); // Clear previous data
       setSelectedModelData(data); // Set sorted data
 
       // console.log('SelectedModelData-=-=-=-=-=-=---=-', sortedModelData);
@@ -1399,7 +1427,7 @@ const IssueGroups = () => {
       });
 
       if (mappedData.length > 0) {
-        setSelectedModelData([]); // Clear previous data
+        // setSelectedModelData([]); // Clear previous data
         setSelectedModelData(mappedData); // Set new data
         // isModel(true);
         // setSelectedSubRow(null);
@@ -1585,7 +1613,7 @@ const IssueGroups = () => {
 
       // Update state only if we have valid data
       if (mappedData.length > 0) {
-        setSelectedModelData([]); // Clear previous data
+        // setSelectedModelData([]); // Clear previous data
         setSelectedModelData(mapObject); // Set new data
         // isModel(true);
         setSelectedSubRow(null);
@@ -1759,7 +1787,7 @@ ORDER BY
       console.log('mapped data', mappedData);
       // Update state only if we have valid data
       if (mappedData.length > 0) {
-        setSelectedModelData([]); // Clear previous data
+        // setSelectedModelData([]); // Clear previous data
         setSelectedModelData(mappedData); // Set new data
         // isModel(true);
         setSelectedSubRow(null);
@@ -2009,8 +2037,9 @@ ORDER BY
       setSelectedextRmiData1(tableData[selectedRow].groupId.toString());
       console.log('kasjdfhasfhioashfioh:::', Object.keys(selectedRow).length);
       console.log('activeDataPdf:::', Object.keys(activeDataPdf).length);
-if(Object.keys(activeDataPdf).length==0){
-      fetchSubTableData();}
+      if (Object.keys(activeDataPdf).length == 0) {
+        fetchSubTableData();
+      }
     }
   }, [selectedRow, tableData, activeDataPdf]);
 
@@ -2449,7 +2478,7 @@ if(Object.keys(activeDataPdf).length==0){
                         console.log('empty data::::');
                         fetchTableData();
 
-                      setSelectedSubData([])
+                        setSelectedSubData([]);
                         setMainTableSelectedIndex([]);
                         setSelectedCheckBoxData([]);
                         setSelectedPayments({});
@@ -2712,9 +2741,9 @@ if(Object.keys(activeDataPdf).length==0){
                         // const issuedStus =
                         //   data.paymentStatus === 'Issued' ? data : null;
 
-                        console.log('dataaaaaa:', data);
+                        // console.log('dataaaaaa:', data);
 
-                        console.log('Updated selectedArray:', selectedArray);
+                        console.log('Updated selectedArray::', selectedArray);
 
                         setpartyNames(data.partyName);
                         setSelectedGroupId(prev => ({
@@ -2723,27 +2752,37 @@ if(Object.keys(activeDataPdf).length==0){
                         }));
 
                         setSelectedPayments(prevPayments => {
-                          console.log('selectedPayments---::::', selectedId);
-                          const key = `${type}:${groupId}`;
+                          console.log('selectedPayments---::::', selectedId);  // The selected payment or transfer ID
+                          const key = `${type}:${groupId}`;  // e.g., 'Advance Payment:451'
                           console.log('key---::::', key);
+                        
+                          // Get the current selected IDs for this group, or an empty array if none exist
                           const currentIds = prevPayments[key] || [];
+                        
+                          // Toggle logic: if selectedId is already in currentIds, remove it; otherwise, add it
                           const updatedIds = currentIds.includes(selectedId)
-                            ? currentIds.filter(id => id == selectedId) // Corrected condition to remove selectedId
-                            : [...currentIds, selectedId];
-
-                          const updatedState = {...prevPayments};
-                          console.log('updatedState::', updatedState);
+                            ? currentIds.filter(id => id !== selectedId)  // Remove selectedId if already selected
+                            : [...currentIds, selectedId];               // Add selectedId if not selected
+                        
+                          // Prepare the updated state object
+                          const updatedState = { ...prevPayments };
+                          console.log('updatedState before applying changes::', updatedState);
                           console.log('updatedIds::', updatedIds);
-                          console.log('key::', key);
+                        
                           if (updatedIds.length > 0) {
+                            // If there are still selected IDs, update the state with the new list
                             updatedState[key] = updatedIds;
-                            console.log('updatedState4::', updatedState);
+                            console.log('updatedState after adding/removing ID::', updatedState);
                           } else {
+                            // If no IDs are selected, remove the key from the state
                             delete updatedState[key];
+                            console.log('updatedState after deleting key (no IDs selected)::', updatedState);
                           }
-                          setSelectedPayments(updatedState);
+                        
+                          // Finally, return the updated state to be applied by React
                           return updatedState;
                         });
+                        
                         setIsLoading(false);
 
                         // if (MainType !== 'Fund Transfer') {
@@ -2759,6 +2798,7 @@ if(Object.keys(activeDataPdf).length==0){
                       const data = selectedSubData[index];
                       const {transferId, paymentId} = data;
 
+                      console.log('activeIndex::', selectedSubData[index]);
                       setSubTabPaymentId(paymentId?.toString());
                       setpartyNames(data.partyName);
                       setCurrency(data.currency);
@@ -2772,6 +2812,7 @@ if(Object.keys(activeDataPdf).length==0){
                       const dataa = selectedSubData[index];
                       setSelectedSubRow(index);
                       console.log('toggledata::', index);
+                      setActiveDataPdf([]);
                       setActiveDataPdf(dataa);
                       // if (MainType !== 'Fund Transfer') {
                       //   setModelButton(true);
@@ -2818,6 +2859,7 @@ if(Object.keys(activeDataPdf).length==0){
                     }}
                     mainTableSelectAll={mainTableSelectAll}
                     setIsLoading={setIsLoading}
+                    selectedPayments={selectedPayments}
                   />
                 )}
               </View>
@@ -3216,12 +3258,13 @@ if(Object.keys(activeDataPdf).length==0){
       )} */}
         {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
 
-        {mainTableSelectedIndex.length !==
+        {/* {mainTableSelectedIndex.length !==
         Object.keys(selectedPayments).length ? (
-          <LoadingIndicator message="Please wait..." />
+          <LoadingIndicator message="Please wait.." />
         ) : (
           <></>
-        )}
+        )} */}
+        {/* //Karthic */}
       </View>
       {/*  */}
       {isModelButton && (

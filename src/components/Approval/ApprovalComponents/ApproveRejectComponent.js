@@ -32,6 +32,7 @@ const ApproveRejectComponent = ({
   currentLevel,
   totalNoOfLevels,
   transId,
+  setAction,
 }) => {
   const navigation = useNavigation();
   const [isRejectPop, setRejectPop] = useState(false);
@@ -40,7 +41,27 @@ const ApproveRejectComponent = ({
   const [warn, setWarn] = useState('');
   const actionAR = useRef('');
   // const [actionAR, setActionAR] = useState('');
-
+  const showToast = (
+    type = 'success',
+    title = '',
+    message = '',
+    position = 'bottom',
+    visibilityTime = 5000,
+    topOffset = 50,
+    bottomOffset = 20,
+    onPress = () => console.log('Toast Pressed!'),
+  ) => {
+    Toast.show({
+      type: type,
+      text1: title,
+      text2: message,
+      position: position,
+      visibilityTime: visibilityTime,
+      topOffset: topOffset,
+      bottomOffset: bottomOffset,
+      onPress,
+    });
+  };
   useEffect(() => {
     console.log('setActionAR' + actionAR.current);
   }, [actionAR]);
@@ -82,20 +103,22 @@ const ApproveRejectComponent = ({
         {
           text: 'Yes',
           onPress: () => {
-            if (transName == 'ModPayment' &&
+            if (
+              transName == 'ModPayment' &&
               action === 'approve' &&
               totalNoOfLevels - 1 == currentLevel
-            ? true
-            : 
-              transName == 'CancelPayment' &&
-              action === 'approve' &&
-              totalNoOfLevels - 1 == currentLevel&&paymentMode === 'Cheque'
-            ? true
-            : false
+                ? true
+                : transName == 'CancelPayment' &&
+                  action === 'approve' &&
+                  totalNoOfLevels - 1 == currentLevel &&
+                  paymentMode === 'Cheque'
+                ? true
+                : false
             ) {
-              setRejectPop(true);
+              // setRejectPop(true);
+              setReUseCancel(true);
             }
-            handleAction(action);
+            handleAction('approve');
           },
         },
       ],
@@ -106,9 +129,10 @@ const ApproveRejectComponent = ({
   const handleAction = async action => {
     // setActionAR(action);
     console.log('params ApRejComp::', params);
+    console.log('params action::', action);
     const url = action === 'approve' ? approveUrl : rejectUrl;
     const successMessage =
-      action === 'approve' ? 'Approve Successfully' : 'Reject Successfully';
+      action === 'approve' ? 'Approve Successfully...' : 'Reject Successfully';
     const errorMessage =
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
@@ -123,12 +147,15 @@ const ApproveRejectComponent = ({
           action === 'approve' &&
           totalNoOfLevels - 1 == currentLevel
         ? true
-        : transName == 'AddPayment' && action === 'reject'&&paymentMode === 'Cheque'
+        : transName == 'AddPayment' &&
+          action === 'reject' &&
+          paymentMode === 'Cheque'
         ? true
         : // ||
         transName == 'CancelPayment' &&
           action === 'approve' &&
-          totalNoOfLevels - 1 == currentLevel&&paymentMode === 'Cheque'
+          totalNoOfLevels - 1 == currentLevel &&
+          paymentMode === 'Cheque'
         ? true
         : false
     ) {
@@ -137,15 +164,17 @@ const ApproveRejectComponent = ({
         ? setAppRejParams(params)
         : setAppRejParams(rejectParams);
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
+      setAction(action);
     } else {
       try {
         console.log('response ApRejCom::2', action);
+        console.log('response body', typeof params === 'string' ? params : JSON.stringify(params));
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', // Set the content type to JSON
           },
-          body: action == 'approve' ? params : JSON.stringify(rejectParams), // Convert the body to a JSON string
+          body: action == 'approve' ? typeof params === 'string' ? params : JSON.stringify(params) : JSON.stringify(rejectParams), // Convert the body to a JSON string
         });
         console.log('response ApRejCom::', response);
 
@@ -162,44 +191,63 @@ const ApproveRejectComponent = ({
       } catch (error) {
         console.error('Error:', error);
         ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+        navigation.navigate('ApprovalMainScreen');
       }
     }
   };
 
   return (
     <View style={styles.container}>
+            {/* <Toast/> */}
+
       <TouchableOpacity
         style={[styles.button, styles.approveButton]}
         onPress={async () => {
-          
-          try {Toast.show({
-            type: 'error', // Red color preset
-            text1: 'Error',
-            text2: 'Failed to fetch current level',
-            visibilityTime: 3000,
-          });<Toast />
+          try {
             const level = await getCurrentLevel(transId);
             console.log('Current Level:', level, '==', currentLevel);
-            if (level !== currentLevel) {
-              actionAR.current = 'reject';
+            if (Number(level) == Number(currentLevel)) {
+              actionAR.current = 'approve';
               // setRejectPop(true);
-              // confirmApproval('approve');
+              confirmApproval('approve');
+              actionAR.current = 'approve';
             } else {
-              ToastAndroid.show("Failed to fetch current level", ToastAndroid.SHORT);
+              let message = 'Sorry! Approval level has been changed';
+            showToast('error', 'Error!', message, 'top', 5000, 100, 40, () =>
+              console.log(''),
+            );
 
+              ToastAndroid.show(
+                'Sorry! Approval Level has been Changed',
+                ToastAndroid.SHORT,
+              );
             }
           } catch (error) {
             console.error('Error retrieving current level:', error);
           }
           // setActionAR('approve');
-          actionAR.current = 'approve';
         }}>
         <Text style={[styles.buttonText, {color: 'white'}]}>Approve</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.button, styles.rejectButton]}
-        onPress={() => {
-          actionAR.current = 'reject';
+        onPress={async () => {
+          try {
+            const level = await getCurrentLevel(transId);
+            console.log('Current Level:', level, '==', currentLevel);
+            if (level == currentLevel) {
+              // setRejectPop(true);
+              actionAR.current = 'reject';
+              setRejectPop(true);
+            } else {
+              ToastAndroid.show(
+                'Sorry! Approval Level has been Changed',
+                ToastAndroid.SHORT,
+              );
+            }
+          } catch (error) {
+            console.error('Error retrieving current level:', error);
+          }
           // if (
           //   (transName == 'ModPayment' && actionAR === 'reject'
           //     ? true
@@ -209,7 +257,6 @@ const ApproveRejectComponent = ({
           //     ? false
           //     : currentLevel == totalNoOfLevels - 1)
           // ) {
-          setRejectPop(true);
           // }
           // setRejectPop(true);
           console.log('pressed;;;');
@@ -219,6 +266,7 @@ const ApproveRejectComponent = ({
           onPress={() => {
             // setActionAR('reject');
             actionAR.current = 'reject';
+            setRejectPop(true);
           }}>
           Reject
         </Text>
@@ -251,7 +299,7 @@ const ApproveRejectComponent = ({
             setRejectPop(true);
             if (
               // JSON.stringify(
-              paymentMode === 'Cheque'
+              paymentMode === 'Cheque' && transName !="CancelPayment"
             ) {
               console.log(
                 'rejectParams PaymentMode:::' +

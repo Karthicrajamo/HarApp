@@ -98,7 +98,7 @@ const TableComponent = ({
   };
 
   useEffect(() => {
-    console.log('initialDataz tc;' + JSON.stringify(initialData));
+    // console.log('initialDataz tc;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
   }, [initialData]);
 

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -77,6 +77,7 @@ const SubTableComponent = ({
   setIsLoading,
   MainType,
   setTempPayments,
+  selectedPayments,
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -103,6 +104,7 @@ const SubTableComponent = ({
   const [longPressData, setLongPressData] = useState([]);
   const [loading, setLoading] = useState(true);
   const fontScale = PixelRatio.getFontScale();
+  const pair = useRef();
 
   const toggleModalDetail = () => {
     setDetailViewModalVisible(!detailViewModalVisible);
@@ -121,17 +123,15 @@ const SubTableComponent = ({
 
   useEffect(() => {
     // if (selectedCheckBoxData.length > 0) {
-    console.log('present', selectedCheckBoxData);
-    console.log('selectedPaymentTypedf', selectedPaymentType);
-    console.log('dataSSS', data);
-
+    // console.log('present', selectedCheckBoxData);
+    // console.log('selectedPaymentTypedf', selectedPaymentType);
+    // console.log('dataSSS', data);
     // setIsChecked(!mainTableSelectedIndex.includes(data[0].groupId) && false);
-
     // }
   }, []);
   useEffect(() => {
     setIsLoading(true);
-    console.log('initialDataz;' + JSON.stringify(initialData));
+    // console.log('initialDataz;' + JSON.stringify(initialData));
     setData(initialData); // Update state when initialData prop changes
     setIsLoading(false);
   }, [initialData]);
@@ -143,124 +143,89 @@ const SubTableComponent = ({
   }, [mainTableSelectedIndex]);
 
   useEffect(() => {
-    console.log('onPressCheckBoxHandle787 status::', selectAllIsChecked);
     setIsLoading(true);
-    if (!selectAllIsChecked) {
-      console.log('sdfsionnn');
-      setIsChecked(false);
-    }
-
-    // Update the isChecked state based on selectAllIsChecked
-    if (selectAllIsChecked) {
-      const newIsChecked = true; // Force to check all if selectAllIsChecked is true
-      setIsChecked(newIsChecked);
-
-      // Update selectedRows based on the newIsChecked state
-      const updatedSelection = new Array(data.length).fill(true); // Select all if checked
-      setSelectedRows(updatedSelection);
-
-      if (
-        newIsChecked &&
-        !data.some(
-          item =>
-            selectedCheckBoxData &&
-            Object.keys(selectedCheckBoxData).includes(
-              `groupId:${item.groupId}`,
-            ),
-        )
-      ) {
-        const updatedCheckBoxData = {...selectedCheckBoxData}; // Ensure immutability
-        // console.log('dataaa345345', data);
-
-        data.forEach((item, index) => {
-          setIsLoading(true);
-
-          const groupKey = `groupId:${item.groupId}`;
-          const absoluteIndex = page * rowsPerPage + index; // Adjust for pagination
-
-          // Initialize the groupKey array if it doesn't exist
-          if (!updatedCheckBoxData[groupKey]) {
-            updatedCheckBoxData[groupKey] = [];
-          }
-
-          // Add the absolute index to the groupKey if it's not already included
-          if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
-            updatedCheckBoxData[groupKey].push(absoluteIndex);
-          }
-        });
-
-        Object.keys(updatedCheckBoxData).forEach(groupKey => {
-          const groupId = parseInt(groupKey.split(':')[1]); // Extract the numeric groupId
-
-          // Check if the groupId is in mainTableSelectedIndex
-          if (!mainTableSelectedIndex.includes(groupId)) {
-            // setIsChecked(false);
-            delete updatedCheckBoxData[groupKey]; // Remove the groupId if not in mainTableSelectedIndex
-          }
-        });
-        console.log('*&(*^&**^*(^^()&()&()&()&(&(&('+JSON.stringify(updatedCheckBoxData));
-        console.log('*&(*^&**^*(^^()&()&()&()&(&(&(selectedCheckBoxData'+selectedCheckBoxData);
-
-        // setIsChecked(!isChecked);
-          setSelectedCheckBoxData(updatedCheckBoxData); // Update state
-
-        data.forEach((item, index) => {
-          setIsLoading(true);
-          console.log('selectediddddd:::' + JSON.stringify(item));
-          const groupKey = `${MainType}:${item.groupId}`;
-          const absoluteIndex = page * rowsPerPage + index; // Adjust for pagination
-
-          // Initialize the groupKey array if it doesn't exist
-          if (!updatedCheckBoxData[groupKey]) {
-            updatedCheckBoxData[groupKey] = [];
-          }
-
-          // Add the absolute index to the groupKey if it's not already included
-          if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
-            updatedCheckBoxData[groupKey].push(
-              initialData[absoluteIndex]['paymentId'] ||
-                initialData[absoluteIndex]['transferId'],
-            );
-          }
-        });
-
-        Object.keys(updatedCheckBoxData).forEach(groupKey => {
-          const groupId = parseInt(groupKey.split(':')[1]); // Extract the numeric groupId
-
-          // Check if the groupId is in mainTableSelectedIndex
-          if (!mainTableSelectedIndex.includes(groupId)) {
-            // setIsChecked(false);
-            delete updatedCheckBoxData[groupKey]; // Remove the groupId if not in mainTableSelectedIndex
-          }
-        });
-       console.log(
-          '*&(*^&**^*(^^()&()&()&()&(&(&(' +
-            JSON.stringify(updatedCheckBoxData),
-        );
-        console.log(
-          '*&(*^&**^*(^^()&()&()&()&(&(&(selectedCheckBoxData' +
-            selectedCheckBoxData,
-        );
-
-        // setIsChecked(!isChecked);
-        // if (selectedCheckBoxData.length < updatedCheckBoxData.length)
-        setTempPayments(updatedCheckBoxData);
-
-        data.forEach(dataItem => onRowIndexSelect(dataItem)); // Pass all indices
-        data.forEach(dataItem => RowDataForIssue(dataItem)); // Pass all indices
+    const selectAll = async () => {
+      if (!selectAllIsChecked) {
+        // Deselect all rows and reset states
+        setIsChecked(false);
+        setSelectedRows(new Array(data.length).fill(false));
+        setSelectedCheckBoxData({});
+        setTempPayments({});
         setIsLoading(false);
+        return;
       }
 
-      // else {
-      //   // const newIsChecked = true; // Force to uncheck all if selectAllIsChecked is false
-      //   setIsChecked(!isChecked);
-      //   console.log("sdfasaojg")
-      //   // const updatedSelection = new Array(data.length).fill(false); // Deselect all if unchecked
-      //   // setSelectedRows(updatedSelection);
-      // // onRowIndexSelect([]); // Pass empty array if none are selected
-      // }
-    }
+      // Select all logic
+      const newIsChecked = true;
+      setIsChecked(newIsChecked);
+      setSelectedRows(new Array(data.length).fill(true));
 
+      const updatedCheckBoxData = {...selectedCheckBoxData};
+      const updatedSelectedPayments = {...selectedPayments};
+      console.log('+++++++++++++++' + JSON.stringify(updatedSelectedPayments));
+
+      data.forEach(async (item, index) => {
+        const groupKey = `groupId:${item.groupId}`;
+        const paymentGroupKey = `${MainType}:${item.groupId}`;
+        const absoluteIndex = page * rowsPerPage + index;
+        const paymentId =
+          initialData[absoluteIndex]['paymentId'] ||
+          initialData[absoluteIndex]['transferId'];
+
+        // Update CheckBox Data
+        if (!updatedCheckBoxData[groupKey]) {
+          updatedCheckBoxData[groupKey] = [];
+        }
+        if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
+          updatedCheckBoxData[groupKey].push(absoluteIndex);
+        }
+
+        // Validate Payments Like CheckBox Data
+        if (updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
+          if (!updatedSelectedPayments[paymentGroupKey]) {
+            updatedSelectedPayments[paymentGroupKey] = [];
+          }
+          if (!updatedSelectedPayments[paymentGroupKey].includes(paymentId)) {
+            updatedSelectedPayments[paymentGroupKey].push(paymentId);
+          }
+        }
+      });
+
+      // Remove groups and payments that are no longer in CheckBox Data
+      Object.keys(updatedCheckBoxData).forEach(groupKey => {
+        const groupId = parseInt(groupKey.split(':')[1]);
+
+        // If groupId is not in mainTableSelectedIndex, remove from both CheckBox and Payments
+        if (!mainTableSelectedIndex.includes(groupId)) {
+          delete updatedCheckBoxData[groupKey];
+
+          // Remove all associated payment entries for this groupId
+          Object.keys(updatedSelectedPayments).forEach(paymentKey => {
+            if (paymentKey.endsWith(`:${groupId}`)) {
+              delete updatedSelectedPayments[paymentKey];
+            }
+          });
+        }
+      });
+
+      console.log(
+        'Updated CheckBox Data:',
+        JSON.stringify(updatedCheckBoxData),
+      );
+      console.log(
+        'Updated Selected Payments:',
+        JSON.stringify(updatedSelectedPayments),
+      );
+
+      // Final state updates
+      setSelectedCheckBoxData(updatedCheckBoxData);
+      setTempPayments(updatedSelectedPayments);
+
+      // Trigger row selection handlers
+      data.forEach(dataItem => onRowIndexSelect(dataItem));
+      data.forEach(dataItem => RowDataForIssue(dataItem));
+    };
+    selectAll();
     setIsLoading(false);
   }, [selectAllIsChecked]);
 
@@ -272,7 +237,7 @@ const SubTableComponent = ({
         '___mainta::',
         mainTableSelectedIndex,
       ),
-    [selectedCheckBoxData]
+    [selectedCheckBoxData],
   );
 
   useEffect(() => {
@@ -290,12 +255,13 @@ const SubTableComponent = ({
     selectedRows,
     isChecked,
     onRowIndexSelect,
-    toggleRowSelection,noModel
+    toggleRowSelection,
+    noModel,
   ]); // Update when data or sliderValue changes
 
   useEffect(() => {
     const calculatedWidths = calculateColumnWidths(data, sliderValue);
-
+    pair.current = `${MainType}:${data[0].groupId}`;
     // Calculate total width of columns
     const totalWidth = Object.values(calculatedWidths).reduce(
       (acc, width) => acc + width,
@@ -392,6 +358,43 @@ const SubTableComponent = ({
 
       return updatedCheckBoxData;
     });
+    setTempPayments(prev => {
+      // Clone the previous selectedPayments to avoid direct mutations
+      const updatedCheckBoxData = {...selectedPayments};
+
+      if (newIsChecked) {
+        // If selecting all, add all row indexes to each groupId key
+        const newMainTableSelectedIndex = [...mainTableSelectedIndex];
+
+        data.forEach((item, index) => {
+          const groupKey = `${MainType}:${item.groupId}`;
+          console.log('item:::' + JSON.stringify(item));
+
+          // Initialize groupKey if not already present
+          if (!updatedCheckBoxData[groupKey]) {
+            updatedCheckBoxData[groupKey] = [];
+          }
+
+          // Add index if not already present
+          if (!updatedCheckBoxData[groupKey].includes(item.paymentId)) {
+            updatedCheckBoxData[groupKey].push(item.paymentId);
+            console.log('Notpush::' + item.paymentId);
+          }
+
+          // Add groupId to mainTableSelectedIndex if not already present
+          // if (!newMainTableSelectedIndex.includes(item.paymentId)) {
+          //   newMainTableSelectedIndex.push(item.paymentId);
+          // }
+        });
+
+        // Update the mainTableSelectedIndex with all selected paymentIds
+        // setMainTableSelectedIndex(newMainTableSelectedIndex);
+      }
+
+      console.log('Updated tempPayments:', JSON.stringify(updatedCheckBoxData));
+
+      return updatedCheckBoxData;
+    });
   };
 
   const columns = Object.keys(data[0]);
@@ -461,9 +464,47 @@ const SubTableComponent = ({
           );
         }
       });
-
+      console.log('check dataa', updatedCheckBoxData);
       // Return the updated selectedCheckBoxData
       return updatedCheckBoxData;
+    });
+    setTempPayments(prevPayments => {
+      const selectedPaymentId = data[rowIndex].paymentId; // Extract paymentId from the selected row
+      const key = `${MainType}:${data[rowIndex].groupId}`; // Use groupId for grouping, but update paymentId
+      console.log('Selected Payment ID:', selectedPaymentId);
+      console.log('Key:', key);
+
+      // Get current selected payment IDs for this group or initialize as empty array
+      const currentIds = selectedPayments[key] || [];
+
+      // Toggle logic: Add or remove paymentId based on selection
+      const updatedIds = currentIds.includes(selectedPaymentId)
+        ? currentIds.filter(id => id !== selectedPaymentId) // Remove paymentId if it's already selected
+        : [...currentIds, selectedPaymentId]; // Add paymentId if it's not selected
+
+      // Prepare the updated state object
+      const updatedState = {...selectedPayments};
+      console.log('Updated State Before Changes::', updatedState);
+      console.log('Updated IDs:', updatedIds);
+
+      if (updatedIds.length > 0) {
+        // If there are selected payment IDs, update the state with the new list
+        updatedState[key] = updatedIds;
+        console.log(
+          'Updated State After Adding/Removing Payment ID:',
+          updatedState,
+        );
+      } else {
+        // If no payment IDs are selected, remove the key from the state
+        delete updatedState[key];
+        console.log(
+          'Updated State After Deleting Key (No Payment IDs Selected):',
+          updatedState,
+        );
+      }
+
+      // Return the updated state
+      return updatedState;
     });
 
     // Update "Select All" checkbox state based on whether all rows are selected

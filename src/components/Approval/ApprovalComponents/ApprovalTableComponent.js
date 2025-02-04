@@ -15,9 +15,10 @@ const ApprovalTableComponent = ({
   const [data, setData] = useState(tableData);
 
   // Filter headers based on the exclude array
-  const headers = Object.keys(tableData[0]).filter(
-    header => !exclude.includes(header),
-  );
+  const headers =
+    tableData && tableData.length > 0
+      ? Object.keys(tableData[0]).filter(header => !exclude.includes(header))
+      : [];
 
   // Calculate column widths based on header text length for alignment
   const columnWidths = headers.map(header => Math.max(header.length * 10, 120)); // Minimum width of 120px
@@ -81,13 +82,18 @@ const ApprovalTableComponent = ({
                         row[header] === true ||
                         row[header] === false ||
                         row[header] === 'Y' ||
-                        row[header] === 'N' ? (
+                        row[header] === 'N' ||
+                        row[header] === 'false' ||
+                        row[header] === 0 ? (
                           <Checkbox
                             status={
                               row[header] === true ||
                               row[header] === 'true' ||
                               row[header] === 'Y'
-                                ? 'checked'
+                                ? // row[header] === false ||
+                                  // row[header] === 'false' ||
+                                  // row[header] === 'N'
+                                  'checked'
                                 : 'unchecked'
                             }
                             disabled={true}
