@@ -122,6 +122,7 @@ const IssueGroups = () => {
   const [selectedPayments, setSelectedPayments] = useState({});
   const [selectedPaymentType, setSelectedPaymentType] = useState('');
   const [MainType, setMainType] = useState('');
+  const [DataFormat, setDataFormat] = useState('');
   const [tempPayments, setTempPayments] = useState([]);
   const [allSelected, setAllSelected] = useState(false);
   const [selectedArray, setSelectedArray] = useState([]);
@@ -1818,19 +1819,19 @@ ORDER BY
       //   oldChqStatus: ['Issued', 'admin'],
       // };
       // console.log('data params params >>>>>' + JSON.stringify(params));
-      const response = await fetch(
-        // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
-        // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
-        `${API_URL}/api/issueGroup/issueButton?`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify({items: selectedPayments}),
-        },
-      );
+      // const response = await fetch(
+      //   // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
+      //   // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
+      //   `${API_URL}/api/issueGroup/issueButton?`,
+      //   {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       Authorization: `${token}`,
+      //     },
+      //     body: JSON.stringify({items: selectedPayments}),
+      //   },
+      // );
 
       console.log(
         'response for response data : ===============>>>>>>>>>> ',
@@ -2494,9 +2495,10 @@ ORDER BY
                         setSelectedRow(value);
                         setMainType(tableData[value]?.type);
                         const groupId = tableData[value]?.groupId;
+                        setDataFormat(`${tableData[value]['type']}:${tableData[value]['groupId']}`);
                         GroupTransformObject(tableData[value]);
                         SetActiveGroupId(tableData[value].groupId);
-                        console.log('rowdataaa::', value);
+                        console.log(`rowdataaa:: "${tableData[value]['type']}":${tableData[value]['groupId']}`);
                         setMainTableSelectedIndex(prev => {
                           if (prev.includes(groupId)) {
                             const groupKey = `groupId:${groupId}`;
@@ -2860,6 +2862,7 @@ ORDER BY
                     mainTableSelectAll={mainTableSelectAll}
                     setIsLoading={setIsLoading}
                     selectedPayments={selectedPayments}
+                    DataFormat={DataFormat}
                   />
                 )}
               </View>

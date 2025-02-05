@@ -18,12 +18,12 @@ export const ReqBodyConv = async (
         ...inputJson.transobj.slice(9, 15), // Remaining elements from index 9 to 14
         // ...(transName !== "CancelPayment" && [null]) 
          ...(transName !== "CancelPayment" ? [null] : []), // Add null conditionally
-
         // null,
       ],
       message: 'Approved',
       data_vec: [
         ...inputJson.transobj.slice(0, 6), // Similar structure as tranObject but stops at index 6
+        // ...[inputJson.transobj[13]]
       ],
       company_id: 1,
       handler: 'MakePayment',
@@ -41,7 +41,7 @@ export const ReqBodyConv = async (
         inputJson.transobj[8], // Keyed object
         ...inputJson.transobj.slice(9, 15), // Remaining elements from index 9 to 14
         // ...(payment === 'Bills Payment' && [null])
-        // null,
+        null,
       ],
       message: 'Approved',
       data_vec: [

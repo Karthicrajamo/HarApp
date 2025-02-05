@@ -78,6 +78,7 @@ const SubTableComponent = ({
   MainType,
   setTempPayments,
   selectedPayments,
+  DataFormat,
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -162,15 +163,17 @@ const SubTableComponent = ({
 
       const updatedCheckBoxData = {...selectedCheckBoxData};
       const updatedSelectedPayments = {...selectedPayments};
-      console.log('+++++++++++++++' + JSON.stringify(updatedSelectedPayments));
+      // console.log('+++++++++++++++' + JSON.stringify(updatedSelectedPayments));
 
-      data.forEach(async (item, index) => {
+      data.forEach(async(item, index) => {
         const groupKey = `groupId:${item.groupId}`;
         const paymentGroupKey = `${MainType}:${item.groupId}`;
+        console.log('+++++++++++++++' + DataFormat);
         const absoluteIndex = page * rowsPerPage + index;
-        const paymentId =
-          initialData[absoluteIndex]['paymentId'] ||
-          initialData[absoluteIndex]['transferId'];
+        let paymentId = 0;
+        paymentId =
+          data[absoluteIndex]?.['paymentId'] || data[absoluteIndex]?.['transferId'];
+        console.log('+paymentId' + paymentId);
 
         // Update CheckBox Data
         if (!updatedCheckBoxData[groupKey]) {
@@ -181,12 +184,12 @@ const SubTableComponent = ({
         }
 
         // Validate Payments Like CheckBox Data
-        if (updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
-          if (!updatedSelectedPayments[paymentGroupKey]) {
-            updatedSelectedPayments[paymentGroupKey] = [];
+        if (updatedSelectedPayments[DataFormat].includes(paymentId)) {
+          if (!updatedSelectedPayments[DataFormat]) {
+            updatedSelectedPayments[DataFormat] = [];
           }
-          if (!updatedSelectedPayments[paymentGroupKey].includes(paymentId)) {
-            updatedSelectedPayments[paymentGroupKey].push(paymentId);
+          if (!updatedSelectedPayments[DataFormat].includes(paymentId)) {
+            updatedSelectedPayments[DataFormat].push(paymentId);
           }
         }
       });

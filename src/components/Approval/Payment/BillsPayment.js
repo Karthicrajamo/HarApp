@@ -98,7 +98,7 @@ export const BillsPayment = ({route}) => {
   const [action, setAction] = useState(null);
   const totalActualAmtRef = useRef(0);
 
-const billType=useRef()
+  const billType = useRef();
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -124,13 +124,13 @@ const billType=useRef()
 
   useEffect(() => {
     console.log('billsPay::', billsPay);
-    
+
     if (Array.isArray(billsPay)) {
-      const billNo = billsPay[0]?.["Bill No"];
-      if (billNo ) {
+      const billNo = billsPay[0]?.['Bill No'];
+      if (billNo) {
         billType.current = billNo.split('-')[0];
         // const billNumber = billNo.split('-')[1];  // Safely split after checking
-        console.log(billType.current);  // Output: 193
+        console.log(billType.current); // Output: 193
       }
       totalActualAmtRef.current = billsPay
         .filter(
@@ -143,10 +143,9 @@ const billType=useRef()
     console.log('totalActualAmtRef.current::', totalActualAmtRef.current);
   }, [billsPay]);
 
-  useEffect(()=>{
-
+  useEffect(() => {
     console.log('ORDER_TYPE::', orderTyp);
-  },[orderTyp])
+  }, [orderTyp]);
   useEffect(() => {
     console.log('advAdjSub::', advAdjSub);
     console.log(
@@ -158,7 +157,13 @@ const billType=useRef()
     if (advAdjSub != null && advAdjSub.length != 0) {
       const generatePOData = data => {
         console.log('datadata' + JSON.stringify(data, null, 2));
+        const formattedDataselectedMat = data
+        .filter(item => item[2] !== null)  // Filter out rows where the third element is null
+        .map(item => `(${item[2]},'${item[3]}',${item[4]},'${item[7]}','${item[8]}','${item[9]}')`)
+        .join(',');
         const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
+        const JOselectedMat = "(275,'716063','19717','77107',0,'7','8','9'),(1656,'VAT@27','77107','raw-material',0,'pcs','-705.6','0'),(1656,'VAT@27','83','Misc Expense',0,'Document','-48','-12.9988')"
+
         const orderNull = `(${data[0][2]},' ')`; // 31924, ''
 
         // Aggregate values for hmtotalOrderMap
@@ -177,12 +182,18 @@ const billType=useRef()
           },
           TAX: {},
         };
-console.log("hmtotalOrderMap:"+hmtotalOrderMap);
+        console.log('hmtotalOrderMap:' + hmtotalOrderMap);
 
         return {
           type: orderTyp,
           adjustmentMethod: 'Payment Adjustment',
-          orderSelectedMat: selectedMat,
+          orderSelectedMat:
+          (orderTyp === 'PO' ?selectedMat: billType.current === 'SO'?formattedDataselectedMat:JOselectedMat),
+            // billType.current === 'JO' ||
+          //  )&&
+          // formattedDataselectedMat,
+            // selectedMat,
+            // "(1015,'119',0,'Recruitment','Job Posting','Nos'),(1623,'JK_Tax',0,'1','.18198','0'),(1623,'JK_Tax',0,'Nos','1.81802','0')",
           orderMat: mainData[3], // Assuming this is a fixed value
           orderNull: orderNull,
           hmtotalOrderMap: hmtotalOrderMap,
@@ -401,11 +412,12 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
         .sort((a, b) => a['SO No'].localeCompare(b['SO No']));
       filteredData = filteredData?.slice(0, billsPay.length);
       console.log('filteredData::' + JSON.stringify(filteredData));
-      console.log('transValue[13]::' + JSON.stringify(transValue[13]));
+      console.log('transValue[13]:' + JSON.stringify(transValue[13]));
 
       // Extract all "id" values from filteredData for quick lookup
-      const filteredIds = new Set(filteredData.map(item => item.id.toString()));
+      const filteredIds = new Set(filteredData.map(item => item['SO No']));
 
+      console.log('Unique filteredIds:', JSON.stringify(filteredIds));
       // Get unique FROM_ORDER values from transValue[13]
       const uniqueFromOrders = new Set(
         transValue[13].map(item => item.FROM_ORDER.toString()),
@@ -413,8 +425,9 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
       console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
 
       // FilteredData should contain only entries where 'id' is in uniqueFromOrders
-      filteredData = filteredData.filter(data =>
-        uniqueFromOrders.has(data.id.toString()),
+      filteredData = filteredData.filter(
+        data => uniqueFromOrders.has(data['SO No']),
+        // uniqueFromOrders.has(data.id.toString()),
       );
 
       const updatedRecords = transValue[13].filter(
@@ -429,7 +442,7 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
       // Update filteredData with matching TO_AMOUNT
       filteredData.forEach(dataItem => {
         const matchingRecord = updatedRecords.find(
-          record => record.FROM_ORDER.toString() === dataItem.id.toString(),
+          record => record.FROM_ORDER.toString() === dataItem['SO No'],
         );
         if (matchingRecord) {
           dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
@@ -456,7 +469,7 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
 
       // Extract all "id" values from filteredData for quick lookup
-      const filteredIds = new Set(filteredData.map(item => item.id.toString()));
+      const filteredIds = new Set(filteredData.map(item => item['JO No']));
 
       // Get unique FROM_ORDER values from transValue[13]
       const uniqueFromOrders = new Set(
@@ -466,7 +479,7 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
 
       // FilteredData should contain only entries where 'id' is in uniqueFromOrders
       filteredData = filteredData?.filter(data =>
-        uniqueFromOrders.has(data.id.toString()),
+        uniqueFromOrders.has(data['JO No']),
       );
 
       const updatedRecords = transValue[13].filter(
@@ -481,7 +494,7 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
       // Update filteredData with matching TO_AMOUNT
       filteredData.forEach(dataItem => {
         const matchingRecord = updatedRecords.find(
-          record => record.FROM_ORDER.toString() === dataItem.id.toString(),
+          record => record.FROM_ORDER.toString() === dataItem['JO No'],
         );
         if (matchingRecord) {
           dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
@@ -688,7 +701,8 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
         const advPayParams = {
           type: transValue[13][0]?.['ORDER_TYPE'], // Access ORDER_TYPE
           adjustmentMethod: 'Payment Adjustment',
-          orderSelectedMat: `(${transValue[13][0]?.['FROM_ORDER']},'${transValue[13][0]?.['FROM_SID']}')`, // Template literal for dynamic value
+          orderSelectedMat:
+            "(1015,'119',0,'Recruitment','Job Posting','Nos'),(1623,'JK_Tax',0,'1','.18198','0'),(1623,'JK_Tax',0,'Nos','1.81802','0')",
           orderMat: `${mainData[3]}`, // Use template literal to insert mainData[3]
           orderNull: `(${transValue[13][0]?.['FROM_ORDER']},' ')`, // Template literal for dynamic value
           hmtotalOrderMap: {
@@ -926,7 +940,11 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
 
   useEffect(() => {
     const fetchCheckStatus = async () => {
-      if (paymentId !== null && mainData.length > 0 && transDetails.length > 0) {
+      if (
+        paymentId !== null &&
+        mainData.length > 0 &&
+        transDetails.length > 0
+      ) {
         try {
           const chkSts = await getUpdateCheckStatus(
             transName,
@@ -936,19 +954,19 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
             mainData[7],
             currentLevel,
             totalNoOfLevels,
-            action  // Approve/Reject
+            action, // Approve/Reject
           );
-  
+
           console.log('checkStatuscheckStatus::', JSON.stringify(chkSts));
-  
-          setCheckStatus(chkSts);  // Set resolved data in state
+
+          setCheckStatus(chkSts); // Set resolved data in state
         } catch (error) {
           console.error('Error fetching check status:', error);
         }
       }
     };
-  
-    fetchCheckStatus();  // Call the async function
+
+    fetchCheckStatus(); // Call the async function
   }, [paymentId, mainData, transDetails, action]);
 
   useEffect(() => {
@@ -1319,27 +1337,29 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
                 editable={false} // Disables input
               />
             </View>
-            {(orderTyp === 'PO'
-              || billType.current === 'JO'|| billType.current === 'SO') &&
-            <View style={commonStyles.flexColumn}>
-              <TouchableOpacity
-                style={commonStyles.enableButtonTextContainer}
-                onPress={toggleModal}>
-                <Text style={commonStyles.disableButtonText}>
-                  Advance Adjustments
-                </Text>
-              </TouchableOpacity>
-              <TextInput
-                style={[commonStyles.oneLineValue, commonStyles.input]}
-                placeholder="" // Placeholder text
-                value={(transValue[1]['ADVANCE_ADJUSTED']
-                  ? transValue[1]['ADVANCE_ADJUSTED']
-                  : 0
-                ).toString()}
-                // value={mainData[17].toString()}
-                editable={false} // Disables input
-              />
-            </View>}
+            {(orderTyp === 'PO' ||
+              billType.current === 'JO' ||
+              billType.current === 'SO') && (
+              <View style={commonStyles.flexColumn}>
+                <TouchableOpacity
+                  style={commonStyles.enableButtonTextContainer}
+                  onPress={toggleModal}>
+                  <Text style={commonStyles.disableButtonText}>
+                    Advance Adjustments
+                  </Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={[commonStyles.oneLineValue, commonStyles.input]}
+                  placeholder="" // Placeholder text
+                  value={(transValue[1]['ADVANCE_ADJUSTED']
+                    ? transValue[1]['ADVANCE_ADJUSTED']
+                    : 0
+                  ).toString()}
+                  // value={mainData[17].toString()}
+                  editable={false} // Disables input
+                />
+              </View>
+            )}
             <View style={commonStyles.flexColumn}>
               <Text style={commonStyles.oneLineKey}>
                 Balance to Pay(Actual amt-Advance Adjusted)
@@ -1372,7 +1392,9 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
                         ? transValue[1]['TAX_ADJUSTED']
                         : 0,
                     )
-                ).toFixed(4).toString()}
+                )
+                  .toFixed(4)
+                  .toString()}
                 editable={false} // Disables input
               />
             </View>
@@ -1458,7 +1480,7 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
               highlightVal={['lastMessageSentBy', 'userName']}
               heading={''}
             />
-            {['rtgs/neft', 'debit card', 'bank transfer','g_pay'].includes(
+            {['rtgs/neft', 'debit card', 'bank transfer', 'g_pay'].includes(
               mainData[7].toLowerCase(),
             ) && (
               <ApprovalTableComponent
@@ -1784,8 +1806,8 @@ console.log("hmtotalOrderMap:"+hmtotalOrderMap);
             color: 'black',
             paddingBottom: 10,
           }}>{`Select Re-Use or Cancel Cheque No: ${
-            checkStatus ? checkStatus[0] : 'null'
-          }`}</Text>
+          checkStatus ? checkStatus[0] : 'null'
+        }`}</Text>
         {/* Children Content */}
         <TouchableOpacity
           onPress={() => {
