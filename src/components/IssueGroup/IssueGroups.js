@@ -165,51 +165,66 @@ const IssueGroups = () => {
 
   useEffect(() => {
     console.log('tempPayments::', tempPayments);
-  
+
     // Filter out entries that start with 'groupId'
     const filterPayments = payments => {
       return Object.fromEntries(
-        Object.entries(payments).filter(([key]) => !key.startsWith('groupId'))
+        Object.entries(payments).filter(([key]) => !key.startsWith('groupId')),
       );
     };
-  
+
     // Get the filtered result
     const filteredPayments = filterPayments(tempPayments);
-  
-    console.log('#$%##%#$%#% Filtered Payments:', JSON.stringify(filteredPayments));
-    console.log('#$%##%#$%#% Filtered Payments Length:', Object.keys(filteredPayments).length);
-    console.log('#$%##%#$%#% Current Selected Payments:', JSON.stringify(selectedPayments));
-    console.log('#$%##%#$%#% Current Selected Payments Length:', Object.keys(selectedPayments).length);
-  
+
+    console.log(
+      '#$%##%#$%#% Filtered Payments:',
+      JSON.stringify(filteredPayments),
+    );
+    console.log(
+      '#$%##%#$%#% Filtered Payments Length:',
+      Object.keys(filteredPayments).length,
+    );
+    console.log(
+      '#$%##%#$%#% Current Selected Payments:',
+      JSON.stringify(selectedPayments),
+    );
+    console.log(
+      '#$%##%#$%#% Current Selected Payments Length:',
+      Object.keys(selectedPayments).length,
+    );
+
     let shouldUpdate = false;
-    const updatedPayments = { ...selectedPayments };
-  
+    const updatedPayments = {...selectedPayments};
+
     // Compare arrays inside each key and update selectedPayments if necessary
     Object.entries(filteredPayments).forEach(([key, tempIds]) => {
       const selectedIds = selectedPayments[key] || [];
-  
+
       // Check if tempPayments has more items than selectedPayments
       if (tempIds.length > selectedIds.length) {
-        updatedPayments[key] = tempIds;  // Update to the larger array
+        updatedPayments[key] = tempIds; // Update to the larger array
         shouldUpdate = true;
       }
     });
-  
+
     // Prevent infinite loops by checking if updates are truly necessary
-    if (shouldUpdate && JSON.stringify(updatedPayments) !== JSON.stringify(selectedPayments)) {
-      console.log('Updating selectedPayments to:', JSON.stringify(updatedPayments));
+    if (
+      shouldUpdate &&
+      JSON.stringify(updatedPayments) !== JSON.stringify(selectedPayments)
+    ) {
+      console.log(
+        'Updating selectedPayments to:',
+        JSON.stringify(updatedPayments),
+      );
       setSelectedPayments(updatedPayments);
     }
-  
+
     // Update tempPayments only if it differs from filteredPayments to avoid re-triggering useEffect
     // if (shouldUpdate && JSON.stringify(filteredPayments) !== JSON.stringify(tempPayments)) {
     //   console.log('Updating tempPayments to:', JSON.stringify(updatedPayments));
     //   setTempPayments(updatedPayments);
     // }
-  
-  }, [tempPayments,mainTableSelectedIndex]);
-  
-
+  }, [tempPayments, mainTableSelectedIndex]);
 
   useEffect(() => {
     console.log('selectedPayments::', selectedPayments);
@@ -239,9 +254,7 @@ const IssueGroups = () => {
       setSelectedPayments(filteredPayments);
     }
     // setTempPayments(selectedPayments)
-  }, [selectedPayments,selectedCheckBoxData]);
-
-
+  }, [selectedPayments, selectedCheckBoxData]);
 
   useEffect(() => {
     console.log('mainTableSelectAll::', mainTableSelectAll);
@@ -1819,19 +1832,19 @@ ORDER BY
       //   oldChqStatus: ['Issued', 'admin'],
       // };
       // console.log('data params params >>>>>' + JSON.stringify(params));
-      // const response = await fetch(
-      //   // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
-      //   // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
-      //   `${API_URL}/api/issueGroup/issueButton?`,
-      //   {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //       Authorization: `${token}`,
-      //     },
-      //     body: JSON.stringify({items: selectedPayments}),
-      //   },
-      // );
+      const response = await fetch(
+        // `${API_URL}/api/issueGroup/issueButton?grpId=${grpId}&paymentType=${selectedDataPaymentType}`,
+        // 'http://192.168.0.169:8084/api/issueGroup/issueButton',
+        `${API_URL}/api/issueGroup/issueButton?`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify({items: selectedPayments}),
+        },
+      );
 
       console.log(
         'response for response data : ===============>>>>>>>>>> ',
@@ -2495,10 +2508,14 @@ ORDER BY
                         setSelectedRow(value);
                         setMainType(tableData[value]?.type);
                         const groupId = tableData[value]?.groupId;
-                        setDataFormat(`${tableData[value]['type']}:${tableData[value]['groupId']}`);
+                        setDataFormat(
+                          `${tableData[value]['type']}:${tableData[value]['groupId']}`,
+                        );
                         GroupTransformObject(tableData[value]);
                         SetActiveGroupId(tableData[value].groupId);
-                        console.log(`rowdataaa:: "${tableData[value]['type']}":${tableData[value]['groupId']}`);
+                        console.log(
+                          `rowdataaa:: "${tableData[value]['type']}":${tableData[value]['groupId']}`,
+                        );
                         setMainTableSelectedIndex(prev => {
                           if (prev.includes(groupId)) {
                             const groupKey = `groupId:${groupId}`;
@@ -2754,37 +2771,46 @@ ORDER BY
                         }));
 
                         setSelectedPayments(prevPayments => {
-                          console.log('selectedPayments---::::', selectedId);  // The selected payment or transfer ID
-                          const key = `${type}:${groupId}`;  // e.g., 'Advance Payment:451'
+                          console.log('selectedPayments---::::', selectedId); // The selected payment or transfer ID
+                          const key = `${type}:${groupId}`; // e.g., 'Advance Payment:451'
                           console.log('key---::::', key);
-                        
+
                           // Get the current selected IDs for this group, or an empty array if none exist
                           const currentIds = prevPayments[key] || [];
-                        
+
                           // Toggle logic: if selectedId is already in currentIds, remove it; otherwise, add it
                           const updatedIds = currentIds.includes(selectedId)
-                            ? currentIds.filter(id => id !== selectedId)  // Remove selectedId if already selected
-                            : [...currentIds, selectedId];               // Add selectedId if not selected
-                        
+                            ? currentIds.filter(id => id !== selectedId) // Remove selectedId if already selected
+                            : [...currentIds, selectedId]; // Add selectedId if not selected
+
                           // Prepare the updated state object
-                          const updatedState = { ...prevPayments };
-                          console.log('updatedState before applying changes::', updatedState);
+                          const updatedState = {...prevPayments};
+                          console.log(
+                            'updatedState before applying changes::',
+                            updatedState,
+                          );
                           console.log('updatedIds::', updatedIds);
-                        
+
                           if (updatedIds.length > 0) {
                             // If there are still selected IDs, update the state with the new list
                             updatedState[key] = updatedIds;
-                            console.log('updatedState after adding/removing ID::', updatedState);
+                            console.log(
+                              'updatedState after adding/removing ID::',
+                              updatedState,
+                            );
                           } else {
                             // If no IDs are selected, remove the key from the state
                             delete updatedState[key];
-                            console.log('updatedState after deleting key (no IDs selected)::', updatedState);
+                            console.log(
+                              'updatedState after deleting key (no IDs selected)::',
+                              updatedState,
+                            );
                           }
-                        
+
                           // Finally, return the updated state to be applied by React
                           return updatedState;
                         });
-                        
+
                         setIsLoading(false);
 
                         // if (MainType !== 'Fund Transfer') {
@@ -3261,12 +3287,12 @@ ORDER BY
       )} */}
         {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
 
-        {/* {mainTableSelectedIndex.length !==
+        {mainTableSelectedIndex.length !==
         Object.keys(selectedPayments).length ? (
           <LoadingIndicator message="Please wait.." />
         ) : (
           <></>
-        )} */}
+        )}
         {/* //Karthic */}
       </View>
       {/*  */}
@@ -3296,6 +3322,11 @@ ORDER BY
           </View>
         </TouchableOpacity>
       )}
+      {isLoading &&
+        mainTableSelectedIndex.length ===
+          Object.keys(selectedPayments).length && (
+          <LoadingIndicator message="Please wait..." />
+        )}
     </View>
   );
 };

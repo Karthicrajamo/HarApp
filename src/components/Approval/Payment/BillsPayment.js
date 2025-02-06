@@ -157,13 +157,17 @@ export const BillsPayment = ({route}) => {
     if (advAdjSub != null && advAdjSub.length != 0) {
       const generatePOData = data => {
         console.log('datadata' + JSON.stringify(data, null, 2));
+        // SO
         const formattedDataselectedMat = data
         .filter(item => item[2] !== null)  // Filter out rows where the third element is null
         .map(item => `(${item[2]},'${item[3]}',${item[4]},'${item[7]}','${item[8]}','${item[9]}')`)
         .join(',');
+        // PO
         const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
-        const JOselectedMat = "(275,'716063','19717','77107',0,'7','8','9'),(1656,'VAT@27','77107','raw-material',0,'pcs','-705.6','0'),(1656,'VAT@27','83','Misc Expense',0,'Document','-48','-12.9988')"
 
+        // JO
+        const selectedData = data[0].slice(2, 6).concat(data[0].slice(6, 10));
+        const JOselectedMat = `(${selectedData.map(item => isNaN(item) ? `'${item}'` : item).join(',')})`;
         const orderNull = `(${data[0][2]},' ')`; // 31924, ''
 
         // Aggregate values for hmtotalOrderMap
@@ -280,7 +284,7 @@ export const BillsPayment = ({route}) => {
         ],
       );
     }
-  }, [advAdjSub]);
+  }, [advAdjSub,orderTyp,billType]);
 
   useEffect(() => {
     console.log('finloadData::', finloadData);

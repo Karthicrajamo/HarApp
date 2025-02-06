@@ -1072,6 +1072,7 @@ export const AdvancePayment = ({route}) => {
                 'CC No',
                 'NB Ref No',
                 'GP No',
+                'LL No',
                 'Party Name',
                 'Reason',
               ]}
