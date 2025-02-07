@@ -1469,60 +1469,68 @@ export const AdvancePayment = ({route}) => {
         title=""
         isVisibleClose={false}
         isVisibleCloseIcon={true}>
-        <Text
-          style={{
-            color: 'black',
-            paddingBottom: 10,
-          }}>{`Select Re-Use or Cancel Cheque No: ${
-          checkStatus ? checkStatus[0] : 'null'
-        }`}</Text>
-        {/* Children Content */}
-        <TouchableOpacity
-          onPress={() => {
-            updateModRejectPayStatus(
-              transName,
-              paymentId,
-              mainData[8],
-              transDetails[3],
-              mainData[7],
-              transValue,
-              transId,
-              'Re-Use',
-              currentLevel,
-              checkStatus,
-              appRejParams,
-              appRejUrl,
-              action,
-            );
-            toggleModalReUse();
-            navigation.navigate('ApprovalMainScreen');
-          }}
-          style={styles.pdfSubOption}>
-          <Text style={styles.subOptionText}>Re-Use</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            updateModRejectPayStatus(
-              transName,
-              paymentId,
-              mainData[8],
-              transDetails[3],
-              mainData[7],
-              transValue,
-              transId,
-              'Cancelled',
-              currentLevel,
-              checkStatus,
-              appRejParams,
-              appRejUrl,
-              action,
-            );
-            toggleModalReUse();
-            navigation.navigate('ApprovalMainScreen');
-          }}
-          style={styles.pdfSubOption}>
-          <Text style={styles.subOptionText}>Cancelled</Text>
-        </TouchableOpacity>
+         <View style={[commonStyles.flexColumn, commonStyles.centerAlign]}>
+  <Text
+    style={{
+      color: 'black',
+      paddingBottom: 10,
+      textAlign: 'center', // Ensures text alignment in center
+    }}>
+    {`Select Re-Use or Cancel Cheque No: ${
+      checkStatus ? checkStatus[0] : 'null'
+    }`}
+  </Text>
+  
+  {/* Children Content */}
+  <TouchableOpacity
+    onPress={() => {
+      updateModRejectPayStatus(
+        transName,
+        paymentId,
+        mainData[8],
+        transDetails[3],
+        mainData[7],
+        transValue,
+        transId,
+        'Re-Use',
+        currentLevel,
+        checkStatus,
+        appRejParams,
+        appRejUrl,
+        action,
+      );
+      toggleModalReUse();
+      navigation.navigate('ApprovalMainScreen');
+    }}
+    style={[styles.pdfSubOption, { alignItems: 'center' }]}>
+    <Text style={styles.subOptionText}>Re-Use</Text>
+  </TouchableOpacity>
+
+  <TouchableOpacity
+    onPress={() => {
+      updateModRejectPayStatus(
+        transName,
+        paymentId,
+        mainData[8],
+        transDetails[3],
+        mainData[7],
+        transValue,
+        transId,
+        'Cancelled',
+        currentLevel,
+        checkStatus,
+        appRejParams,
+        appRejUrl,
+        action,
+      );
+      toggleModalReUse();
+      navigation.navigate('ApprovalMainScreen');
+    }}
+    style={[styles.pdfSubOption, { alignItems: 'center' }]}>
+    <Text style={styles.subOptionText}>Cancelled</Text>
+  </TouchableOpacity>
+</View>
+
       </CustomModalWithCloseIcon>
 
       {/* Button to toggle visibility */}

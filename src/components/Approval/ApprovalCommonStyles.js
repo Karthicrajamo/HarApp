@@ -5,6 +5,7 @@ const commonStyles = StyleSheet.create({
   heading: {padding: 8, fontWeight: '800', color: 'black', fontSize: 16},
   textCenter: {alignItems: 'center', justifyContent: 'center'},
   padTop:{paddingTop:10},
+  centerAlign:{ alignItems: 'center', justifyContent: 'center' },
   flexRow: {
     flexDirection: 'row',
     padding: 15,

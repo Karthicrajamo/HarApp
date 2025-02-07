@@ -91,6 +91,8 @@ import {useNavigation} from '@react-navigation/native';
 import useOrientation from './src/components/customHooks/useOrientation';
 import DocumentApproverMain from './src/components/DocumentApproval/DocumentApproverMain';
 import {requestStoragePermission} from './src/components/common-utils/requestStoragePermission';
+import { Provider } from 'react-redux';
+import store from './src/components/Approval/store';
 // Load the sound file
 Sound.setCategory('Playback');
 
@@ -1184,6 +1186,8 @@ const App = () => {
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <NotifierWrapper>
+      <Provider store={store}>
+
         <NavigationContainer ref={navigationRef} theme={MyTheme}>
           <Drawer.Navigator
             initialRouteName={isLoggedIn ? 'HomeDrawer' : 'LoginScreen'}
@@ -1393,6 +1397,15 @@ const App = () => {
 
           <FABWithUnreadCount />
         </NavigationContainer>
+      {/* <NavigationContainer>
+        <Stack.Navigator initialRouteName="LoginScreen">
+          <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ApprovalMainScreen" component={ApprovalMainScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="AdvancePayment" component={AdvancePayment} options={{ headerShown: false }} />
+          <Stack.Screen name="BillsPayment" component={BillsPayment} options={{ headerShown: false }} />
+        </Stack.Navigator>
+      </NavigationContainer> */}
+    </Provider>
       </NotifierWrapper>
     </GestureHandlerRootView>
   );

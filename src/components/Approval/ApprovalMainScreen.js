@@ -29,7 +29,10 @@ import axios from 'axios';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
 import LottieView from 'lottie-react-native';
 import generatingPdfAnimationJSON from '../assets/animations/generating-pdf-animation.json';
+
 const {width, height} = Dimensions.get('window');
+
+export let wholedata = {};
 
 const ApprovalScreen = () => {
   const navigation = useNavigation();
@@ -43,17 +46,32 @@ const ApprovalScreen = () => {
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const [PDFModalVisible, setPDFModalVisible] = useState(false);
   const [AdvPDFModalVisible, setAdvPDFModalVisible] = useState(false);
+  const [taxPDFModalVisible, setTaxPDFModalVisible] = useState(false);
+  const [paySheetPDFModalVisible, setPaySheetPDFModalVisible] = useState(false);
   const [transValue, setTransValue] = useState([]);
   const [itemValues, setItemValues] = useState([]);
+
+  //paysheeet payment - Kesaven
+  const [transName, setTransName] = useState();
+  const [isPaysheetData, setPaysheetData] = useState([]);
+  const [paymentId, setPaymentId] = useState();
+  const [isIndexed, setIndexed] = useState();
+  const [isFilteredData, setFilteredData] = useState();
+  const [empCount, setEmpCount] = useState(0);
+
+  useEffect(() => {
+    console.log('approvalData>>>', wholedata);
+  }, [wholedata]);
 
   useEffect(() => {
     console.log('transValue apMain::');
   }, [transValue]);
 
-  const toggleModalPDF = () => {
+  const closeModalPDF = () => {
     setBillsPDFModalVisible(false);
     setAdvPDFModalVisible(false);
     setPDFModalVisible(!PDFModalVisible);
+    setTaxPDFModalVisible(false);
   };
 
   const currentDate = new Date();
@@ -138,26 +156,43 @@ const ApprovalScreen = () => {
 
       const data = await response.json();
       setApprovalListData(data);
-      // console.log('data:::::', data);
+      console.log('data:::::', data);
+
+      // paysheet payment - kesaven
+      const paymentIds = data
+        .filter(item => item.TRANS_NAME.slice(3) === 'PaysheetPayment')
+        .map(item => {
+          const match = item.IDENTIFICATION.match(
+            /(?:Payment Id|payment_id)\s*=\s*(\d+)/i,
+          );
+          return match ? match[1] : null; // Extracted ID or null
+        })
+        .filter(id => id !== null); // Remove null values
+
+      console.log('paymentIds:', paymentIds);
+
+      // setPaymentId(paymentIds)
+
+      fetchPaysheetData(paymentIds);
 
       const filteredData = data.filter(item =>
         [
-          // 'AddPaymentGroup',
-          // 'ModPaymentGroup',
-          // 'DelPaymentGroup',
+          'AddPaymentGroup',
+          'ModPaymentGroup',
+          'DelPaymentGroup',
           'AddPayment',
           'ModPayment',
           'CancelPayment',
-          // 'CanPayment',
-          // 'AddDocumentApproval',
-          // 'ModDocumentApproval',
-          // 'AddPaysheetPayment',
-          // 'ModPaysheetPayment',
-          // 'CanPaysheetPayment',
+          'AddDocumentApproval',
+          'ModDocumentApproval',
+          'AddPaysheetPayment',
+          'ModPaysheetPayment',
+          'CanPaysheetPayment',
           // 'AddBankTrans',
+          // 'AddThirdPartyBankAcc',
         ].includes(item.TRANS_NAME),
       );
-      // console.log('Ap filteredData:::', filteredData);
+      console.log('Ap filteredData:::', filteredData);
       setFilteredApprovalData(filteredData);
       setTempFilteredApprovalData(filteredData);
     } catch (error) {
@@ -220,6 +255,87 @@ const ApprovalScreen = () => {
     navigation.navigate('HomeScreen');
   };
 
+  // paysheet payment - kesaven
+  async function fetchPaysheetData(ids) {
+    if (!Array.isArray(ids) || ids.length === 0) {
+      console.error('Invalid IDs: Expected a non-empty array.');
+
+      return null;
+    }
+
+    const formattedIds = ids.map(id => parseInt(id, 10)).join(', '); // Convert array to comma-separated values
+
+    setFilteredData(formattedIds);
+
+    const url = `${API_URL}/api/common/loadVectorwithContentsjson`;
+
+    const payload = {
+      query: `WITH PaymentCounts AS (
+
+            SELECT PAYMENT_ID, COUNT(*) AS payment_count
+
+            FROM PAYSHEET_PAYMENT_DETAILS
+
+            WHERE PAYMENT_ID IN (${formattedIds})
+
+            GROUP BY PAYMENT_ID
+
+        ),
+
+        Earnings AS (
+
+            SELECT ppd.PAYMENT_ID, MAX(e.EARNING_NAME) AS earnings
+
+            FROM PAYSHEET_PAYMENT_DETAILS ppd
+
+            JOIN PAYSHEET_DETAILS pd ON ppd.PAYSHEET_ID = pd.PAYSHEET_ID
+
+            JOIN EARNING e ON pd.EARN_ID = e.EARN_ID
+
+            WHERE ppd.PAYMENT_ID IN (${formattedIds})
+
+            GROUP BY ppd.PAYMENT_ID
+
+        )
+
+        SELECT pc.PAYMENT_ID, pc.payment_count, e.earnings
+
+        FROM PaymentCounts pc
+
+        LEFT JOIN Earnings e ON pc.PAYMENT_ID = e.PAYMENT_ID`,
+    };
+
+    // console.log('payload:', payload);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json',
+        },
+
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log('DATA FETCHED>>>>>', data);
+
+      setPaysheetData(data);
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching paysheet data:', error);
+
+      return null;
+    }
+  }
+
   const navigateToScreen = (
     transName,
     transId,
@@ -229,6 +345,15 @@ const ApprovalScreen = () => {
     totalNoOfLevels,
   ) => {
     return () => {
+      wholedata = {
+        transName: transName,
+        transId: transId,
+        status: status,
+        currentLevel: currentLevel,
+        noOfLevel: totalNoOfLevels,
+      };
+      // appDetData.appData = wholedata;
+
       if (
         transName === 'AddPaymentGroup' ||
         transName === 'ModPaymentGroup' ||
@@ -238,11 +363,13 @@ const ApprovalScreen = () => {
           transName: transName,
           transId: transId,
           status: status,
+          currentLevel: currentLevel,
+          noOfLevel: totalNoOfLevels,
         });
       } else if (
         transName === 'AddPayment' ||
-        'ModPayment' ||
-        'CancelPayment'
+        transName === 'ModPayment' ||
+        transName === 'CancelPayment'
       ) {
         const firstWord = identification.trim().split(' ')[0];
         if (firstWord === 'Adv') {
@@ -255,6 +382,13 @@ const ApprovalScreen = () => {
           });
         } else if (firstWord === 'Bill') {
           navigation.navigate('BillsPayment', {
+            transName: transName,
+            transId: transId,
+            status: status,
+            currentLevel: currentLevel,
+          });
+        } else if (firstWord === 'Tax') {
+          navigation.navigate('TaxPayment', {
             transName: transName,
             transId: transId,
             status: status,
@@ -274,6 +408,20 @@ const ApprovalScreen = () => {
           });
         }
       }
+
+      if (
+        transName === 'AddPaysheetPayment' ||
+        transName === 'ModPaysheetPayment' ||
+        transName === 'CanPaysheetPayment'
+      ) {
+        navigation.navigate('PaysheetPaymentMain', {
+          transName: transName,
+          transId: transId,
+          status: status,
+          currentLevel: currentLevel,
+        });
+      }
+
       if (transName === 'AddBankTrans') {
         navigation.navigate('BankAccountTransactionMain', {
           transName: transName,
@@ -285,11 +433,69 @@ const ApprovalScreen = () => {
     };
   };
 
+  //paysheet payment - kesaven
+  const earningNameFetcher = searchId => {
+    const result = isPaysheetData.find(item => item[0] === searchId);
+
+    return result ? result[2] : 'ID not found'; // Incorrect return statement
+  };
+
+  const empNumberFetcher = searchId => {
+    const result = isPaysheetData.find(item => item[0] === searchId);
+
+    return result ? result[1] : 'ID not found'; // Incorrect return statement
+  };
+  // function findArrayIndexContainingNumber(nestedArray, number) {
+  //   return nestedArray.findIndex(innerArray => {
+  //     // Compare as strings
+
+  //     return innerArray.some(item => item === String(number));
+  //   });
+  // }
+
+  // if (item.TRANS_NAME.slice(3) === 'PaysheetPayment') {
+  //   let paymentID = item.IDENTIFICATION.split('=')[1].slice(0, -1);
+
+  //   let index = findArrayIndexContainingNumber(isPaysheetData, paymentID);
+
+  //   console.log('ent:', isPaysheetData[index]);
+
+  //   setIndexed(isPaysheetData[index]);
+
+  //   const searchId = paymentID; // Replace with the ID you want to search for
+
+  //   infoFinder = searchId => {
+  //     const result = isPaysheetData.find(item => item[0] === searchId);
+
+  //     if (result) {
+  //       console.log('result', result); // This will print the array containing the ID 303
+  //     } else {
+  //       console.log('ID not found');
+  //     }
+  //   };
+
+  //   // const earningNameFetcher = (searchId) => {
+
+  //   //   const result = isPaysheetData.find((item) => item[0] === searchId);
+
+  //   //   return result ? result[2] : "ID not found"; // Returning the third column
+
+  //   // };
+
+  //   console.log('Display');
+
+  //   console.log(earningNameFetcher(paymentID));
+
+  //   // setPaysheetData([findArrayIndexContainingNumber(isPaysheetData,item.IDENTIFICATION.split("=")[1].slice(0, -1))])
+  // }
+
+  // const paymentIdToDisplay = isFilteredData; // For example, display data for payment ID 290
+
   const renderItem = ({item}) => {
     let formattedIdentification = item.IDENTIFICATION;
 
     // Debugging the original data
-    // console.log('Original IDENTIFICATION:', formattedIdentification);
+    console.log('Original IDENTIFICATION:', formattedIdentification);
 
     // Check if IDENTIFICATION matches the specific format
     if (
@@ -313,6 +519,53 @@ const ApprovalScreen = () => {
       console.log('Transformed IDENTIFICATION:', formattedIdentification);
     }
 
+    //paysheet payment  - kesaven
+    function findArrayIndexContainingNumber(nestedArray, number) {
+      return nestedArray.findIndex(innerArray => {
+        // Compare as strings
+
+        return innerArray.some(item => item === String(number));
+      });
+    }
+
+    if (item.TRANS_NAME.slice(3) === 'PaysheetPayment') {
+      let paymentID = item.IDENTIFICATION.split('=')[1].slice(0, -1);
+
+      let index = findArrayIndexContainingNumber(isPaysheetData, paymentID);
+
+      console.log('ent:', isPaysheetData[index]);
+
+      setIndexed(isPaysheetData[index]);
+
+      const searchId = paymentID; // Replace with the ID you want to search for
+
+      infoFinder = searchId => {
+        const result = isPaysheetData.find(item => item[0] === searchId);
+
+        if (result) {
+          console.log('result', result); // This will print the array containing the ID 303
+        } else {
+          console.log('ID not found');
+        }
+      };
+
+      // const earningNameFetcher = (searchId) => {
+
+      //   const result = isPaysheetData.find((item) => item[0] === searchId);
+
+      //   return result ? result[2] : "ID not found"; // Returning the third column
+
+      // };
+
+      console.log('Display');
+
+      console.log(earningNameFetcher(paymentID));
+
+      // setPaysheetData([findArrayIndexContainingNumber(isPaysheetData,item.IDENTIFICATION.split("=")[1].slice(0, -1))])
+    }
+
+    const paymentIdToDisplay = isFilteredData; // For example, display data for payment ID 290
+
     return (
       <TouchableOpacity
         style={styles.itemContainer}
@@ -335,6 +588,29 @@ const ApprovalScreen = () => {
             <Text style={styles.paymentText}>{formattedIdentification}</Text>
             {/* Use formatted string */}
           </View>
+          {/*// paysheet payment - kesaven */}
+          <View>
+            {item.TRANS_NAME.slice(3) === 'PaysheetPayment' ? (
+              <View style={styles.row}>
+                {/* {fetchDataById(item.TRANS_ID)} */}
+
+                <Text style={[styles.paymentText, {marginRight: 3}]}>
+                  No of Emp:{' '}
+                  {empNumberFetcher(
+                    item.IDENTIFICATION.split('=')[1].slice(0, -1),
+                  ) || ''}
+                </Text>
+
+                <Text style={styles.paymentText}>
+                  Earning Name:{' '}
+                  {earningNameFetcher(
+                    item.IDENTIFICATION.split('=')[1].slice(0, -1),
+                  ) || ''}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
           <View style={styles.row}>
             <Text style={[styles.paymentText, {marginRight: 3}]}>
               No of levels: {item.NO_OF_LEVELS}
@@ -361,6 +637,10 @@ const ApprovalScreen = () => {
                   setBillsPDFModalVisible(true);
                 } else if (firstWord === 'Adv') {
                   setAdvPDFModalVisible(true);
+                } else if (firstWord === 'Tax') {
+                  setTaxPDFModalVisible(true);
+                } else if (firstWord === 'Payment') {
+                  setPaySheetPDFModalVisible(true);
                 }
                 fetchPaymentDetails(item.TRANS_ID, item.TRANS_NAME);
                 setItemValues(item);
@@ -417,16 +697,17 @@ const ApprovalScreen = () => {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isRefreshing}
+              // refreshing={isRefreshing}
               onRefresh={fetchApprovalList} // Trigger fetchData on pull-down
               colors={[CustomThemeColors.primary]} // Customize spinner color
             />
           }
         />
       )}
+      {/* Bills PDF MODAL*/}
       <CustomModal
         isVisible={BillsPDFModalVisible}
-        onClose={toggleModalPDF}
+        onClose={closeModalPDF}
         title="Select an Option">
         {/* Children Content */}
         <TouchableOpacity
@@ -489,9 +770,10 @@ const ApprovalScreen = () => {
           <Text style={styles.subOptionText}>Payment Detailed PDF</Text>
         </TouchableOpacity>
       </CustomModal>
+      {/* ADVANCE PDF MODAL */}
       <CustomModal
         isVisible={AdvPDFModalVisible}
-        onClose={toggleModalPDF}
+        onClose={closeModalPDF}
         title="Select an Option">
         {/* Children Content */}
         <TouchableOpacity
@@ -523,7 +805,72 @@ const ApprovalScreen = () => {
           <Text style={styles.subOptionText}>Print PDF</Text>
         </TouchableOpacity>
       </CustomModal>
-      {/* Lottie View */}
+
+      {/* TAX PDF MODAL*/}
+      <CustomModal
+        isVisible={taxPDFModalVisible}
+        onClose={closeModalPDF}
+        title="Select PDF Type">
+        {/* Children Content */}
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsPdfLoading(true); // Set loading to true before starting the operation
+              setAdvPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/taxpay_printPdf`;
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: itemValues.TRANS_ID,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsPdfLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Print PDF</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            try {
+              setIsPdfLoading(true); // Set loading to true before starting the operation
+              setAdvPDFModalVisible(false); // Close the modal
+
+              const requestUrl = `${API_URL}/api/approval/payment/taxpay_printDetailedPdf`;
+              const requestBody = {
+                tranObject: transValue,
+                trans_id: itemValues.TRANS_ID,
+                company_id: 1,
+              };
+
+              // Convert requestBody to a JSON string
+              const requestBodyString = JSON.stringify(requestBody);
+              console.log('requestBody::', requestBodyString);
+
+              // Await the execution of BlobFetchComponent
+              await BlobFetchComponent(requestUrl, requestBodyString);
+            } catch (error) {
+              console.error('Error executing BlobFetchComponent:', error);
+            } finally {
+              // Set loading to false after the operation completes, regardless of success or failure
+              setIsPdfLoading(false);
+            }
+          }}
+          style={styles.pdfSubOption}>
+          <Text style={styles.subOptionText}>Print Detailed PDF</Text>
+        </TouchableOpacity>
+      </CustomModal>
+      {/* Lottie View*/}
       <Modal
         animationType="slide"
         transparent={true}

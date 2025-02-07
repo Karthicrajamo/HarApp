@@ -36,9 +36,11 @@ const CustomModalWithCloseIcon = ({
           <View style={styles.titleContainer}>
             {title && <Text style={styles.modalTitle}>{title}</Text>}
             {isVisibleCloseIcon && (
-              <TouchableOpacity onPress={onClose} style={styles.topRightCloseButton}>
-                <Icon name="close" size={24} color="#fff" />
-              </TouchableOpacity>
+            <View style={{ justifyContent: 'flex-end' }}>
+            <TouchableOpacity onPress={onClose} style={styles.topRightCloseButton}>
+              <Icon name="close" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
             )}
           </View>
 
@@ -100,13 +102,13 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.02,
   },
   topRightCloseButton: {
-    position: 'absolute',
-    right: width * -.08,
-    top: height * -0.047,
-    backgroundColor: CustomThemeColors.primary,
-    padding: width * 0.02,
-    borderRadius: 50,
-    zIndex: 10,color:'white'
+    // position: 'absolute',
+    // right: width * -.08,
+    // top: height * -0.047,
+    // backgroundColor: CustomThemeColors.primary,
+    // padding: width * 0.02,
+    // borderRadius: 50,
+    color:'black'
   },
   childrenContainer: {
     width: '100%',
