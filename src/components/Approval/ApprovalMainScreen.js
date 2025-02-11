@@ -22,7 +22,7 @@ import ApprovalDateFilter from './ApprovalDateFilter';
 import SearchComponent from './SearchComp';
 import commonStyles from './ApprovalCommonStyles';
 import CustomModal from '../common-utils/modal';
-import {isTablet} from 'react-native-device-info';
+import DeviceInfo from 'react-native-device-info';
 import {sharedData} from '../Login/UserId';
 import {BlobFetchComponent} from '../common-utils/BlobFetchComponent';
 import axios from 'axios';
@@ -386,6 +386,7 @@ const ApprovalScreen = () => {
             transId: transId,
             status: status,
             currentLevel: currentLevel,
+            totalNoOfLevels: totalNoOfLevels,
           });
         } else if (firstWord === 'Tax') {
           navigation.navigate('TaxPayment', {
@@ -952,7 +953,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pdfSubOption: {
-    width: isTablet ? 300 : 200,
+    width: DeviceInfo.isTablet() ? 300 : 200,
     padding: 10,
     backgroundColor: 'white',
     paddingHorizontal: 50,

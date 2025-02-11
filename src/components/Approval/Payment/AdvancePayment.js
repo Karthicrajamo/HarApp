@@ -32,7 +32,7 @@ import {ReqBodyConv} from './BillsComp/ReqBodyConv';
 import CurrencyConversion from '../ApprovalComponents/FXRate';
 import {NumToWordsCon} from '../ApprovalComponents/NumToWordsCon';
 import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
-import {isTablet} from 'react-native-device-info';
+import DeviceInfo from 'react-native-device-info';
 import {CustomThemeColors} from '../../CustomThemeColors';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import KeyValueJoiner from '../ApprovalComponents/KeyValueJoiner';
@@ -42,6 +42,7 @@ import {
   updateModRejectPayStatus,
 } from './BillsComp/ReUseCancelComp';
 import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -356,12 +357,12 @@ export const AdvancePayment = ({route}) => {
 
       // Remove duplicates if needed
       const uniquePoSoJoNos = [...new Set(poSoJoNos)];
-      // console.log('OtherDetails params::', {
-      //   payment_id: paymentId,
-      //   type: transValue[4][0].ORDER_TYPE,
-      //   orders: [transValue[4][0].PO_SO_JO_NO],
-      //   datafor: 'Approval',
-      // });
+      console.log('OtherDetails params::', {
+        payment_id: paymentId,
+        type: transValue[4][0].ORDER_TYPE,
+        orders: uniquePoSoJoNos,
+        datafor: 'Approval',
+      });
       FetchValueAssignKeysAPIString(
         `${API_URL}/api/approval/payment/getAdvPayOrderMain`,
         headArrTb1,
@@ -783,7 +784,11 @@ export const AdvancePayment = ({route}) => {
 
   useEffect(() => {
     const fetchCheckStatus = async () => {
-      if (paymentId !== null && mainData.length > 0 && transDetails.length > 0) {
+      if (
+        paymentId !== null &&
+        mainData.length > 0 &&
+        transDetails.length > 0
+      ) {
         try {
           const chkSts = await getUpdateCheckStatus(
             transName,
@@ -793,21 +798,20 @@ export const AdvancePayment = ({route}) => {
             mainData[7],
             currentLevel,
             totalNoOfLevels,
-            action  // Approve/Reject
+            action, // Approve/Reject
           );
-  
+
           console.log('checkStatuscheckStatus::', JSON.stringify(chkSts));
-  
-          setCheckStatus(chkSts);  // Set resolved data in state
+
+          setCheckStatus(chkSts); // Set resolved data in state
         } catch (error) {
           console.error('Error fetching check status:', error);
         }
       }
     };
-  
-    fetchCheckStatus();  // Call the async function
+
+    fetchCheckStatus(); // Call the async function
   }, [paymentId, mainData, transDetails, action]);
-  
 
   useEffect(() => {
     console.log('pairsData::', pairsData);
@@ -1255,7 +1259,7 @@ export const AdvancePayment = ({route}) => {
                 heading={''}
               />
             )}
-            {['rtgs/neft', 'debit card', 'bank transfer','g_pay'].includes(
+            {['rtgs/neft', 'debit card', 'bank transfer', 'g_pay'].includes(
               mainData[7].toLowerCase(),
             ) && (
               <ApprovalTableComponent
@@ -1466,71 +1470,95 @@ export const AdvancePayment = ({route}) => {
         // isVisible={true}
         isVisible={reUseCancel}
         onClose={toggleModalReUse}
-        title=""
+        title="Select Cheque Status Below"
         isVisibleClose={false}
         isVisibleCloseIcon={true}>
-         <View style={[commonStyles.flexColumn, commonStyles.centerAlign]}>
-  <Text
-    style={{
-      color: 'black',
-      paddingBottom: 10,
-      textAlign: 'center', // Ensures text alignment in center
-    }}>
-    {`Select Re-Use or Cancel Cheque No: ${
-      checkStatus ? checkStatus[0] : 'null'
-    }`}
-  </Text>
-  
-  {/* Children Content */}
-  <TouchableOpacity
-    onPress={() => {
-      updateModRejectPayStatus(
-        transName,
-        paymentId,
-        mainData[8],
-        transDetails[3],
-        mainData[7],
-        transValue,
-        transId,
-        'Re-Use',
-        currentLevel,
-        checkStatus,
-        appRejParams,
-        appRejUrl,
-        action,
-      );
-      toggleModalReUse();
-      navigation.navigate('ApprovalMainScreen');
-    }}
-    style={[styles.pdfSubOption, { alignItems: 'center' }]}>
-    <Text style={styles.subOptionText}>Re-Use</Text>
-  </TouchableOpacity>
+        <View style={[commonStyles.flexColumn, commonStyles.centerAlign]}>
+          <View style={[commonStyles.flexRowNoPadd, commonStyles.centerAlign]}>
+            <Text
+              style={{
+                color: 'black',
+                paddingBottom: 10,
+                textAlign: 'center', // Ensures text alignment in center
+              }}>
+              {`Cheque No: ${checkStatus ? checkStatus[0] : 'null'}`}
+            </Text>
+            {/* <TouchableOpacity
+              onPress={toggleModalReUse}
+              style={styles.topRightCloseButton}>
+              <Icon name="close" size={24} color="black" />
+            </TouchableOpacity> */}
+          </View>
+          <View style={commonStyles.flexRowNoPadd}>
+            {/* Children Content */}
+            <TouchableOpacity
+              onPress={() => {
+                updateModRejectPayStatus(
+                  transName,
+                  paymentId,
+                  mainData[8],
+                  transDetails[3],
+                  mainData[7],
+                  transValue,
+                  transId,
+                  'Re-Use',
+                  currentLevel,
+                  checkStatus,
+                  appRejParams,
+                  appRejUrl,
+                  action,
+                );
+                toggleModalReUse();
+                navigation.navigate('ApprovalMainScreen');
+              }}
+              style={[
+                styles.pdfSubOption,
+                {
+                  alignItems: 'center',
+                  width: 170,
+                  marginRight: 10,
+                  backgroundColor: CustomThemeColors.primary,
+                },
+              ]}>
+              <Text style={[styles.subOptionText, {color: 'white'}]}>
+                Re-Use
+              </Text>
+            </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={() => {
-      updateModRejectPayStatus(
-        transName,
-        paymentId,
-        mainData[8],
-        transDetails[3],
-        mainData[7],
-        transValue,
-        transId,
-        'Cancelled',
-        currentLevel,
-        checkStatus,
-        appRejParams,
-        appRejUrl,
-        action,
-      );
-      toggleModalReUse();
-      navigation.navigate('ApprovalMainScreen');
-    }}
-    style={[styles.pdfSubOption, { alignItems: 'center' }]}>
-    <Text style={styles.subOptionText}>Cancelled</Text>
-  </TouchableOpacity>
-</View>
-
+            <TouchableOpacity
+              onPress={() => {
+                updateModRejectPayStatus(
+                  transName,
+                  paymentId,
+                  mainData[8],
+                  transDetails[3],
+                  mainData[7],
+                  transValue,
+                  transId,
+                  'Cancelled',
+                  currentLevel,
+                  checkStatus,
+                  appRejParams,
+                  appRejUrl,
+                  action,
+                );
+                toggleModalReUse();
+                navigation.navigate('ApprovalMainScreen');
+              }}
+              style={[
+                styles.pdfSubOption,
+                {
+                  alignItems: 'center',
+                  width: 170,
+                  backgroundColor: CustomThemeColors.primary,
+                },
+              ]}>
+              <Text style={[styles.subOptionText, {color: 'white'}]}>
+                Cancelled
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </CustomModalWithCloseIcon>
 
       {/* Button to toggle visibility */}
@@ -1641,7 +1669,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pdfSubOption: {
-    width: isTablet ? 300 : 200,
+    width: DeviceInfo.isTablet() ? 300 : 200,
     padding: 10,
     backgroundColor: 'white',
     paddingHorizontal: 50,

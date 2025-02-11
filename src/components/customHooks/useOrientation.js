@@ -14,7 +14,6 @@ const useOrientation = () => {
         Orientation.lockToLandscape(); // Set landscape for tablets
       } else {
         Orientation.lockToPortrait(); // Set portrait for phones
-        // Orientation.lockToLandscape(); // Set landscape for tablets
       }
     };
 
@@ -31,7 +30,6 @@ const useOrientation = () => {
         }
       } else {
         if (width > height) {
-          // Orientation.lockToLandscape(); // Force landscape on tablet
           Orientation.lockToPortrait(); // Force portrait on phone
         }
       }

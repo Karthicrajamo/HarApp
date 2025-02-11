@@ -26,7 +26,7 @@ import {DateFormatComma} from '../../common-utils/DateFormatComma';
 import {NumToWordsCon} from '../ApprovalComponents/NumToWordsCon';
 import {CustomThemeColors} from '../../CustomThemeColors';
 import {BlobFetchComponent} from '../../common-utils/BlobFetchComponent';
-import {isTablet} from 'react-native-device-info';
+import DeviceInfo from 'react-native-device-info';
 import LoadingIndicator from '../../commonUtils/LoadingIndicator';
 import ApproveRejectComponent from '../ApprovalComponents/ApproveRejectComponent';
 import {ReqBodyConv} from './BillsComp/ReqBodyConv';
@@ -159,15 +159,20 @@ export const BillsPayment = ({route}) => {
         console.log('datadata' + JSON.stringify(data, null, 2));
         // SO
         const formattedDataselectedMat = data
-        .filter(item => item[2] !== null)  // Filter out rows where the third element is null
-        .map(item => `(${item[2]},'${item[3]}',${item[4]},'${item[7]}','${item[8]}','${item[9]}')`)
-        .join(',');
+          .filter(item => item[2] !== null) // Filter out rows where the third element is null
+          .map(
+            item =>
+              `(${item[2]},'${item[3]}',${item[4]},'${item[7]}','${item[8]}','${item[9]}')`,
+          )
+          .join(',');
         // PO
         const selectedMat = `(${data[0][2]},'${data[0][3]}')`; // 31924, 79453
 
         // JO
         const selectedData = data[0].slice(2, 6).concat(data[0].slice(6, 10));
-        const JOselectedMat = `(${selectedData.map(item => isNaN(item) ? `'${item}'` : item).join(',')})`;
+        const JOselectedMat = `(${selectedData
+          .map(item => (isNaN(item) ? `'${item}'` : item))
+          .join(',')})`;
         const orderNull = `(${data[0][2]},' ')`; // 31924, ''
 
         // Aggregate values for hmtotalOrderMap
@@ -187,17 +192,22 @@ export const BillsPayment = ({route}) => {
           TAX: {},
         };
         console.log('hmtotalOrderMap:' + hmtotalOrderMap);
+        console.log('billType.current:' + billType.current);
 
         return {
           type: orderTyp,
           adjustmentMethod: 'Payment Adjustment',
           orderSelectedMat:
-          (orderTyp === 'PO' ?selectedMat: billType.current === 'SO'?formattedDataselectedMat:JOselectedMat),
-            // billType.current === 'JO' ||
+            orderTyp === 'PO' || billType.current === 'SUP'
+              ? selectedMat
+              : billType.current === 'SO'
+              ? formattedDataselectedMat
+              : JOselectedMat,
+          // billType.current === 'JO' ||
           //  )&&
           // formattedDataselectedMat,
-            // selectedMat,
-            // "(1015,'119',0,'Recruitment','Job Posting','Nos'),(1623,'JK_Tax',0,'1','.18198','0'),(1623,'JK_Tax',0,'Nos','1.81802','0')",
+          // selectedMat,
+          // "(1015,'119',0,'Recruitment','Job Posting','Nos'),(1623,'JK_Tax',0,'1','.18198','0'),(1623,'JK_Tax',0,'Nos','1.81802','0')",
           orderMat: mainData[3], // Assuming this is a fixed value
           orderNull: orderNull,
           hmtotalOrderMap: hmtotalOrderMap,
@@ -284,7 +294,7 @@ export const BillsPayment = ({route}) => {
         ],
       );
     }
-  }, [advAdjSub,orderTyp,billType]);
+  }, [advAdjSub, orderTyp, billType]);
 
   useEffect(() => {
     console.log('finloadData::', finloadData);
@@ -1921,7 +1931,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   pdfSubOption: {
-    width: isTablet ? 300 : 200,
+    width: DeviceInfo.isTablet() ? 300 : 200,
     padding: 10,
     backgroundColor: 'white',
     paddingHorizontal: 50,

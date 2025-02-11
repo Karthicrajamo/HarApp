@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
@@ -78,7 +78,7 @@ const SubTableComponent = ({
   MainType,
   setTempPayments,
   selectedPayments,
-  DataFormat,
+  DataFormat,tempPayments
 }) => {
   const {width: screenWidth} = Dimensions.get('window');
   const [data, setData] = useState(initialData);
@@ -143,95 +143,180 @@ const SubTableComponent = ({
     // setSelectedCheckBoxData(selectedCheckBoxData.filter(dataa=>dataa.length !=0))
   }, [mainTableSelectedIndex]);
 
-  useEffect(() => {
-    setIsLoading(true);
-    const selectAll = async () => {
-      if (!selectAllIsChecked) {
-        // Deselect all rows and reset states
-        setIsChecked(false);
-        setSelectedRows(new Array(data.length).fill(false));
-        setSelectedCheckBoxData({});
-        setTempPayments({});
-        setIsLoading(false);
-        return;
+  // useEffect(() => {
+  //   setIsLoading(true);
+  //   const selectAll = async () => {
+  //     if (!selectAllIsChecked) {
+  //       // Deselect all rows and reset states
+  //       setIsChecked(false);
+  //       setSelectedRows(new Array(data.length).fill(false));
+  //       setSelectedCheckBoxData({});
+  //       setTempPayments({});
+  //       setIsLoading(false);
+  //       return;
+  //     }
+
+  //     // Select all logic
+  //     const newIsChecked = true;
+  //     setIsChecked(newIsChecked);
+  //     setSelectedRows(new Array(data.length).fill(true));
+
+  //     const updatedCheckBoxData = {...selectedCheckBoxData};
+  //     const updatedSelectedPayments = {...selectedPayments};
+  //     // console.log('+++++++++++++++' + JSON.stringify(updatedSelectedPayments));
+
+  //     data.forEach(async(item, index) => {
+  //       const groupKey = `groupId:${item.groupId}`;
+  //       const paymentGroupKey = `${MainType}:${item.groupId}`;
+  //       console.log('+++++++++++++++' + DataFormat);
+  //       const absoluteIndex = page * rowsPerPage + index;
+  //       let paymentId = 0;
+  //       paymentId =
+  //         data[absoluteIndex]?.['paymentId'] || data[absoluteIndex]?.['transferId'];
+  //       console.log('+paymentId' + paymentId);
+
+  //       // Update CheckBox Data
+  //       if (!updatedCheckBoxData[groupKey]) {
+  //         updatedCheckBoxData[groupKey] = [];
+  //       }
+  //       if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
+  //         updatedCheckBoxData[groupKey].push(absoluteIndex);
+  //       }
+
+  //       // Validate Payments Like CheckBox Data
+  //       if (updatedSelectedPayments[DataFormat].includes(paymentId)) {
+  //         if (!updatedSelectedPayments[DataFormat]) {
+  //           updatedSelectedPayments[DataFormat] = [];
+  //         }
+  //         if (!updatedSelectedPayments[DataFormat].includes(paymentId)) {
+  //           updatedSelectedPayments[DataFormat].push(paymentId);
+  //         }
+  //       }
+  //     });
+
+  //     // Remove groups and payments that are no longer in CheckBox Data
+  //     Object.keys(updatedCheckBoxData).forEach(groupKey => {
+  //       const groupId = parseInt(groupKey.split(':')[1]);
+
+  //       // If groupId is not in mainTableSelectedIndex, remove from both CheckBox and Payments
+  //       if (!mainTableSelectedIndex.includes(groupId)) {
+  //         delete updatedCheckBoxData[groupKey];
+
+  //         // Remove all associated payment entries for this groupId
+  //         Object.keys(updatedSelectedPayments).forEach(paymentKey => {
+  //           if (paymentKey.endsWith(`:${groupId}`)) {
+  //             delete updatedSelectedPayments[paymentKey];
+  //           }
+  //         });
+  //       }
+  //     });
+
+  //     console.log(
+  //       'Updated CheckBox Data:',
+  //       JSON.stringify(updatedCheckBoxData),
+  //     );
+  //     console.log(
+  //       'Updated Selected Payments:',
+  //       JSON.stringify(updatedSelectedPayments),
+  //     );
+
+  //     // Final state updates
+  //     setSelectedCheckBoxData(updatedCheckBoxData);
+
+  //     if (
+  //       JSON.stringify(updatedSelectedPayments) !== JSON.stringify(selectedPayments)
+  //     ) {
+  //       console.log(
+  //         'Updating updatedSelectedPayments to:',
+  //         JSON.stringify(updatedSelectedPayments),
+  //       );
+  //       // setSelectedPayments(updatedPayments);
+  //       setTempPayments(updatedSelectedPayments);
+  //     }
+
+  //     // Trigger row selection handlers
+  //     data.forEach(dataItem => onRowIndexSelect(dataItem));
+  //     data.forEach(dataItem => RowDataForIssue(dataItem));
+  //   };
+  //   selectAll();
+  //   setIsLoading(false);
+  // }, [selectAllIsChecked]);
+
+  const selectAllHandler = useCallback(() => {
+    // setIsLoading(true);
+  
+    if (!selectAllIsChecked) {
+      // Deselect all rows and reset states
+      setIsChecked(false);
+      setSelectedRows(new Array(data.length).fill(false));
+      setSelectedCheckBoxData({});
+      setTempPayments({});
+      setIsLoading(false);
+      return;
+    }
+  
+    // Select all logic
+    const newIsChecked = true;
+    setIsChecked(newIsChecked);
+    setSelectedRows(new Array(data.length).fill(true));
+  
+    const updatedCheckBoxData = { ...selectedCheckBoxData };
+    const updatedSelectedPayments = { ...selectedPayments };
+  
+    data.forEach((item, index) => {
+      const groupKey = `groupId:${item.groupId}`;
+      const paymentGroupKey = `${MainType}:${item.groupId}`;
+      const absoluteIndex = page * rowsPerPage + index;
+      let paymentId = data[absoluteIndex]?.['paymentId'] || data[absoluteIndex]?.['transferId'];
+  
+      // Update CheckBox Data
+      if (!updatedCheckBoxData[groupKey]) {
+        updatedCheckBoxData[groupKey] = [];
       }
-
-      // Select all logic
-      const newIsChecked = true;
-      setIsChecked(newIsChecked);
-      setSelectedRows(new Array(data.length).fill(true));
-
-      const updatedCheckBoxData = {...selectedCheckBoxData};
-      const updatedSelectedPayments = {...selectedPayments};
-      // console.log('+++++++++++++++' + JSON.stringify(updatedSelectedPayments));
-
-      data.forEach(async(item, index) => {
-        const groupKey = `groupId:${item.groupId}`;
-        const paymentGroupKey = `${MainType}:${item.groupId}`;
-        console.log('+++++++++++++++' + DataFormat);
-        const absoluteIndex = page * rowsPerPage + index;
-        let paymentId = 0;
-        paymentId =
-          data[absoluteIndex]?.['paymentId'] || data[absoluteIndex]?.['transferId'];
-        console.log('+paymentId' + paymentId);
-
-        // Update CheckBox Data
-        if (!updatedCheckBoxData[groupKey]) {
-          updatedCheckBoxData[groupKey] = [];
+      if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
+        updatedCheckBoxData[groupKey].push(absoluteIndex);
+      }
+  
+      // Validate Payments Like CheckBox Data
+      if (updatedSelectedPayments[DataFormat]?.includes(paymentId)) {
+        if (!updatedSelectedPayments[DataFormat]) {
+          updatedSelectedPayments[DataFormat] = [];
         }
-        if (!updatedCheckBoxData[groupKey].includes(absoluteIndex)) {
-          updatedCheckBoxData[groupKey].push(absoluteIndex);
+        if (!updatedSelectedPayments[DataFormat].includes(paymentId)) {
+          updatedSelectedPayments[DataFormat].push(paymentId);
         }
-
-        // Validate Payments Like CheckBox Data
-        if (updatedSelectedPayments[DataFormat].includes(paymentId)) {
-          if (!updatedSelectedPayments[DataFormat]) {
-            updatedSelectedPayments[DataFormat] = [];
+      }
+    });
+  
+    // Remove groups and payments that are no longer in CheckBox Data
+    Object.keys(updatedCheckBoxData).forEach(groupKey => {
+      const groupId = parseInt(groupKey.split(':')[1]);
+  
+      if (!mainTableSelectedIndex.includes(groupId)) {
+        delete updatedCheckBoxData[groupKey];
+  
+        Object.keys(updatedSelectedPayments).forEach(paymentKey => {
+          if (paymentKey.endsWith(`:${groupId}`)) {
+            delete updatedSelectedPayments[paymentKey];
           }
-          if (!updatedSelectedPayments[DataFormat].includes(paymentId)) {
-            updatedSelectedPayments[DataFormat].push(paymentId);
-          }
-        }
-      });
-
-      // Remove groups and payments that are no longer in CheckBox Data
-      Object.keys(updatedCheckBoxData).forEach(groupKey => {
-        const groupId = parseInt(groupKey.split(':')[1]);
-
-        // If groupId is not in mainTableSelectedIndex, remove from both CheckBox and Payments
-        if (!mainTableSelectedIndex.includes(groupId)) {
-          delete updatedCheckBoxData[groupKey];
-
-          // Remove all associated payment entries for this groupId
-          Object.keys(updatedSelectedPayments).forEach(paymentKey => {
-            if (paymentKey.endsWith(`:${groupId}`)) {
-              delete updatedSelectedPayments[paymentKey];
-            }
-          });
-        }
-      });
-
-      console.log(
-        'Updated CheckBox Data:',
-        JSON.stringify(updatedCheckBoxData),
-      );
-      console.log(
-        'Updated Selected Payments:',
-        JSON.stringify(updatedSelectedPayments),
-      );
-
-      // Final state updates
-      setSelectedCheckBoxData(updatedCheckBoxData);
+        });
+      }
+    });
+  
+    setSelectedCheckBoxData(updatedCheckBoxData);
+  
+    if (JSON.stringify(updatedSelectedPayments) !== JSON.stringify(tempPayments)) {
       setTempPayments(updatedSelectedPayments);
-
-      // Trigger row selection handlers
-      data.forEach(dataItem => onRowIndexSelect(dataItem));
-      data.forEach(dataItem => RowDataForIssue(dataItem));
-    };
-    selectAll();
-    setIsLoading(false);
+    }
+  
+    data.forEach(dataItem => onRowIndexSelect(dataItem));
+    data.forEach(dataItem => RowDataForIssue(dataItem));
+    // setIsLoading(false);
   }, [selectAllIsChecked]);
-
+  
+  useEffect(() => {
+    selectAllHandler();
+  }, [selectAllHandler]);
   useEffect(
     () =>
       console.log(

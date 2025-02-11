@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import commonStyles from '../Approval/ApprovalCommonStyles';
-import { CustomThemeColors } from '../CustomThemeColors';
+import {CustomThemeColors} from '../CustomThemeColors';
+import DeviceInfo from 'react-native-device-info';
 
 const {width, height} = Dimensions.get('window');
 
@@ -34,13 +35,19 @@ const CustomModalWithCloseIcon = ({
         <View style={styles.modalContent}>
           {/* Modal Title */}
           <View style={styles.titleContainer}>
-            {title && <Text style={styles.modalTitle}>{title}</Text>}
+            {title ? (
+              <Text style={styles.modalTitle}>{title}</Text>
+            ) : (
+              <Text style={styles.modalTitle}></Text>
+            )}
             {isVisibleCloseIcon && (
-            <View style={{ justifyContent: 'flex-end' }}>
-            <TouchableOpacity onPress={onClose} style={styles.topRightCloseButton}>
-              <Icon name="close" size={24} color="black" />
-            </TouchableOpacity>
-          </View>
+              <View style={{justifyContent: 'flex-end'}}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.topRightCloseButton}>
+                  <Icon name="close" size={24} color="black" />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -81,10 +88,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
-    width: width * 0.9,
+    width: DeviceInfo.isTablet() ? width / 2 : width,
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: width * 0.05,
+    // padding: width * 0.05,
     alignItems: 'center',
     margin: 10,
   },
@@ -96,19 +103,20 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   modalTitle: {
-    fontSize: width * 0.05,
+    fontSize: DeviceInfo.isTablet() ? width * 0.03 : 16,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: height * 0.02,
+    // marginBottom: 10,
+    margin: 10,
   },
   topRightCloseButton: {
     // position: 'absolute',
     // right: width * -.08,
     // top: height * -0.047,
     // backgroundColor: CustomThemeColors.primary,
-    // padding: width * 0.02,
+    padding: 10,
     // borderRadius: 50,
-    color:'black'
+    color: 'black',
   },
   childrenContainer: {
     width: '100%',

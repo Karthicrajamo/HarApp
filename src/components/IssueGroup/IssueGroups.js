@@ -1047,6 +1047,8 @@ const IssueGroups = () => {
 
         updatedEndDate = `${day}-${month}-${year}`;
       }
+      
+      
 
       // Construct the URL with the updated start and end dates
       const url = `${API_URL}/api/issueGroup/getAllpaymentGroups?fromDate=${updatedStartDate}&toDate=${updatedEndDate}`;
@@ -2246,16 +2248,20 @@ ORDER BY
       (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
       0,
     );
+    const allPaymentIds = Object.values(selectedPayments).flat();
 
+    // Check if every payment ID exists in selectedArray
+    const allExist = allPaymentIds.every(id => selectedArray.includes(id));
     console.log(
       'selectedArray.length ==',
-      selectedArray.length,
+      selectedArray,
       '-=-=-= Total length of all arrays:',
-      totalLength,
+      allPaymentIds,
     );
 
-    if (selectedArray.length !== totalLength) {
-      issueData(preparedItemsForIssue);
+    if (!allExist) {
+    // if (selectedArray.length !== totalLength) {
+      // issueData(preparedItemsForIssue);
 
       // setTimeout(() => handleRefresh(), 1500);
     } else {
@@ -2490,9 +2496,9 @@ ORDER BY
                     onRowIndexSelect={value => {
                       if (value.length < 1) {
                         console.log('empty data::::');
-                        fetchTableData();
+                        // fetchTableData();
 
-                        setSelectedSubData([]);
+                        // setSelectedSubData([]);
                         setMainTableSelectedIndex([]);
                         setSelectedCheckBoxData([]);
                         setSelectedPayments({});
@@ -2500,9 +2506,10 @@ ORDER BY
                         setActiveDataPdf([]);
                         setSelectedSubData([]);
                         SetActiveGroupId('');
-
+                        setSelectedArray([])
                         setHideSubTab(true);
                       } else {
+                        setSelectedSubData([]);
                         setHideSubTab(false);
                         setActiveDataPdf([]);
                         setSelectedRow(value);
@@ -2725,23 +2732,31 @@ ORDER BY
                         });
 
                         // Prepare the updated selectedArray
+                        // setSelectedArray(prevArray => {
+                        //   // Start with the current selectedArray state
+                        //   let updatedArray = [...prevArray];
+
+                        //   ids.forEach(id => {
+                        //     const exists = updatedArray.includes(id);
+
+                        //     // If id exists, remove it; if it doesn’t, add it
+                        //     if (exists) {
+                        //       updatedArray = updatedArray.filter(
+                        //         item => item !== id,
+                        //       );
+                        //     }
+                        //   });
+
+                        //   return updatedArray;
+                        // });
                         setSelectedArray(prevArray => {
-                          // Start with the current selectedArray state
-                          let updatedArray = [...prevArray];
-
-                          ids.forEach(id => {
-                            const exists = updatedArray.includes(id);
-
-                            // If id exists, remove it; if it doesn’t, add it
-                            if (exists) {
-                              updatedArray = updatedArray.filter(
-                                item => item !== id,
-                              );
-                            }
-                          });
-
-                          return updatedArray;
+                          // Create a Set to store unique values
+                          const updatedSet = new Set([...prevArray, ...ids]);
+                        
+                          // Convert Set back to an array and return it
+                          return Array.from(updatedSet);
                         });
+                        
                         setIsLoading(false);
 
                         // }
@@ -2855,33 +2870,47 @@ ORDER BY
                       const selectedId = transferId || paymentId;
                       console.log('issued status', data);
                       if (data.paymentStatus === 'Issued') {
+                        // setSelectedArray(prevArray => {
+                        //   const exists = prevArray.includes(selectedId);
+
+                        //   console.log('Selection Toggle:', {
+                        //     currentArray: prevArray,
+                        //     selectedId: selectedId,
+                        //     exists: exists,
+                        //     result: exists
+                        //       ? prevArray.filter(item => item == selectedId)
+                        //       : [...prevArray, selectedId],
+                        //   });
+
+                        //   // Or for more detailed debugging:
+                        //   console.log('Previous Array:', prevArray);
+                        //   console.log('Selected ID:', selectedId);
+                        //   console.log('ID exists in array?:', exists);
+                        //   console.log(
+                        //     'New Array:',
+                        //     exists
+                        //       ? prevArray.filter(item => item !== selectedId)
+                        //       : [...prevArray, selectedId],
+                        //   );
+
+                        //   return exists
+                        //     ? prevArray.filter(item => item !== selectedId)
+                        //     : [...prevArray, selectedId];
+                        // });
                         setSelectedArray(prevArray => {
-                          const exists = prevArray.includes(selectedId);
-
-                          console.log('Selection Toggle:', {
-                            currentArray: prevArray,
+                          // Create a Set to store unique values (prevents duplicates)
+                          const updatedSet = new Set([...prevArray, selectedId]);
+                        
+                          console.log('Selection Update:', {
+                            previousArray: prevArray,
                             selectedId: selectedId,
-                            exists: exists,
-                            result: exists
-                              ? prevArray.filter(item => item !== selectedId)
-                              : [...prevArray, selectedId],
+                            updatedArray: Array.from(updatedSet),
                           });
-
-                          // Or for more detailed debugging:
-                          console.log('Previous Array:', prevArray);
-                          console.log('Selected ID:', selectedId);
-                          console.log('ID exists in array?:', exists);
-                          console.log(
-                            'New Array:',
-                            exists
-                              ? prevArray.filter(item => item !== selectedId)
-                              : [...prevArray, selectedId],
-                          );
-
-                          return exists
-                            ? prevArray.filter(item => item !== selectedId)
-                            : [...prevArray, selectedId];
+                        
+                          // Convert Set back to an array and return it
+                          return Array.from(updatedSet);
                         });
+                        
                       }
                       setIsLoading(false);
                     }}
