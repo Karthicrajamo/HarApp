@@ -45,13 +45,16 @@ import {
 import finLoadVectorwithContentsAPI, {
   useFinLoadVectorwithContentsAPI,
 } from '../ApprovalComponents/finLoadVectorwithContentsAPI';
+import { wholedata } from '../ApprovalMainScreen';
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 // Karthic Nov 25
 export const BillsPayment = ({route}) => {
-  const {transName, transId, status, currentLevel, totalNoOfLevels} =
-    route.params || {};
+  // const {transName, transId, status, currentLevel, totalNoOfLevels} =
+  //   route.params || {};
+    const {transName, transId, status, currentLevel, totalNoOfLevels} =
+    wholedata || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [isModalVisible, setModalVisible] = useState(false);
@@ -153,7 +156,7 @@ export const BillsPayment = ({route}) => {
       advAdjSub ? Object.keys(advAdjSub).length : 999,
     );
     console.log('transName::', transName);
-
+    setIsLoading(true);
     if (advAdjSub != null && advAdjSub.length != 0) {
       const generatePOData = data => {
         console.log('datadata' + JSON.stringify(data, null, 2));
@@ -294,6 +297,7 @@ export const BillsPayment = ({route}) => {
         ],
       );
     }
+    setIsLoading(false);
   }, [advAdjSub, orderTyp, billType]);
 
   useEffect(() => {
@@ -366,6 +370,7 @@ export const BillsPayment = ({route}) => {
 
   useEffect(() => {
     console.log('advanceAdjustmentModal::', advanceAdjustmentModal);
+    setIsLoading(true);
 
     if (orderTyp === 'PO') {
       let filteredData = advanceAdjustmentModal
@@ -528,7 +533,8 @@ export const BillsPayment = ({route}) => {
         setAdvanceAdjustmentModal(filteredData);
       }
     }
-  }, [advanceAdjustmentModal]); // Only re-run when orderTyp changes
+    setIsLoading(false);
+  }, [advanceAdjustmentModal,transValue]); // Only re-run when orderTyp changes
 
   useEffect(() => {
     console.log('paidAdjustment::', paidAdjustment);
@@ -1812,63 +1818,86 @@ export const BillsPayment = ({route}) => {
         isVisible={reUseCancel}
         // isVisible={true}
         onClose={toggleModalReUse}
-        title=""
+        title="Select Cheque Status Below"
         isVisibleClose={false}
         isVisibleCloseIcon={true}>
-        <Text
-          style={{
-            color: 'black',
-            paddingBottom: 10,
-          }}>{`Select Re-Use or Cancel Cheque No: ${
-          checkStatus ? checkStatus[0] : 'null'
-        }`}</Text>
-        {/* Children Content */}
-        <TouchableOpacity
-          onPress={() => {
-            updateModRejectPayStatus(
-              transName,
-              paymentId,
-              mainData[8],
-              transDetails[3],
-              mainData[7],
-              transValue,
-              transId,
-              'Re-Use',
-              currentLevel,
-              checkStatus,
-              appRejParams,
-              appRejUrl,
-              action,
-            );
-            toggleModalReUse();
-            navigation.navigate('ApprovalMainScreen');
-          }}
-          style={styles.pdfSubOption}>
-          <Text style={styles.subOptionText}>Re-Use</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            updateModRejectPayStatus(
-              transName,
-              paymentId,
-              mainData[8],
-              transDetails[3],
-              mainData[7],
-              transValue,
-              transId,
-              'Cancelled',
-              currentLevel,
-              checkStatus,
-              appRejParams,
-              appRejUrl,
-              action,
-            );
-            toggleModalReUse();
-            navigation.navigate('ApprovalMainScreen');
-          }}
-          style={styles.pdfSubOption}>
-          <Text style={styles.subOptionText}>Cancelled</Text>
-        </TouchableOpacity>
+        <View style={[commonStyles.flexColumn, commonStyles.centerAlign]}>
+          <View style={[commonStyles.flexRowNoPadd, commonStyles.centerAlign]}>
+            <Text
+              style={{
+                color: 'black',
+                paddingBottom: 10,
+              }}>{`Cheque No: ${checkStatus ? checkStatus[0] : 'null'}`}</Text>
+            {/* Children Content */}
+          </View>
+          <View style={commonStyles.flexRowNoPadd}>
+            <TouchableOpacity
+              onPress={() => {
+                updateModRejectPayStatus(
+                  transName,
+                  paymentId,
+                  mainData[8],
+                  transDetails[3],
+                  mainData[7],
+                  transValue,
+                  transId,
+                  'Re-Use',
+                  currentLevel,
+                  checkStatus,
+                  appRejParams,
+                  appRejUrl,
+                  action,
+                );
+                toggleModalReUse();
+                navigation.navigate('ApprovalMainScreen');
+              }}
+              style={[
+                styles.pdfSubOption,
+                {
+                  alignItems: 'center',
+                  width: 170,
+                  marginRight: 10,
+                  backgroundColor: CustomThemeColors.primary,
+                },
+              ]}>
+              <Text style={[styles.subOptionText, {color: 'white'}]}>
+                Re-Use
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                updateModRejectPayStatus(
+                  transName,
+                  paymentId,
+                  mainData[8],
+                  transDetails[3],
+                  mainData[7],
+                  transValue,
+                  transId,
+                  'Cancelled',
+                  currentLevel,
+                  checkStatus,
+                  appRejParams,
+                  appRejUrl,
+                  action,
+                );
+                toggleModalReUse();
+                navigation.navigate('ApprovalMainScreen');
+              }}
+              style={[
+                styles.pdfSubOption,
+                {
+                  alignItems: 'center',
+                  width: 170,
+                  backgroundColor: CustomThemeColors.primary,
+                },
+              ]}>
+              <Text style={[styles.subOptionText, {color: 'white'}]}>
+                Cancelled
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </CustomModalWithCloseIcon>
 
       {!isRefreshing && (

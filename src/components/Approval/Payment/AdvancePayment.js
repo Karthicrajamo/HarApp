@@ -43,14 +43,18 @@ import {
 } from './BillsComp/ReUseCancelComp';
 import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import CustomButton from '../../common-utils/CustomButton';
+import { wholedata } from '../ApprovalMainScreen';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
 // Karthic Nov 25
 export const AdvancePayment = ({route}) => {
-  const {transName, transId, status, currentLevel, totalNoOfLevels} =
-    route.params || {};
+  // const {transName, transId, status, currentLevel, totalNoOfLevels} =
+  //   route.params || {};
+    const {transName, transId, status, currentLevel, totalNoOfLevels} =
+    wholedata || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
   const [accountNo, setAccountNo] = useState('');
@@ -1478,6 +1482,8 @@ export const AdvancePayment = ({route}) => {
             <Text
               style={{
                 color: 'black',
+                paddingTop: 0,
+                marginTop: 0,
                 paddingBottom: 10,
                 textAlign: 'center', // Ensures text alignment in center
               }}>
@@ -1515,12 +1521,17 @@ export const AdvancePayment = ({route}) => {
                 styles.pdfSubOption,
                 {
                   alignItems: 'center',
-                  width: 170,
+                  // width: 170,
+                  flex: 1,
                   marginRight: 10,
                   backgroundColor: CustomThemeColors.primary,
                 },
               ]}>
-              <Text style={[styles.subOptionText, {color: 'white'}]}>
+              <Text
+                style={[
+                  styles.subOptionText,
+                  {color: 'white', fontSize: DeviceInfo.isTablet() ? 14 : 12},
+                ]}>
                 Re-Use
               </Text>
             </TouchableOpacity>
@@ -1549,11 +1560,16 @@ export const AdvancePayment = ({route}) => {
                 styles.pdfSubOption,
                 {
                   alignItems: 'center',
-                  width: 170,
+                  // width: 200,
+                  flex: 1,
                   backgroundColor: CustomThemeColors.primary,
                 },
               ]}>
-              <Text style={[styles.subOptionText, {color: 'white'}]}>
+              <Text
+                style={[
+                  styles.subOptionText,
+                  {color: 'white', fontSize: DeviceInfo.isTablet() ? 14 : 12},
+                ]}>
                 Cancelled
               </Text>
             </TouchableOpacity>
@@ -1565,10 +1581,13 @@ export const AdvancePayment = ({route}) => {
       {!isRefreshing && (
         <>
           <View style={styles.buttonContainer}>
-            <Button
-              title="Click here for more info"
-              onPress={handleButtonClick}
-            />
+            <CustomButton
+              color={'white'}
+              fontColor={'black'}
+              onPress={handleButtonClick} // Trigger handleButtonClick on press
+            >
+              Click here for {showInfoPairs ? 'more' : 'less'} info
+            </CustomButton>
           </View>
           <View>
             <ApproveRejectComponent

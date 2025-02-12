@@ -16,10 +16,10 @@ import DeviceInfo from 'react-native-device-info';
 const {width, height} = Dimensions.get('window');
 
 const CustomModalWithCloseIcon = ({
-  isVisible,
+  isVisible=false,
   onClose,
-  children,
-  title,
+  children='',
+  title='',
   subBtn = '',
   subBtnAction,
   isVisibleClose = true,
@@ -92,6 +92,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     // padding: width * 0.05,
+    paddingHorizontal:DeviceInfo.isTablet() ?10:0,
+
     alignItems: 'center',
     margin: 10,
   },
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   modalTitle: {
-    fontSize: DeviceInfo.isTablet() ? width * 0.03 : 16,
+    fontSize: DeviceInfo.isTablet() ? 18 : 16,
     fontWeight: 'bold',
     color: '#333',
     // marginBottom: 10,

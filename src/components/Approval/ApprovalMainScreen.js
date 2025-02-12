@@ -29,6 +29,8 @@ import axios from 'axios';
 import LoadingIndicator from '../commonUtils/LoadingIndicator';
 import LottieView from 'lottie-react-native';
 import generatingPdfAnimationJSON from '../assets/animations/generating-pdf-animation.json';
+import { setTransferDetails } from './Slice/TransactionSlice';
+import { useDispatch } from 'react-redux';
 
 const {width, height} = Dimensions.get('window');
 
@@ -353,7 +355,13 @@ const ApprovalScreen = () => {
         noOfLevel: totalNoOfLevels,
       };
       // appDetData.appData = wholedata;
-
+// useDispatch(setTransferDetails({
+//   transName: transName,
+//   transId: transId,
+//   status: status,
+//   currentLevel: currentLevel,
+//   noOfLevel: totalNoOfLevels,
+// }))
       if (
         transName === 'AddPaymentGroup' ||
         transName === 'ModPaymentGroup' ||

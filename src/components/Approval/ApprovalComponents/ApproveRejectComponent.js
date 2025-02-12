@@ -165,16 +165,25 @@ const ApproveRejectComponent = ({
         : setAppRejParams(rejectParams);
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
       setAction(action);
+      toggleModal();
     } else {
       try {
         console.log('response ApRejCom::2', action);
-        console.log('response body', typeof params === 'string' ? params : JSON.stringify(params));
+        console.log(
+          'response body',
+          typeof params === 'string' ? params : JSON.stringify(params),
+        );
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', // Set the content type to JSON
           },
-          body: action == 'approve' ? typeof params === 'string' ? params : JSON.stringify(params) : JSON.stringify(rejectParams), // Convert the body to a JSON string
+          body:
+            action == 'approve'
+              ? typeof params === 'string'
+                ? params
+                : JSON.stringify(params)
+              : JSON.stringify(rejectParams), // Convert the body to a JSON string
         });
         console.log('response ApRejCom::', response);
 
@@ -198,7 +207,7 @@ const ApproveRejectComponent = ({
 
   return (
     <View style={styles.container}>
-            {/* <Toast/> */}
+      {/* <Toast/> */}
 
       <TouchableOpacity
         style={[styles.button, styles.approveButton]}
@@ -213,9 +222,9 @@ const ApproveRejectComponent = ({
               actionAR.current = 'approve';
             } else {
               let message = 'Sorry! Approval level has been changed';
-            showToast('error', 'Error!', message, 'top', 5000, 100, 40, () =>
-              console.log(''),
-            );
+              showToast('error', 'Error!', message, 'top', 5000, 100, 40, () =>
+                console.log(''),
+              );
 
               ToastAndroid.show(
                 'Sorry! Approval Level has been Changed',
@@ -299,7 +308,8 @@ const ApproveRejectComponent = ({
             setRejectPop(true);
             if (
               // JSON.stringify(
-              paymentMode === 'Cheque' && transName !="CancelPayment"
+              paymentMode === 'Cheque' &&
+              transName != 'CancelPayment'
             ) {
               console.log(
                 'rejectParams PaymentMode:::' +
