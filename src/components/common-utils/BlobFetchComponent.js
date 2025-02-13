@@ -4,17 +4,16 @@ import RNFetchBlob from 'rn-fetch-blob';
 import RNFS from 'react-native-fs';
 import {API_URL} from '../ApiUrl';
 
-
 export const BlobFetchComponent = async (apiurl, requestbody) => {
   try {
     // Retrieve token for authorization
-    const credentials = await Keychain.getGenericPassword({ service: 'jwt' });
+    const credentials = await Keychain.getGenericPassword({service: 'jwt'});
     if (!credentials) {
       throw new Error('Authorization credentials not found.');
     }
     const token = credentials.password;
-    console.log('Token with Bearer printPdf:', token);
-  
+    console.log('apiurl blob:', apiurl);
+    console.log('requestbody blob:', requestbody);
 
     // Make the POST request using Axios
     const response = await axios.post(apiurl, requestbody, {
@@ -41,11 +40,11 @@ export const BlobFetchComponent = async (apiurl, requestbody) => {
     console.log('Filename without extension:', fileName);
 
     // Ensure the directory exists before downloading
-    const { fs } = RNFetchBlob;
+    const {fs} = RNFetchBlob;
     const downloadDir = fs.dirs.DownloadDir; // Save to download directory
     const folderPath = `${downloadDir}/HarnessERP/`;
 
-    if (!await RNFS.exists(folderPath)) {
+    if (!(await RNFS.exists(folderPath))) {
       await RNFS.mkdir(folderPath);
       console.log('Folder created:', folderPath);
     }
@@ -57,67 +56,66 @@ export const BlobFetchComponent = async (apiurl, requestbody) => {
 };
 
 const downloadAndViewPdf = async fileName => {
-    const fileNamePrefix = 'bills_';
-    try {
+  const fileNamePrefix = 'bills_';
+  try {
+    // Fetch token (ensure that token exists and is valid)
+    const credentials = await Keychain.getGenericPassword({service: 'jwt'});
+    if (!credentials) {
+      throw new Error('No credentials found');
+    }
 
-      // Fetch token (ensure that token exists and is valid)
-      const credentials = await Keychain.getGenericPassword({service: 'jwt'});
-      if (!credentials) {
-        throw new Error('No credentials found');
-      }
+    const token = credentials.password;
+    const url = `${API_URL}/api/common/downloadFile/${fileName}`; // API URL
 
-      const token = credentials.password;
-      const url = `${API_URL}/api/common/downloadFile/${fileName}`; // API URL
+    // Use RNFetchBlob to download the file
+    const {config, fs} = RNFetchBlob;
+    const downloadDir = fs.dirs.DownloadDir; // Save to download directory
 
-      // Use RNFetchBlob to download the file
-      const {config, fs} = RNFetchBlob;
-      const downloadDir = fs.dirs.DownloadDir; // Save to download directory
+    console.log('Starting download from:', url);
 
-      console.log('Starting download from:', url);
+    const folderPath = `${downloadDir}/HarnessERP`;
+    const folderExists = await RNFS.exists(folderPath);
+    if (!folderExists) {
+      await RNFS.mkdir(folderPath); // Create the directory if it doesn't exist
+      console.log('Folder created: ', folderPath);
+    }
 
-      const folderPath = `${downloadDir}/HarnessERP`;
-      const folderExists = await RNFS.exists(folderPath);
-      if (!folderExists) {
-        await RNFS.mkdir(folderPath); // Create the directory if it doesn't exist
-        console.log('Folder created: ', folderPath);
-      }
-
-      const filePath = `${downloadDir}/HarnessERP/${fileNamePrefix}${fileName}.pdf`;
-      const response = await RNFetchBlob.config({
-        fileCache: true, // Disable caching to force re-download every time
-        appendExt: 'pdf', // Use pdf extension
-        path: filePath, // Save with proper file name
-      })
-        .fetch('GET', url, {
+    const filePath = `${downloadDir}/HarnessERP/${fileNamePrefix}${fileName}.pdf`;
+    const response = await RNFetchBlob.config({
+      fileCache: true, // Disable caching to force re-download every time
+      appendExt: 'pdf', // Use pdf extension
+      path: filePath, // Save with proper file name
+    })
+      .fetch('GET', url, {
         //   Authorization: `${token}`,
-          'Content-Type': 'application/octet-stream', // Ensure binary stream
-        })
-        .progress((received, total) => {
-          // Log received bytes and total bytes
-          console.log(`Received: ${received}, Total: ${total}`);
+        'Content-Type': 'application/octet-stream', // Ensure binary stream
+      })
+      .progress((received, total) => {
+        // Log received bytes and total bytes
+        console.log(`Received: ${received}, Total: ${total}`);
 
-          if (total > 0) {
-            // Calculate and update download progress
-            let progressPercent = Math.floor((received / total) * 100);
-            console.log('Download progress:', progressPercent, '%');
-          }
-        });
+        if (total > 0) {
+          // Calculate and update download progress
+          let progressPercent = Math.floor((received / total) * 100);
+          console.log('Download progress:', progressPercent, '%');
+        }
+      });
 
-      const statusCode = response.info().status;
+    const statusCode = response.info().status;
 
-      if (statusCode === 200) {
-        // const filePath = response.path(); // Get file path after download
-        // console.log('File downloaded successfully to:', filePath);
+    if (statusCode === 200) {
+      // const filePath = response.path(); // Get file path after download
+      // console.log('File downloaded successfully to:', filePath);
 
-        // Optionally open the file after download (Android only)
-        RNFetchBlob.android.actionViewIntent(filePath, 'application/pdf');
-      } else {
-        console.error('Error: File download failed with status', statusCode);
-      }
-    } catch (error) {
-      console.error('Error fetching and downloading the file:', error);
-    } 
-  };
+      // Optionally open the file after download (Android only)
+      RNFetchBlob.android.actionViewIntent(filePath, 'application/pdf');
+    } else {
+      console.error('Error: File download failed with status', statusCode);
+    }
+  } catch (error) {
+    console.error('Error fetching and downloading the file:', error);
+  }
+};
 
 // const downloadAndViewPdf = async (fileName) => {
 //   const fileNamePrefix = 'ig_bills_';

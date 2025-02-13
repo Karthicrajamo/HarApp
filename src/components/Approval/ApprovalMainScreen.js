@@ -791,7 +791,7 @@ const ApprovalScreen = () => {
               setIsPdfLoading(true); // Set loading to true before starting the operation
               setAdvPDFModalVisible(false); // Close the modal
 
-              const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
+              const requestUrl = `${API_URL}/api/approval/payment/advancePaymentPdf`;
               const requestBody = {
                 tranObject: transValue,
                 trans_id: itemValues.TRANS_ID,

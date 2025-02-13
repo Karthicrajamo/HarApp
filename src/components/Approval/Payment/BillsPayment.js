@@ -46,6 +46,7 @@ import finLoadVectorwithContentsAPI, {
   useFinLoadVectorwithContentsAPI,
 } from '../ApprovalComponents/finLoadVectorwithContentsAPI';
 import { wholedata } from '../ApprovalMainScreen';
+
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
 
@@ -100,8 +101,10 @@ export const BillsPayment = ({route}) => {
   const [advAdjSub, setAdvAdjSub] = useState(null);
   const [action, setAction] = useState(null);
   const totalActualAmtRef = useRef(0);
-
-  const billType = useRef();
+  
+  const [billType, setBillType] = useState('');
+  // const billType = useRef();
+  useEffect(()=>{"billType::"+billType},[billType])
 
   // useEffect(() => {
   //   console.log('paidAdjustment::', paidAdjustment);
@@ -131,9 +134,11 @@ export const BillsPayment = ({route}) => {
     if (Array.isArray(billsPay)) {
       const billNo = billsPay[0]?.['Bill No'];
       if (billNo) {
-        billType.current = billNo.split('-')[0];
+        const type=billNo.split('-')[0]
+        console.log("billNo::"+type); // Output: 193
+        setBillType(type)
         // const billNumber = billNo.split('-')[1];  // Safely split after checking
-        console.log(billType.current); // Output: 193
+        // console.log(billType.current); // Output: 193
       }
       totalActualAmtRef.current = billsPay
         .filter(
@@ -195,15 +200,15 @@ export const BillsPayment = ({route}) => {
           TAX: {},
         };
         console.log('hmtotalOrderMap:' + hmtotalOrderMap);
-        console.log('billType.current:' + billType.current);
+        console.log('billType.current:' + billType);
 
         return {
           type: orderTyp,
           adjustmentMethod: 'Payment Adjustment',
           orderSelectedMat:
-            orderTyp === 'PO' || billType.current === 'SUP'
+            orderTyp === 'PO' || billType === 'SUP'
               ? selectedMat
-              : billType.current === 'SO'
+              : billType === 'SO'
               ? formattedDataselectedMat
               : JOselectedMat,
           // billType.current === 'JO' ||
@@ -1231,7 +1236,7 @@ export const BillsPayment = ({route}) => {
     <View style={styles.container}>
       <TitleBar
         text={`${
-          transName === 'ModPayment' ? 'Modify Payment' : transName
+          wholedata.transName === 'ModPayment' ? 'Modify Payment' : wholedata.transName
         } - ${paymentId}`}
         showMenuBar={true}
         onMenuPress={() => navigation.openDrawer()}
@@ -1358,8 +1363,8 @@ export const BillsPayment = ({route}) => {
               />
             </View>
             {(orderTyp === 'PO' ||
-              billType.current === 'JO' ||
-              billType.current === 'SO') && (
+              billType === 'JO' ||
+              billType === 'SO') && (
               <View style={commonStyles.flexColumn}>
                 <TouchableOpacity
                   style={commonStyles.enableButtonTextContainer}

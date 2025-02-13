@@ -546,7 +546,7 @@ export const AdvancePayment = ({route}) => {
             ];
       const adChargeExc =
         transValue[4][0]?.ORDER_TYPE === 'PO'
-          ? [0, 12, 14, 18, 21, 22]
+          ? [0, 12, 14, 18, 20, 22]
           : transValue[4][0]?.ORDER_TYPE === 'JO'
           ? [13, 14, 19, 22, 23]
           : [11, 13, 17, 20, 21];
@@ -1124,7 +1124,7 @@ export const AdvancePayment = ({route}) => {
               <ApprovalTableComponent
                 tableData={orderDetails}
                 highlightVal={['Payable Amt']}
-                heading={'Other Details'}
+                heading={'Order Details'}
               />
             )}
             {materialAdPayment && (

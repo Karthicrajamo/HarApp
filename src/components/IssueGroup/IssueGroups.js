@@ -55,6 +55,7 @@ const IssueGroups = () => {
   const [tableDataForFilter, setTableDataForFilter] = useState([]);
   const navigation = useNavigation(); //For Nagivation
   const [isLoading, setIsLoading] = useState(false);
+  const [thirdIsLoading, setThirdIsLoading] = useState(false);
   const loadingRef = useRef(isLoading);
 
   //Refresh Component
@@ -298,6 +299,7 @@ const IssueGroups = () => {
   useEffect(() => {
     // fetchModelTableData()
     if (taxData.length > 0) {
+      setThirdIsLoading(true);
       console.log('Tax data has been updated:', MainType);
       if (MainType == 'Advance Payment') {
         fetchModelAdvPay();
@@ -367,6 +369,7 @@ const IssueGroups = () => {
     );
     // selectedSubRow = -1;
     if (selectedSubRow != null) {
+    setIsLoading(true)
       if (selectedData[0].type == 'Tax Payment') {
         // fetchModelTableSubData();
         console.log('khfjhfjkf::tax');
@@ -1047,8 +1050,6 @@ const IssueGroups = () => {
 
         updatedEndDate = `${day}-${month}-${year}`;
       }
-      
-      
 
       // Construct the URL with the updated start and end dates
       const url = `${API_URL}/api/issueGroup/getAllpaymentGroups?fromDate=${updatedStartDate}&toDate=${updatedEndDate}`;
@@ -1362,8 +1363,7 @@ const IssueGroups = () => {
     } catch (error) {
       console.error('Error fetching table data:', error);
     } finally {
-      setIsLoading(false);
-      // Always hide loading indicator after login attempt (success or failure)
+      setThirdIsLoading(false);
     }
   };
 
@@ -1460,8 +1460,7 @@ const IssueGroups = () => {
     } catch (error) {
       console.error('Error fetching bills payment details table data:', error);
     } finally {
-      setIsLoading(false);
-      // Always hide loading indicator after login attempt (success or failure)
+      setThirdIsLoading(false);
     }
   };
   // useEffect(() => {
@@ -1641,8 +1640,9 @@ const IssueGroups = () => {
       // You might want to add error handling UI feedback here
       setSelectedModelData([]);
       isModel(false);
-      // } finally {
-      //   setIsLoading(false);
+    } finally {
+      // setIsLoading(false);
+      setThirdIsLoading(false);
     }
   };
 
@@ -1811,6 +1811,8 @@ ORDER BY
     } catch (error) {
       console.error('Fetch error details:', error);
       throw error;
+    } finally {
+      setThirdIsLoading(false);
     }
   };
   //-------------------------------------------------------------
@@ -1878,7 +1880,7 @@ ORDER BY
           'response for issue data : ===============>>>>>>>>>> ',
           data,
         );
-        setTimeout(() => handleRefresh(), 1000);
+        // setTimeout(() => handleRefresh(), 1000);
       }
     } catch (error) {
       // showErrorModal('GENCOO1', true);
@@ -2043,7 +2045,8 @@ ORDER BY
       selectedRow !== null &&
       selectedRow >= 0 &&
       selectedRow < tableData.length
-    ) {
+    ) {      setIsLoading(true);
+
       setSelectedDataGroupId(tableData[selectedRow]?.groupId);
       setSelectedDataDataPaymentType(tableData[selectedRow]?.type);
       setSelectedData([tableData[selectedRow]]);
@@ -2260,8 +2263,8 @@ ORDER BY
     );
 
     if (!allExist) {
-    // if (selectedArray.length !== totalLength) {
-      // issueData(preparedItemsForIssue);
+      // if (selectedArray.length !== totalLength) {
+      issueData(preparedItemsForIssue);
 
       // setTimeout(() => handleRefresh(), 1500);
     } else {
@@ -2496,7 +2499,7 @@ ORDER BY
                     onRowIndexSelect={value => {
                       if (value.length < 1) {
                         console.log('empty data::::');
-                        // fetchTableData();
+                        fetchTableData();
 
                         // setSelectedSubData([]);
                         setMainTableSelectedIndex([]);
@@ -2506,7 +2509,7 @@ ORDER BY
                         setActiveDataPdf([]);
                         setSelectedSubData([]);
                         SetActiveGroupId('');
-                        setSelectedArray([])
+                        setSelectedArray([]);
                         setHideSubTab(true);
                       } else {
                         setSelectedSubData([]);
@@ -2752,11 +2755,11 @@ ORDER BY
                         setSelectedArray(prevArray => {
                           // Create a Set to store unique values
                           const updatedSet = new Set([...prevArray, ...ids]);
-                        
+
                           // Convert Set back to an array and return it
                           return Array.from(updatedSet);
                         });
-                        
+
                         setIsLoading(false);
 
                         // }
@@ -2899,18 +2902,20 @@ ORDER BY
                         // });
                         setSelectedArray(prevArray => {
                           // Create a Set to store unique values (prevents duplicates)
-                          const updatedSet = new Set([...prevArray, selectedId]);
-                        
+                          const updatedSet = new Set([
+                            ...prevArray,
+                            selectedId,
+                          ]);
+
                           console.log('Selection Update:', {
                             previousArray: prevArray,
                             selectedId: selectedId,
                             updatedArray: Array.from(updatedSet),
                           });
-                        
+
                           // Convert Set back to an array and return it
                           return Array.from(updatedSet);
                         });
-                        
                       }
                       setIsLoading(false);
                     }}
@@ -3322,6 +3327,9 @@ ORDER BY
         ) : (
           <></>
         )}
+        {/* {thirdIsLoading && isModelButton && (
+        <LoadingIndicator message="Please wait..." />
+      )} */}
         {/* //Karthic */}
       </View>
       {/*  */}
@@ -3356,6 +3364,7 @@ ORDER BY
           Object.keys(selectedPayments).length && (
           <LoadingIndicator message="Please wait..." />
         )}
+      {thirdIsLoading && <LoadingIndicator message="Please wait..." />}
     </View>
   );
 };

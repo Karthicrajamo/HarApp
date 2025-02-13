@@ -496,6 +496,7 @@ const SubTableComponent = ({
   });
 
   const handleRowCheckbox = rowIndex => {
+    setIsLoading(true)
     const updatedSelection = [...selectedRows];
     updatedSelection[rowIndex] = !updatedSelection[rowIndex];
     setSelectedRows(updatedSelection);
@@ -596,7 +597,7 @@ const SubTableComponent = ({
     });
 
     // Update "Select All" checkbox state based on whether all rows are selected
-    const allSelected = updatedSelection.every(Boolean);
+    const allSelected = updatedSelection.some(Boolean);
     setIsChecked(allSelected);
     // onRowIndexSelect(selectedData)
   };
@@ -905,7 +906,7 @@ const SubTableComponent = ({
                               }}
                               size={
                                 sliderValue <= 1.5625
-                                  ? 14
+                                  ? 20
                                   : sliderValue <= 2.578125
                                   ? 16
                                   : sliderValue <= 3.578125 && 18

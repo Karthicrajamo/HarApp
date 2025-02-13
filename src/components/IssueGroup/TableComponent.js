@@ -179,7 +179,7 @@ const TableComponent = ({
     if (!isSelected) {
       onPressCheckBoxHandle(false);
     } else {
-      onPressCheckBoxHandle(true);
+      // onPressCheckBoxHandle(true);
     }
 
     console.log('Updated selection:', updatedSelection);
@@ -246,9 +246,9 @@ const TableComponent = ({
       });
       // onPressCheckBoxHandle(true)
     } else {
+      onRowIndexSelect([]); // Pass empty array if none are selected
       setSelectedRow([]);
       setSelectedRows([]);
-      onRowIndexSelect([]); // Pass empty array if none are selected
     }
     setIsLoading(false);
   };
@@ -591,7 +591,7 @@ const TableComponent = ({
                         }}
                         size={
                           sliderValue <= 1.5625
-                            ? 14
+                            ? 20
                             : sliderValue <= 2.578125
                             ? 16
                             : sliderValue <= 3.578125
