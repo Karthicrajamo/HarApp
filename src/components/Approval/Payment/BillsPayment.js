@@ -398,12 +398,27 @@ export const BillsPayment = ({route}) => {
       filteredData = filteredData.filter(data =>
         uniqueFromOrders.has(data.id.toString()),
       );
-
-      const updatedRecords = transValue[13].filter(
-        item =>
-          filteredIds.has(item.FROM_ORDER.toString()) &&
-          item['MAT_CHARGE'] !== 'MAT_TAX' &&
-          item['TO_AMOUNT'] !== 0,
+//karthic for add same from_ORDER value
+      // const updatedRecords = transValue[13].filter(
+      //   item =>
+      //     filteredIds.has(item.FROM_ORDER.toString()) &&
+      //     item['MAT_CHARGE'] !== 'MAT_TAX' &&
+      //     item['TO_AMOUNT'] !== 0,
+      // );
+      const filteredItems = transValue[13].filter(
+        item => item['MAT_CHARGE'] !== 'MAT_TAX' && item['TO_AMOUNT'] !== 0
+      );
+      
+      const updatedRecords = Array.from(
+        filteredItems.reduce((acc, item) => {
+          const key = item.FROM_ORDER;
+          if (acc.has(key)) {
+            acc.get(key).TO_AMOUNT += item.TO_AMOUNT;
+          } else {
+            acc.set(key, { ...item });
+          }
+          return acc;
+        }, new Map()).values()
       );
 
       console.log('Updated Records:', JSON.stringify(updatedRecords));
@@ -446,6 +461,7 @@ export const BillsPayment = ({route}) => {
       const uniqueFromOrders = new Set(
         transValue[13].map(item => item.FROM_ORDER.toString()),
       );
+
       console.log('Unique FROM_ORDERs:', Array.from(uniqueFromOrders));
 
       // FilteredData should contain only entries where 'id' is in uniqueFromOrders
@@ -454,21 +470,38 @@ export const BillsPayment = ({route}) => {
         // uniqueFromOrders.has(data.id.toString()),
       );
 
-      const updatedRecords = transValue[13].filter(
-        item =>
-          filteredIds.has(item.FROM_ORDER.toString()) &&
-          item['MAT_CHARGE'] !== 'MAT_TAX' &&
-          item['TO_AMOUNT'] !== 0,
+      // const updatedRecords = transValue[13].filter(
+      //   item =>
+      //     filteredIds.has(item.FROM_ORDER.toString()) &&
+      //     item['MAT_CHARGE'] !== 'MAT_TAX' &&
+      //     item['TO_AMOUNT'] !== 0,
+      // );
+      const filteredItems = transValue[13].filter(
+        item => item['MAT_CHARGE'] !== 'MAT_TAX' && item['TO_AMOUNT'] !== 0
+      );
+      
+      const updatedRecords = Array.from(
+        filteredItems.reduce((acc, item) => {
+          const key = item.FROM_ORDER;
+          if (acc.has(key)) {
+            acc.get(key).TO_AMOUNT += item.TO_AMOUNT;
+          } else {
+            acc.set(key, { ...item });
+          }
+          return acc;
+        }, new Map()).values()
       );
 
       console.log('Updated Records:', JSON.stringify(updatedRecords));
 
       // Update filteredData with matching TO_AMOUNT
+      console.log("filteredData::2"+JSON.stringify(filteredData));
       filteredData.forEach(dataItem => {
         const matchingRecord = updatedRecords.find(
           record => record.FROM_ORDER.toString() === dataItem['SO No'],
         );
         if (matchingRecord) {
+
           dataItem[`Adjust Advance(${currency})`] = matchingRecord.TO_AMOUNT;
           console.log(`✅. Updated:`, dataItem);
         } else {
@@ -493,7 +526,7 @@ export const BillsPayment = ({route}) => {
       console.log('transValue[13]::' + JSON.stringify(transValue[13]));
 
       // Extract all "id" values from filteredData for quick lookup
-      const filteredIds = new Set(filteredData.map(item => item['JO No']));
+      // const filteredIds = new Set(filteredData.map(item => item['JO No']));
 
       // Get unique FROM_ORDER values from transValue[13]
       const uniqueFromOrders = new Set(
@@ -506,11 +539,27 @@ export const BillsPayment = ({route}) => {
         uniqueFromOrders.has(data['JO No']),
       );
 
-      const updatedRecords = transValue[13].filter(
-        item =>
-          filteredIds.has(item.FROM_ORDER.toString()) &&
-          item['MAT_CHARGE'] !== 'MAT_TAX' &&
-          item['TO_AMOUNT'] !== 0,
+      // const updatedRecords = transValue[13].filter(
+      //   item =>
+      //     filteredIds.has(item.FROM_ORDER.toString()) &&
+      //     item['MAT_CHARGE'] !== 'MAT_TAX' &&
+      //     item['TO_AMOUNT'] !== 0,
+      // );
+
+      const filteredItems = transValue[13].filter(
+        item => item['MAT_CHARGE'] !== 'MAT_TAX' && item['TO_AMOUNT'] !== 0
+      );
+      
+      const updatedRecords = Array.from(
+        filteredItems.reduce((acc, item) => {
+          const key = item.FROM_ORDER;
+          if (acc.has(key)) {
+            acc.get(key).TO_AMOUNT += item.TO_AMOUNT;
+          } else {
+            acc.set(key, { ...item });
+          }
+          return acc;
+        }, new Map()).values()
       );
 
       console.log('Updated Records:', JSON.stringify(updatedRecords));
@@ -681,7 +730,7 @@ export const BillsPayment = ({route}) => {
       currentLevel,
       transName,
       'Bills Payment',
-      totalNoOfLevels,
+      wholedata.noOfLevel,
     );
     const rejBody = ReqBodyRejConv(
       transValue,
@@ -978,7 +1027,7 @@ export const BillsPayment = ({route}) => {
             transDetails[3],
             mainData[7],
             currentLevel,
-            totalNoOfLevels,
+            wholedata.noOfLevel,
             action, // Approve/Reject
           );
 
@@ -1776,7 +1825,7 @@ export const BillsPayment = ({route}) => {
               console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Bills_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -1805,7 +1854,7 @@ export const BillsPayment = ({route}) => {
               console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Bills_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -1929,7 +1978,7 @@ export const BillsPayment = ({route}) => {
               setAppRejUrl={setAppRejUrl}
               transName={transName}
               currentLevel={currentLevel}
-              totalNoOfLevels={totalNoOfLevels}
+              totalNoOfLevels={wholedata.noOfLevel}
               transId={transId}
               setAction={setAction}
             />

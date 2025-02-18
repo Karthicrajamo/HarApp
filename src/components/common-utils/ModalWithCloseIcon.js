@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
-    width: DeviceInfo.isTablet() ? width / 2 : width,
+    width: DeviceInfo.isTablet() ? width / 1.5 : width,
     backgroundColor: '#fff',
     borderRadius: 10,
     // padding: width * 0.05,

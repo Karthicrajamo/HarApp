@@ -18,6 +18,7 @@ import {isTablet} from 'react-native-device-info';
 import {useNavigation} from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import {Snackbar} from 'react-native-paper';
+import { wholedata } from '../ApprovalMainScreen';
 
 const ApproveRejectComponent = ({
   approveUrl,
@@ -102,19 +103,21 @@ const ApproveRejectComponent = ({
         },
         {
           text: 'Yes',
-          onPress: () => {
+          onPress: () => {console.log("transName123::"+transName+"\naction:::"+action+"\ncurrentLevel:::"+currentLevel+"\nwholedata.noOfLevel"+wholedata.noOfLevel)
             if (
               transName == 'ModPayment' &&
               action === 'approve' &&
-              totalNoOfLevels - 1 == currentLevel
+              wholedata.noOfLevel - 1 == currentLevel
                 ? true
                 : transName == 'CancelPayment' &&
                   action === 'approve' &&
-                  totalNoOfLevels - 1 == currentLevel &&
+                  wholedata.noOfLevel - 1 == currentLevel &&
                   paymentMode === 'Cheque'
                 ? true
                 : false
             ) {
+              console.log("Entered dataaaLLL");
+              
               // setRejectPop(true);
               setReUseCancel(true);
             }
@@ -137,7 +140,7 @@ const ApproveRejectComponent = ({
       action === 'approve' ? 'Approval Failed' : 'Rejection Failed';
     console.log('rejUrl::', JSON.stringify(rejectParams));
     // console.log('rejUrl type::', rejectParams['trans_type']);
-    console.log('transName type::', totalNoOfLevels + '____' + currentLevel);
+    console.log('transName type::', wholedata.noOfLevel + '____' + currentLevel);
 
     // _________________________karthic 23 Jan 25 ----------------------
     if (
@@ -145,7 +148,7 @@ const ApproveRejectComponent = ({
         ? true
         : transName == 'ModPayment' &&
           action === 'approve' &&
-          totalNoOfLevels - 1 == currentLevel
+          wholedata.noOfLevel - 1 == currentLevel
         ? true
         : transName == 'AddPayment' &&
           action === 'reject' &&
@@ -154,7 +157,7 @@ const ApproveRejectComponent = ({
         : // ||
         transName == 'CancelPayment' &&
           action === 'approve' &&
-          totalNoOfLevels - 1 == currentLevel &&
+          wholedata.noOfLevel - 1 == currentLevel &&
           paymentMode === 'Cheque'
         ? true
         : false
@@ -165,7 +168,8 @@ const ApproveRejectComponent = ({
         : setAppRejParams(rejectParams);
       action === 'approve' ? setAppRejUrl(approveUrl) : setAppRejUrl(rejectUrl);
       setAction(action);
-      toggleModal();
+      // toggleModal();
+      setRejectPop(false)
     } else {
       try {
         console.log('response ApRejCom::2', action);
@@ -221,14 +225,20 @@ const ApproveRejectComponent = ({
               confirmApproval('approve');
               actionAR.current = 'approve';
             } else {
-              let message = 'Sorry! Approval level has been changed';
-              showToast('error', 'Error!', message, 'top', 5000, 100, 40, () =>
-                console.log(''),
-              );
-
-              ToastAndroid.show(
+              Alert.alert(
                 'Sorry! Approval Level has been Changed',
-                ToastAndroid.SHORT,
+                '',
+                [
+                  {
+                    text: 'Ok',
+                    onPress: () => navigation.navigate('ApprovalMainScreen'),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel pressed'), // Or any other action
+                  },
+                ],
+                {cancelable: false},
               );
             }
           } catch (error) {
@@ -249,33 +259,61 @@ const ApproveRejectComponent = ({
               actionAR.current = 'reject';
               setRejectPop(true);
             } else {
-              ToastAndroid.show(
+              Alert.alert(
                 'Sorry! Approval Level has been Changed',
-                ToastAndroid.SHORT,
+                '',
+                [
+                  {
+                    text: 'Ok',
+                    onPress: () => navigation.navigate('ApprovalMainScreen'),
+                  },
+                  {
+                    text: 'Cancel',
+                    onPress: () => console.log('Cancel pressed'), // Or any other action
+                  },
+                ],
+                {cancelable: false},
               );
             }
           } catch (error) {
             console.error('Error retrieving current level:', error);
           }
-          // if (
-          //   (transName == 'ModPayment' && actionAR === 'reject'
-          //     ? true
-          //     : currentLevel == totalNoOfLevels - 1) ||
-          //   (transName == 'AddPayment' && actionAR === 'reject') ||
-          //   (transName == 'CancelPayment' && actionAR === 'reject'
-          //     ? false
-          //     : currentLevel == totalNoOfLevels - 1)
-          // ) {
-          // }
-          // setRejectPop(true);
-          console.log('pressed;;;');
+       
         }}>
         <Text
           style={[styles.buttonText, {color: 'white'}]}
-          onPress={() => {
-            // setActionAR('reject');
-            actionAR.current = 'reject';
-            setRejectPop(true);
+          onPress={async () => {
+            try {
+              const level = await getCurrentLevel(transId);
+              console.log('Current Level:', level, '==', currentLevel);
+              if (level == currentLevel) {
+                // setRejectPop(true);
+                actionAR.current = 'reject';
+                setRejectPop(true);
+              } else {
+                // ToastAndroid.show(
+                //   'Sorry! Approval Level has been Changed',
+                //   ToastAndroid.SHORT,
+                // );
+                Alert.alert(
+                  'Sorry! Approval Level has been Changed',
+                  '',
+                  [
+                    {
+                      text: 'Ok',
+                      onPress: () => navigation.navigate('ApprovalMainScreen'),
+                    },
+                    {
+                      text: 'Cancel',
+                      onPress: () => console.log('Cancel pressed'), // Or any other action
+                    },
+                  ],
+                  {cancelable: false},
+                );
+              }
+            } catch (error) {
+              console.error('Error retrieving current level:', error);
+            }
           }}>
           Reject
         </Text>

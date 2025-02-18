@@ -31,6 +31,7 @@ import CustomModal from '../common-utils/modal';
 import CustomAlert from '../common-utils/CustomAlert';
 import {ActivityIndicator} from 'react-native-paper';
 import {setActive} from 'react-native-sound';
+import FetchValueAssignKeysAPI from '../Approval/ApprovalComponents/FetchValueAssignKeysAPI';
 
 const IssueGroups = () => {
   const fontScale = PixelRatio.getFontScale();
@@ -55,6 +56,8 @@ const IssueGroups = () => {
   const [tableDataForFilter, setTableDataForFilter] = useState([]);
   const navigation = useNavigation(); //For Nagivation
   const [isLoading, setIsLoading] = useState(false);
+  const [bufferLoad, setBufferLoad] = useState(false);
+
   const [thirdIsLoading, setThirdIsLoading] = useState(false);
   const loadingRef = useRef(isLoading);
 
@@ -145,6 +148,10 @@ const IssueGroups = () => {
   }, [selectedSubData]);
 
   useEffect(() => {
+    console.log('subTabPaymentIduse:::' + subTabPaymentId);
+  }, [subTabPaymentId]);
+
+  useEffect(() => {
     console.log('hideSubTab::' + hideSubTab);
     if (hideSubTab) {
       console.log('hideSubTab::innnn' + hideSubTab);
@@ -208,16 +215,22 @@ const IssueGroups = () => {
       }
     });
 
+    console.log(
+      'Updating JSON.stringify(updatedPayments) !== JSON.stringify(selectedPayments) t:',
+      JSON.stringify(filteredPayments) !== JSON.stringify(selectedPayments),
+      '\nselectedPayments>>>', 
+      JSON.stringify(selectedPayments),
+      '\n++++++filteredPayments\n',
+      JSON.stringify(filteredPayments),"\nshouldUpdate"+shouldUpdate
+    );
+    
     // Prevent infinite loops by checking if updates are truly necessary
     if (
       shouldUpdate &&
-      JSON.stringify(updatedPayments) !== JSON.stringify(selectedPayments)
+      JSON.stringify(filteredPayments) !== JSON.stringify(selectedPayments)
     ) {
-      console.log(
-        'Updating selectedPayments to:',
-        JSON.stringify(updatedPayments),
-      );
-      setSelectedPayments(updatedPayments);
+      console.log('Updating selectedPayments to:');
+       setSelectedPayments(filteredPayments);
     }
 
     // Update tempPayments only if it differs from filteredPayments to avoid re-triggering useEffect
@@ -254,6 +267,7 @@ const IssueGroups = () => {
     if (JSON.stringify(selectedPayments) != JSON.stringify(filteredPayments)) {
       setSelectedPayments(filteredPayments);
     }
+    setBufferLoad(false);
     // setTempPayments(selectedPayments)
   }, [selectedPayments, selectedCheckBoxData]);
 
@@ -305,16 +319,55 @@ const IssueGroups = () => {
         fetchModelAdvPay();
       } else if (MainType == 'Tax Payment') {
         fetchSubTableTax();
-      } else if (MainType == 'Paysheet Payment') {
-        console.log('taxdata______', MainType);
-        fetchModelTableData();
-      } else if (MainType == 'Bills Payment') {
+      }
+      //  else if (MainType == 'Paysheet Payment') {
+      //   console.log('taxdata______', MainType);
+      //   console.log('subTabPaymentId::', subTabPaymentId);
+      //   // fetchModelTableData();
+      //   console.log('paysheet::tax');
+      //   FetchValueAssignKeysAPI(
+      //     `${API_URL}/api/common/finLoadVectorwithContentsjson`,
+      //     [
+      //       'Paysheet ID',
+      //       'Paysheet Type',
+      //       'Pay Cycle',
+      //       'From',
+      //       'To',
+      //       'Emp No',
+      //       'Employee Name',
+      //       'Category',
+      //       'Department',
+      //       'Designation',
+      //       'Group1',
+      //       'State',
+      //       'Group3',
+      //       'Group4',
+      //       'Pay Mode',
+      //       'Account Details',
+      //       'Passed Amt',
+      //       'Paid Amt',
+      //       'Remaining Amount',
+      //       'Already Paid Amt',
+      //       'Paysheet Currency',
+      //       'Employee Status',
+      //       'Due Date',
+      //     ],
+      //     [],
+      //     setSelectedModelData,
+      //     {
+      //       query: `select ppd.paysheet_id, e.earning_name, e.interval_type, to_char(pd.interval_from_date,'DD-MON-YYYY'), to_char(pd.interval_to_date,'DD-MON-YYYY'), evd.emp_no, evd.emp_id, evd.order_no, evd.emp_name, evd.category_name, evd.department_name, evd.designation_name, evd.grp1_name, evd.grp2_name, evd.grp3_name, evd.grp4_name, ppd.payment_mode, case when b.bank_name is not null then eat.acc_type_name||':'||b.bank_name||':'||b.branch_name||':'||ea.acct_no else '' end as account_details, ppd.passed_amount, ppd.paid_amount, ppd.remaining_amt, ppd.already_paid_amt, ppd.paysheet_currency, evd.status, to_char(pd.due_date,'DD-MON-YYYY') from paysheet_payment_details ppd left join employee_version_view evd on evd.emp_id = ppd.emp_id and evd.order_no = ppd.emp_version_no left join paysheet_details pd on pd.paysheet_id = ppd.paysheet_id left join earning e on e.earn_id = pd.earn_id left join emp_account ea on ea.emp_id = ppd.emp_id and ea.acct_id = ppd.emp_account_id left join emp_account_type eat on eat.acc_type_id = ea.acc_type_id left join bank_master b on b.bank_id = ea.bank_id where ppd.payment_id=${subTabPaymentId}`,
+      //     },
+      //     'POST',
+      //   );
+      //   setThirdIsLoading(false);
+      // }
+      else if (MainType == 'Bills Payment') {
         fetchBillsPaymentDetailsData();
       }
 
       // You can perform any other actions here
     }
-  }, [taxData]);
+  }, [taxData, subTabPaymentId]);
 
   useEffect(() => {
     console.log('selectedCheckBoxData:::main', selectedCheckBoxData);
@@ -369,12 +422,52 @@ const IssueGroups = () => {
     );
     // selectedSubRow = -1;
     if (selectedSubRow != null) {
-    setIsLoading(true)
+      setIsLoading(true);
       if (selectedData[0].type == 'Tax Payment') {
         // fetchModelTableSubData();
         console.log('khfjhfjkf::tax');
         fetchModelTableSubData();
         // fetchModelTableData();
+      } else if (MainType == 'Paysheet Payment') {
+        console.log('taxdata______', MainType);
+        console.log('subTabPaymentId::', subTabPaymentId);
+        // fetchModelTableData();
+        console.log('paysheet::tax');
+        FetchValueAssignKeysAPI(
+          `${API_URL}/api/common/finLoadVectorwithContentsjson`,
+          [
+            'Paysheet ID',
+            'Paysheet Type',
+            'Pay Cycle',
+            'From',
+            'To',
+            'Emp No',
+            'Employee Name',
+            'Category',
+            'Department',
+            'Designation',
+            'Group1',
+            'State',
+            'Group3',
+            'Group4',
+            'Pay Mode',
+            'Account Details',
+            'Passed Amt',
+            'Paid Amt',
+            'Remaining Amount',
+            'Already Paid Amt',
+            'Paysheet Currency',
+            'Employee Status',
+            'Due Date',
+          ],
+          [],
+          setSelectedModelData,
+          {
+            query: `select ppd.paysheet_id, e.earning_name, e.interval_type, to_char(pd.interval_from_date,'DD-MON-YYYY'), to_char(pd.interval_to_date,'DD-MON-YYYY'), evd.emp_no, evd.emp_id, evd.order_no, evd.emp_name, evd.category_name, evd.department_name, evd.designation_name, evd.grp1_name, evd.grp2_name, evd.grp3_name, evd.grp4_name, ppd.payment_mode, case when b.bank_name is not null then eat.acc_type_name||':'||b.bank_name||':'||b.branch_name||':'||ea.acct_no else '' end as account_details, ppd.passed_amount, ppd.paid_amount, ppd.remaining_amt, ppd.already_paid_amt, ppd.paysheet_currency, evd.status, to_char(pd.due_date,'DD-MON-YYYY') from paysheet_payment_details ppd left join employee_version_view evd on evd.emp_id = ppd.emp_id and evd.order_no = ppd.emp_version_no left join paysheet_details pd on pd.paysheet_id = ppd.paysheet_id left join earning e on e.earn_id = pd.earn_id left join emp_account ea on ea.emp_id = ppd.emp_id and ea.acct_id = ppd.emp_account_id left join emp_account_type eat on eat.acc_type_id = ea.acc_type_id left join bank_master b on b.bank_id = ea.bank_id where ppd.payment_id=${subTabPaymentId}`,
+          },
+          'POST',
+        );
+        setThirdIsLoading(false);
       } else if (selectedData[0].type != 'Fund Transfer') {
         console.log('khfjhfjkf::non-tax');
         console.log('type', selectedData[0].type);
@@ -382,7 +475,10 @@ const IssueGroups = () => {
         // fetchModelTableData();
         // fetchModelTableTaxData();
       } // fetchModelTableSubData();
-    }
+     else if (selectedData[0].type == 'Fund Transfer') {
+        setThirdIsLoading(false);
+        setIsLoading(false);
+      }}
   }, [selectedSubRow, selectedData]);
 
   useEffect(() => {
@@ -2045,7 +2141,8 @@ ORDER BY
       selectedRow !== null &&
       selectedRow >= 0 &&
       selectedRow < tableData.length
-    ) {      setIsLoading(true);
+    ) {
+      setIsLoading(true);
 
       setSelectedDataGroupId(tableData[selectedRow]?.groupId);
       setSelectedDataDataPaymentType(tableData[selectedRow]?.type);
@@ -2497,9 +2594,10 @@ ORDER BY
                       setActiveDataPdf([]);
                     }}
                     onRowIndexSelect={value => {
+                      setBufferLoad(true);
                       if (value.length < 1) {
                         console.log('empty data::::');
-                        fetchTableData();
+                        // fetchTableData();
 
                         // setSelectedSubData([]);
                         setMainTableSelectedIndex([]);
@@ -2510,6 +2608,7 @@ ORDER BY
                         setSelectedSubData([]);
                         SetActiveGroupId('');
                         setSelectedArray([]);
+                        setTempPayments([]);
                         setHideSubTab(true);
                       } else {
                         setSelectedSubData([]);
@@ -2649,6 +2748,7 @@ ORDER BY
                     setTempPayments={setTempPayments}
                     onRowIndexSelect={data => {
                       setIsLoading(true);
+                      setBufferLoad(true);
 
                       if (data.length == 0) {
                         const ids = selectedSubData
@@ -2765,6 +2865,7 @@ ORDER BY
                         // }
                       } else {
                         setIsLoading(true);
+                        // setBufferLoad(true)
 
                         const {transferId, paymentId} = data;
                         // const type = tableData[selectedRow].type;
@@ -2798,7 +2899,7 @@ ORDER BY
 
                           // Toggle logic: if selectedId is already in currentIds, remove it; otherwise, add it
                           const updatedIds = currentIds.includes(selectedId)
-                            ? currentIds.filter(id => id !== selectedId) // Remove selectedId if already selected
+                            ? currentIds.filter(id => id == selectedId) // Remove selectedId if already selected
                             : [...currentIds, selectedId]; // Add selectedId if not selected
 
                           // Prepare the updated state object
@@ -2845,7 +2946,13 @@ ORDER BY
                       const {transferId, paymentId} = data;
 
                       console.log('activeIndex::', selectedSubData[index]);
-                      setSubTabPaymentId(paymentId?.toString());
+                      console.log(
+                        'paymentid2::',
+                        selectedSubData[index].paymentId?.toString(),
+                      );
+                      setSubTabPaymentId(
+                        selectedSubData[index].paymentId?.toString(),
+                      );
                       setpartyNames(data.partyName);
                       setCurrency(data.currency);
                       setActiveDataPdf(data);
@@ -3321,12 +3428,7 @@ ORDER BY
       )} */}
         {/* {isLoading ? <LoadingIndicator message="Please wait..." /> : <></>} */}
 
-        {mainTableSelectedIndex.length !==
-        Object.keys(selectedPayments).length ? (
-          <LoadingIndicator message="Please wait.." />
-        ) : (
-          <></>
-        )}
+        
         {/* {thirdIsLoading && isModelButton && (
         <LoadingIndicator message="Please wait..." />
       )} */}
@@ -3359,12 +3461,19 @@ ORDER BY
           </View>
         </TouchableOpacity>
       )}
+      {mainTableSelectedIndex.length !==
+          Object.keys(selectedPayments).length || bufferLoad ? (
+          <LoadingIndicator message="Please wait.." />
+        ) : (
+          <></>
+        )}
       {isLoading &&
         mainTableSelectedIndex.length ===
           Object.keys(selectedPayments).length && (
           <LoadingIndicator message="Please wait..." />
         )}
       {thirdIsLoading && <LoadingIndicator message="Please wait..." />}
+      {/* {bufferLoad && <LoadingIndicator message="Please wait..." />} */}
     </View>
   );
 };

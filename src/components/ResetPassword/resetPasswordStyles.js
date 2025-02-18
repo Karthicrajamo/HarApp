@@ -1,145 +1,138 @@
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Dimensions, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {Dimensions} from 'react-native';
-import {horizontalScale, moderateScale, verticalScale} from '../themes/Metrics';
+import DeviceInfo from 'react-native-device-info';
+import { currentFontScale, sysBasedFontSize } from '../Login/UserId';
 
-const {width, height} = Dimensions.get('window');
+const {width} = Dimensions.get('window');
+const isTablet = DeviceInfo.isTablet();
 
 const styles = StyleSheet.create({
   body: {
     position: 'absolute',
-    top: 0,
-    height: width < 600 ? hp('70') : hp('75'),
     width: '100%',
-    zIndex: 10,
+    height: '40%',
+    // resizeMode: 'cover',
+    top: 50,
   },
-  footer: {
-    // position: 'absolute',
-    bottom: 0,
-    zIndex: 1,
-    height: width < 600 ? 40 : 40,
-    width: '100%',
-  },
-  foot: {
-    marginTop: width > 600 ? '65%' : '50%',
-  },
-  resetcontainer: {
-    // position: 'absolute',
-    // left:0,
-    // right:0,
-    // top:250,
-    top: 160,
-    bottom: 0,
-  },
-  subcontainer2: {
-    alignItems: 'center',
-  },
-  input: {
-    width: wp('80%'),
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: '#D9D9D9',
-    marginVertical: hp('2%'),
-    opacity: 1,
-    backgroundColor: 'white',
-    color: 'black',
-    padding: 10,
-  },
-  resetbutton: {
-    borderRadius: 10,
-    backgroundColor: '#3788E5',
-    bottom: hp('2%'),
-    width: wp('80%'),
-    paddingVertical: 10,
-    height: verticalScale(49),
-    alignSelf: 'center',
+  scrollViewContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: '9%',
-  },
-  resetbuttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: moderateScale(12),
-    fontFamily: 'Montserrat_700Bold',
-  },
-  resetpassword: {
-    color: '#3788E5',
-    bottom: hp('1.2%'), // 2% of screen height
-    alignSelf: 'center',
-    marginBottom: 35,
   },
   headText: {
-    textAlign: 'center',
-    top: 60,
-    fontSize: 20,
+    fontSize: isTablet ? 26 : 22,
+    fontWeight: 'bold',
     color: 'white',
+    marginBottom: hp('3%'),
+    textAlign: 'center',
   },
-  // maincontainer: {
-  //   flex: 1,
-  // },
-  // background: {
-  //   flex: 1,
-  //   resizeMode: 'cover',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // resetpasswordheading: {
-  //   color: 'white',
-  //   fontSize: wp('5%'),
-  //   bottom: hp('25%'), // 15% of screen height
-  // },
-  // userdetailscontainer :{
-  //   position: 'absolute',
-  // },
-  // subcontainer: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // button: {
-  //   backgroundColor: 'white',
-  //   borderRadius: 10,
-  //   backgroundColor:'#3788E5',
-  //   bottom: hp('2%'),
-  //   width: wp('80%'),
-  //   paddingVertical:10 ,
-  //   height: verticalScale(49),
-  //   alignSelf: 'center',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // input: {
-  //   width: wp('80%'), // 80% of screen width
-  //   borderBottomWidth: 1,
-  //   borderColor: '#ccc',
-  //   marginVertical: hp('2%'), // 2% of screen height
-  //   paddingHorizontal: wp('5%'), // 5% of screen width
-  //   opacity:1,
-  // },
-  // resetbutton: {
-  //   backgroundColor: 'white',
-  //   borderRadius: wp('7%'), // 7% of screen width
-  //   top: hp('7%'), // 5% of screen height
-  //   width: wp('40%'), // 40% of screen width
-  //   height: hp('3%'),
-  //   alignSelf: 'center',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // resetbuttontext: {
-  //   color: 'skyblue',
-  //   fontWeight: 'bold',
-  //   fontSize: wp('3%'),
-  // },
-  // backtologin: {
-  //   color: 'white',
-  //   top: hp('8%'), // 2% of screen height
-  //   alignSelf: 'center',
-  // },
+  resetContainer: {
+    width: wp('85%'),
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+    marginVertical:50
+  },
+  input: {
+    width: '100%',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    marginBottom: hp('2%'),
+    backgroundColor: 'white',
+    padding: 15,
+    fontSize: isTablet ? 18 : 14,
+  },
+  resetButton: {
+    borderRadius: 10,
+    backgroundColor: '#3788E5',
+    paddingVertical: hp('2%'),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: hp('3%'),
+  },
+  resetButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: isTablet ? 18 : 14,
+  },
+  resetPasswordText: {
+    color: '#3788E5',
+    textAlign: 'center',
+    marginTop: hp('2%'),
+    fontSize: isTablet ? 16 : 12,
+  }, topContainer: {
+    flex: 0.5,
+    backgroundColor: 'white',
+  },
+  circleContainer: {
+    // flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    // backgroundColor: CustomThemeColors.primary, // Light background color
+    padding: 10,
+    borderRadius: 0,
+    // flex: 1,
+    // justifyContent: 'flex-end',
+    // width: '100%',
+  },circleContainer: {
+    // flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    // backgroundColor: CustomThemeColors.primary, // Light background color
+    padding: 10,
+    borderRadius: 0,
+    // flex: 1,
+    // justifyContent: 'flex-end',
+    // width: '100%',
+  },
+  circleBackground: {
+    // width: '100%',
+    // height: isTablet ? (isPortrait ? 350 : 250) : 300, // Height adjusted for tablets and portrait/landscape mode
+    // backgroundColor: '#3498db',
+    // borderTopLeftRadius: isTablet ? (isPortrait ? 175 : 125) : 150, // Half of the height for curve
+    // borderTopRightRadius: isTablet ? (isPortrait ? 175 : 125) : 150,
+    // position: 'absolute',
+    // bottom: 0,
+    // left: 0,
+    // overflow: 'hidden',
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // paddingBottom: 30,
+  },
+  headingText: {
+    fontSize: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 16
+        : 24
+      : 24, // Adjust font size for tablet/phone
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 10,
+    marginTop: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 55
+        : 65
+      : 0,
+  },
+  secondheadingText: {
+    fontSize: isTablet
+      ? currentFontScale >= sysBasedFontSize.Large
+        ? 16
+        : 16
+      : 16, // Adjust font size for tablet/phone
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
 });
 
 export default styles;

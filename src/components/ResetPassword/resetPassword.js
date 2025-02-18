@@ -2,45 +2,73 @@ import React, {useState, useEffect} from 'react';
 import {
   View,
   TextInput,
-  Alert,
-  ImageBackground,
+  Image,
   Text,
   TouchableOpacity,
-  Image,
-  Button,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import styles from './resetPasswordStyles';
 import {getGenericPassword} from 'react-native-keychain';
 import CustomAlert from '../common-utils/CustomAlert';
-import API_URL from '../ApiUrl';
-// import Alert from '@mui/material/Alert';
 import * as Keychain from 'react-native-keychain';
+import {API_URL} from '../ApiUrl';
+import {sharedData, sysBasedFontSize} from '../Login/UserId';
+import {CustomThemeColors} from '../CustomThemeColors';
+import topLogoImage from '../../images/logo.png';
+import Svg, {
+  Circle,
+  Ellipse,
+  Rect,
+  Polygon,
+  Path,
+  Text as SvgText,
+} from 'react-native-svg';
+import DeviceInfo from 'react-native-device-info';
+import { Keyboard } from 'react-native';
+
+const {width, height} = Dimensions.get('window');
 
 const ResetPassword = () => {
+  const isTablet = DeviceInfo.isTablet();
+
   const [authtoken, setAuthtoken] = useState(null);
   const [username, setUsername] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const navigation = useNavigation();
 
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [isUserAlertVisible, setIsUserAlertVisible] = useState(false);
   const [isPassAlertVisible, setIsPassAlertVisible] = useState(false);
   const [isNewPassAlertVisible, setIsNewPassAlertVisible] = useState(false);
   const [failPass, setFailPass] = useState(false);
   const [successLogin, setSuccessLogin] = useState(false);
+  const [active, setActive] = useState(false)
 
-  const showAlert = () => {
-    console.log('Showing Alert');
-    setIsAlertVisible(true);
-  };
-  const showAlertNow = () => {
-    showAlert();
-  };
-  const hideAlert = () => {
-    setIsAlertVisible(false);
-  };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setActive(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setActive(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   const onCloseUser = () => {
     setIsUserAlertVisible(false);
   };
@@ -64,55 +92,45 @@ const ResetPassword = () => {
         if (credentials && credentials.password) {
           setAuthtoken(credentials.password);
           console.log(
-            'token extracted from keychain storage !! : ' +
-              credentials.password,
+            'Token extracted from keychain storage:',
+            credentials.password,
           );
-        } else {
-          // throw new Error('No Token found in Keychain.');
         }
       } catch (error) {
         console.error('Error fetching Token', error);
-        // Alert.alert('Error ' + 'failed to fetch token');
       }
     };
     fetchToken();
   }, []);
+
   const handleBackToLogin = () => {
     navigation.navigate('LoginScreen');
   };
 
   const handleResetPassword = async () => {
-    showAlert();
-    // setUsername('');
-    // setOldPassword('');
-    // setNewPassword('');
-    console.log(username);
     try {
-      if (!username) {
+      if (!username || username !== sharedData.userName) {
         setIsUserAlertVisible(true);
-        // Alert.alert('Alert', 'Please enter username  to proceed.');
-      } else if (!oldPassword) {
-        // Alert.alert('Alert', 'Please enter oldpassword to proceed.');
-      } else if (!newPassword) {
+        return;
+      }
+      if (!oldPassword) {
+        setIsPassAlertVisible(true);
+        return;
+      }
+      if (!newPassword) {
         setIsNewPassAlertVisible(true);
-        // Alert.alert('Alert', 'Please enter newpassword to proceed.');
-        // <CustomAlert
-        //   visible={setIsAlertVisible}
-        //   title={'Alert'}
-        //   message={'Please enter newpassword to proceed.'}
-        //   onClose={hideAlert}
-        // />;
         return;
       }
 
       const requestBody = {
         userId: username,
-        oldPassword: oldPassword,
-        newPassword: newPassword,
+        oldPassword,
+        newPassword,
       };
+
       const credentials = await Keychain.getGenericPassword({service: 'jwt'});
       const token = credentials.password;
-      // Sending the POST request to fetch user credentials
+
       const response = await fetch(`${API_URL}/api/user/resetPassword`, {
         method: 'POST',
         headers: {
@@ -125,41 +143,91 @@ const ResetPassword = () => {
       if (!response.ok) {
         throw new Error('Failed to reset password');
       }
+
       setSuccessLogin(true);
-      // Alert.alert('Success', 'Password reset successful');
       navigation.navigate('HomeScreen');
     } catch (error) {
       console.error('Error:', error);
       setFailPass(true);
-      // Alert.alert('Error', 'Failed to reset password');
     }
   };
 
   return (
     <>
-      <Image
-        style={styles.body}
-        source={require('../../images/Background.png')}
-      />
-      <View style={{flex: 1, zIndex: 10}}>
-        <Text style={styles.headText}>Reset Password</Text>
+      {/* <Image source={require('../../images/Background.png')} style={styles.body} /> */}
+      {!active &&
+      <View style={[styles.topContainer, {flex: .4, marginBottom:10}]}>
+        <Svg
+          height={isTablet ? (sysBasedFontSize.Large ? 210 : 210) : 500}
+          width="100%"
+          style={{
+            // paddingVertical: 30,
+            position: 'absolute',
+            top: isTablet ? (sysBasedFontSize.Large ? -70 : -1) : -10,
+            // backgroundColor: 'red',
+          }}>
+          <Ellipse
+            cx="50%"
+            cy="0%"
+            rx="100%"
+            ry="210"
+            fill={CustomThemeColors.primary}
+          />
+          <View style={styles.circleContainer}>
+            {/* Semi-circle background at the bottom */}
+            <View style={styles.circleBackground}>
+              <Text style={styles.headingText}>
+              </Text>
+                        <Text style={styles.headText}>Reset Password</Text>
 
-        <View style={styles.resetcontainer}>
-          <View style={styles.subcontainer2}>
+            </View>
+          </View>
+        </Svg>
+      </View>}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{flex: 1}}>
+        <ScrollView contentContainerStyle={styles.scrollViewContainer}>
+          {/* <Text style={styles.headText}>Reset Password</Text> */}
+          <View style={styles.resetContainer}>
             <TextInput
               style={styles.input}
               placeholder="Username"
               placeholderTextColor="#3788E5"
-              onChangeText={text => setUsername(text)}
+              onChangeText={setUsername}
               value={username}
             />
-            {/* <TouchableOpacity onPress={showAlertNow}>
-              <Button title="Show Alert" />
-            </TouchableOpacity> */}
-            <CustomAlert
+            <TextInput
+              style={styles.input}
+              placeholder="Old Password"
+              placeholderTextColor="#3788E5"
+              onChangeText={setOldPassword}
+              value={oldPassword}
+              secureTextEntry
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              placeholderTextColor="#3788E5"
+              onChangeText={setNewPassword}
+              value={newPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={styles.resetButton}
+              onPress={()=>handleResetPassword()}>
+              <Text style={styles.resetButtonText}>RESET</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleBackToLogin}>
+              <Text style={styles.resetPasswordText}>Back to Login Page</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <CustomAlert
               visible={isUserAlertVisible}
               title={'Alert'}
-              message={'Please enter username to proceed.'}
+              message={'Please enter a Proper Username to proceed.'}
               onClose={onCloseUser}
             />
             <CustomAlert
@@ -186,100 +254,8 @@ const ResetPassword = () => {
               message={'Password reset successful'}
               onClose={onCloseSuccess}
             />
-            {/* <CustomAlert
-              visible={isAlertVisible}
-              onClose={hideAlert}
-              title="Alert Title"
-              message="This is a custom alert message."
-            /> */}
-            <TextInput
-              style={styles.input}
-              placeholder="Old Password"
-              placeholderTextColor="#3788E5"
-              onChangeText={text => setOldPassword(text)}
-              value={oldPassword}
-              secureTextEntry={true}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="New Password"
-              placeholderTextColor="#3788E5"
-              onChangeText={text => setNewPassword(text)}
-              value={newPassword}
-              secureTextEntry={true}
-            />
-            <TouchableOpacity
-              style={styles.resetbutton}
-              onPress={handleResetPassword}>
-              <Text style={styles.resetbuttonText}>RESET</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity>
-              <Text onPress={handleBackToLogin} style={styles.resetpassword}>
-                Back to Login Page{' '}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.foot}>
-            <Image
-              style={styles.footer}
-              source={require('../../images/Ellipsef.png')}></Image>
-          </View>
-        </View>
-      </View>
     </>
   );
-
-  //   return (
-  //   <View  style={styles.maincontainer} >
-  //         <ImageBackground source={require('../../images/harness_background.png')} style={styles.background}>
-
-  //     <View >
-  //             <Text style={styles.resetpasswordheading}>Reset Password</Text>
-  //     </View>
-
-  // <View style={styles.userdetailscontainer}>
-  //   <View style={styles.subcontainer}>
-  //       <TextInput
-  //         style={styles.input}
-  //         placeholder="Username"
-  //         onChangeText={(text) => setUsername(text)}
-  //         value={username}
-  //       />
-  //       <TextInput
-  //         style={styles.input}
-  //         placeholder="Old Password"
-  //         onChangeText={(text) => setOldPassword(text)}
-  //         value={oldPassword}
-  //         secureTextEntry={true}
-  //       />
-  //       <TextInput
-  //         style={styles.input}
-  //         placeholder="New Password"
-  //         onChangeText={(text) => setNewPassword(text)}
-  //         value={newPassword}
-  //         secureTextEntry={true}
-  //       />
-  //     {/ <View> /}
-  //       <TouchableOpacity style={styles.resetbutton} onPress={handleResetPassword}>
-  //             <Text style={styles.resetbuttontext}>Reset</Text>
-  //       </TouchableOpacity>
-  //       {/ </View> /}
-  //     {/ <View>  /}
-
-  //       <TouchableOpacity  >
-  //             <Text onPress={handleBackToLogin} style={styles.backtologin}>
-  //             Back to Login Page </Text>
-  //       </TouchableOpacity>
-  //     {/ </View> /}
-  //   </View>
-  //   </View>
-
-  //          </ImageBackground>
-  //   </View>
-
-  //   );
 };
 
 export default ResetPassword;

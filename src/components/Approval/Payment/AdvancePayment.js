@@ -44,7 +44,7 @@ import {
 import CustomModalWithCloseIcon from './../../common-utils/ModalWithCloseIcon';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomButton from '../../common-utils/CustomButton';
-import { wholedata } from '../ApprovalMainScreen';
+import {wholedata} from '../ApprovalMainScreen';
 
 const {width} = Dimensions.get('window');
 const isMobile = width < 768;
@@ -53,7 +53,7 @@ const isMobile = width < 768;
 export const AdvancePayment = ({route}) => {
   // const {transName, transId, status, currentLevel, totalNoOfLevels} =
   //   route.params || {};
-    const {transName, transId, status, currentLevel, totalNoOfLevels} =
+  const {transName, transId, status, currentLevel, totalNoOfLevels} =
     wholedata || {};
   const navigation = useNavigation();
   const [pairsData, setPairsData] = useState([]);
@@ -801,7 +801,7 @@ export const AdvancePayment = ({route}) => {
             transDetails[3],
             mainData[7],
             currentLevel,
-            totalNoOfLevels,
+            wholedata.noOfLevel,
             action, // Approve/Reject
           );
 
@@ -1444,7 +1444,7 @@ export const AdvancePayment = ({route}) => {
               setIsLoading(true); // Set loading to true before starting the operation
               setPDFModalVisible(false); // Close the modal
 
-              const requestUrl = `${API_URL}/api/approval/payment/advancePaymentPdf`;
+              const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
               // const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
 
               const requestBody = {
@@ -1457,7 +1457,7 @@ export const AdvancePayment = ({route}) => {
               console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Adv_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -1522,7 +1522,7 @@ export const AdvancePayment = ({route}) => {
                 {
                   alignItems: 'center',
                   // width: 170,
-                  flex: 1,
+                  flex: .5,
                   marginRight: 10,
                   backgroundColor: CustomThemeColors.primary,
                 },
@@ -1530,7 +1530,11 @@ export const AdvancePayment = ({route}) => {
               <Text
                 style={[
                   styles.subOptionText,
-                  {color: 'white', fontSize: DeviceInfo.isTablet() ? 14 : 12},
+                  {
+                    color: 'white',
+                    fontSize: DeviceInfo.isTablet() ? 14 : 12,
+                    // flex: 1,
+                  },
                 ]}>
                 Re-Use
               </Text>
@@ -1561,7 +1565,7 @@ export const AdvancePayment = ({route}) => {
                 {
                   alignItems: 'center',
                   // width: 200,
-                  flex: 1,
+                  flex: .5,
                   backgroundColor: CustomThemeColors.primary,
                 },
               ]}>
@@ -1604,7 +1608,7 @@ export const AdvancePayment = ({route}) => {
               setAppRejUrl={setAppRejUrl}
               transName={transName}
               currentLevel={currentLevel}
-              totalNoOfLevels={totalNoOfLevels}
+              totalNoOfLevels={wholedata.noOfLevel}
               transId={transId}
               setAction={setAction}
             />

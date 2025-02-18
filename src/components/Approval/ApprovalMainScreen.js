@@ -62,11 +62,11 @@ const ApprovalScreen = () => {
   const [empCount, setEmpCount] = useState(0);
 
   useEffect(() => {
-    console.log('approvalData>>>', wholedata);
+    // console.log('approvalData>>>', wholedata);
   }, [wholedata]);
 
   useEffect(() => {
-    console.log('transValue apMain::');
+    // console.log('transValue apMain::');
   }, [transValue]);
 
   const closeModalPDF = () => {
@@ -82,10 +82,7 @@ const ApprovalScreen = () => {
   const startDate = new Date(currentDate);
   startDate.setDate(currentDate.getDate() - 183);
 
-  // useEffect(() => {
-  //   console.log('482984239492 : ');
-  //   fetchApprovalList();
-  // }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       console.log('Navigated back to ComponentA');
@@ -158,7 +155,7 @@ const ApprovalScreen = () => {
 
       const data = await response.json();
       setApprovalListData(data);
-      console.log('data:::::', data);
+      // console.log('data:::::', data);
 
       // paysheet payment - kesaven
       const paymentIds = data
@@ -194,7 +191,7 @@ const ApprovalScreen = () => {
           // 'AddThirdPartyBankAcc',
         ].includes(item.TRANS_NAME),
       );
-      console.log('Ap filteredData:::', filteredData);
+      // console.log('Ap filteredData:::', filteredData);
       setFilteredApprovalData(filteredData);
       setTempFilteredApprovalData(filteredData);
     } catch (error) {
@@ -504,7 +501,7 @@ const ApprovalScreen = () => {
     let formattedIdentification = item.IDENTIFICATION;
 
     // Debugging the original data
-    console.log('Original IDENTIFICATION:', formattedIdentification);
+    // console.log('Original IDENTIFICATION:', formattedIdentification);
 
     // Check if IDENTIFICATION matches the specific format
     if (
@@ -513,7 +510,7 @@ const ApprovalScreen = () => {
       formattedIdentification.includes('No of Payments=')
     ) {
       // Debugging condition match
-      console.log('Formatting IDENTIFICATION:', formattedIdentification);
+      // console.log('Formatting IDENTIFICATION:', formattedIdentification);
 
       // Reformat the string
       formattedIdentification = formattedIdentification
@@ -525,7 +522,7 @@ const ApprovalScreen = () => {
         .replace(/,([^,]*)$/, ' $1 Payments'); // Add 'Payments' to the last number
 
       // Debugging the transformed data
-      console.log('Transformed IDENTIFICATION:', formattedIdentification);
+      // console.log('Transformed IDENTIFICATION:', formattedIdentification);
     }
 
     //paysheet payment  - kesaven
@@ -542,7 +539,7 @@ const ApprovalScreen = () => {
 
       let index = findArrayIndexContainingNumber(isPaysheetData, paymentID);
 
-      console.log('ent:', isPaysheetData[index]);
+      // console.log('ent:', isPaysheetData[index]);
 
       setIndexed(isPaysheetData[index]);
 
@@ -566,9 +563,7 @@ const ApprovalScreen = () => {
 
       // };
 
-      console.log('Display');
-
-      console.log(earningNameFetcher(paymentID));
+   
 
       // setPaysheetData([findArrayIndexContainingNumber(isPaysheetData,item.IDENTIFICATION.split("=")[1].slice(0, -1))])
     }
@@ -726,7 +721,6 @@ const ApprovalScreen = () => {
               setBillsPDFModalVisible(false); // Close the modal
 
               const requestUrl = `${API_URL}/api/approval/payment/billspay_printPdf`;
-              console.log('transvalue ApMain::', itemValues);
               const requestBody = {
                 tranObject: transValue,
                 trans_id: itemValues.TRANS_ID,
@@ -734,10 +728,9 @@ const ApprovalScreen = () => {
 
               // Convert requestBody to a JSON string
               const requestBodyString = JSON.stringify(requestBody);
-              console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Bills_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -763,10 +756,9 @@ const ApprovalScreen = () => {
 
               // Convert requestBody to a JSON string
               const requestBodyString = JSON.stringify(requestBody);
-              console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Bills_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -796,13 +788,13 @@ const ApprovalScreen = () => {
                 tranObject: transValue,
                 trans_id: itemValues.TRANS_ID,
               };
+// console.log("pdfBody::"+requestBody+"\nrequestUrl::"+requestUrl);
 
               // Convert requestBody to a JSON string
               const requestBodyString = JSON.stringify(requestBody);
-              console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
-              await BlobFetchComponent(requestUrl, requestBodyString);
+              await BlobFetchComponent(requestUrl, requestBodyString,name='Adv_');
             } catch (error) {
               console.error('Error executing BlobFetchComponent:', error);
             } finally {
@@ -835,7 +827,6 @@ const ApprovalScreen = () => {
 
               // Convert requestBody to a JSON string
               const requestBodyString = JSON.stringify(requestBody);
-              console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
               await BlobFetchComponent(requestUrl, requestBodyString);
@@ -864,7 +855,6 @@ const ApprovalScreen = () => {
 
               // Convert requestBody to a JSON string
               const requestBodyString = JSON.stringify(requestBody);
-              console.log('requestBody::', requestBodyString);
 
               // Await the execution of BlobFetchComponent
               await BlobFetchComponent(requestUrl, requestBodyString);

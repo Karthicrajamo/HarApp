@@ -4,7 +4,7 @@ import RNFetchBlob from 'rn-fetch-blob';
 import RNFS from 'react-native-fs';
 import {API_URL} from '../ApiUrl';
 
-export const BlobFetchComponent = async (apiurl, requestbody) => {
+export const BlobFetchComponent = async (apiurl, requestbody,name='') => {
   try {
     // Retrieve token for authorization
     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
@@ -49,14 +49,14 @@ export const BlobFetchComponent = async (apiurl, requestbody) => {
       console.log('Folder created:', folderPath);
     }
 
-    downloadAndViewPdf(fileName);
+    downloadAndViewPdf(fileName,name);
   } catch (error) {
     console.error('Error fetching and downloading the file:', error);
   }
 };
 
-const downloadAndViewPdf = async fileName => {
-  const fileNamePrefix = 'bills_';
+const downloadAndViewPdf = async (fileName,name) => {
+  const fileNamePrefix = name?name:'';
   try {
     // Fetch token (ensure that token exists and is valid)
     const credentials = await Keychain.getGenericPassword({service: 'jwt'});
